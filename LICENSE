@@ -1,0 +1,23 @@
+wapform_flutter is licensed under the GNU Lesser General Public License,
+version 2.1, with the Free Pascal (FPC) static-linking exception —
+together referred to in this repository as the "Modified LGPL".
+
+  - COPYING.LGPL.txt          the full LGPL v2.1 license text
+  - COPYING.modifiedLGPL.txt  the static-linking exception that applies
+                              on top of it
+
+Copyright (c) 2026 (your name or organization)
+
+Portions of this package (the `lazarus_*.dart` files) are Dart
+translations of Free Pascal FCL-DB / LCL source files:
+
+  Copyright (c) 2004-2024 by the Free Pascal development team and
+  contributors (see individual file headers for the specific upstream
+  file each translation is derived from).
+
+The `wapform_*.dart` files are original code (not translated from FPC),
+released under the same license to keep the licensing of this package
+simple, since they depend on the LGPL-covered translation files above.
+
+See individual file headers for per-file provenance notes and any
+deviations from the upstream Object Pascal source.

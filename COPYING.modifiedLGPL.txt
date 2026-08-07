@@ -1,0 +1,35 @@
+MODIFIED LGPL — STATIC LINKING EXCEPTION
+=========================================
+
+This package is licensed under the GNU Lesser General Public License,
+version 2.1 (see COPYING.LGPL.txt), with the following additional
+exception, which grants permission for static linking in addition to
+the dynamic/shared linking already permitted by the LGPL. This is the
+same "Modified LGPL" license used by the Free Pascal (FPC) and Lazarus
+projects for their runtime and component libraries, from which this
+package's `lazarus_*.dart` files are translated.
+
+    As a special exception, the copyright holders of this library give
+    you permission to link this library with independent modules to
+    produce an executable, regardless of the license terms of these
+    independent modules, and to copy and distribute the resulting
+    executable under terms of your choice, provided that you also meet,
+    for each linked independent module, the terms and conditions of the
+    license of that module. An independent module is a module which is
+    not derived from or based on this library. If you modify this
+    library, you may extend this exception to your version of the
+    library, but you are not obligated to do so. If you do not wish to
+    do so, delete this exception statement from your version.
+
+Practically, for this package: an app that imports these Dart files
+(whether compiled into a single binary for mobile/desktop, or bundled
+for web — there is no separate "dynamic linking" step in Dart/Flutter,
+so this is the linking mode that matters here) does not have to be
+licensed under the LGPL itself. Only modifications to the library files
+in this package remain subject to the LGPL (see COPYING.LGPL.txt),
+i.e. must be published in source form under the same license if you
+distribute them.
+
+This exception statement, together with the GNU Lesser General Public
+License it modifies, is what the source headers in this package refer
+to as "Modified LGPL".

@@ -1,0 +1,38 @@
+name: wapform_flutter
+description: >
+  A Flutter port of a Lazarus/Free Pascal (FPC) based WML form and report
+  engine. Includes line-by-line Dart translations of FPC's db/sqldb/
+  dbctrls/dbgrids/grids/stdctrls/extctrls units, plus original WapForm
+  modules (expression evaluator, tag engine, lookup box, banded report
+  builder) built on top of them.
+version: 0.1.0
+homepage: https://github.com/wapform/wapform_flutter
+repository: https://github.com/wapform/wapform_flutter
+
+# LGPL-2.1 with the FPC static-linking exception ("Modified LGPL").
+# pub.dev's SPDX picker has no exact entry for the modified exception
+# text, so LGPL-2.1-only is used here as the closest umbrella identifier.
+# See LICENSE, COPYING.LGPL.txt and COPYING.modifiedLGPL.txt for the
+# actual terms that apply to this package.
+license: LGPL-2.1-only
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: '>=3.19.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  crypto: ^3.0.3
+  flutter_html: ^3.0.0
+  flutter_html_table: ^3.0.0
+  printing: ^5.13.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  # No assets/plugins of its own — pure Dart source package.

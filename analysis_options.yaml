@@ -1,0 +1,8 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # The FPC translation layer intentionally mirrors upstream Pascal
+    # naming/structure in many places (see file headers), so a few
+    # default lints are relaxed rather than fighting the source layout.
+    - prefer_final_fields: false
