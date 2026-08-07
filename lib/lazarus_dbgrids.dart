@@ -22,7 +22,7 @@
 //      // aa ??? issue          —— deviates from upstream behavior to fix a defect
 //      // aa ### flutter extension —— a feature added for Flutter that upstream doesn't have
 //
-//  Translation: Copyright (c) 2026 (your name or organization)
+//  Translation: Copyright (c) 2026 Minhong Information Co., Ltd. (wapform.com)
 // ═════════════════════════════════════════════════════════════════════════════
 
 // ═════════════════════════════════════════════════════════════════════════════

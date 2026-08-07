@@ -8,7 +8,7 @@
 //  License: GNU Lesser General Public License v2.1, with the static linking exception (Modified LGPL)
 //        See the accompanying COPYING.LGPL.txt and COPYING.modifiedLGPL.txt.
 //
-//  Copyright (c) 2026 (your name or organization)
+//  Copyright (c) 2026 Minhong Information Co., Ltd. (wapform.com)
 // ═════════════════════════════════════════════════════════════════════════════
 
 // wapform_expression.dart — WML expression engine (MyParser / WapEvaluator; merged from myexp_flutter)
@@ -239,7 +239,14 @@ bool _toBool(dynamic v) {
   return false;
 }
 
-bool isNull(dynamic v) => v == null;
+// aa ??? issue
+// Renamed to private (was a public top-level `isNull`): unused anywhere
+// in this codebase, and its name collided with package:matcher's
+// `isNull` — any file importing this package alongside flutter_test
+// (e.g. a test file that also needs an expression-engine helper) would
+// hit an ambiguous_export compile error on `expect(x, isNull)`.
+bool _isNull(dynamic v) => v == null;
+// zz ??? issue
 
 String varToStr(dynamic v) {
   if (v == null) return '';

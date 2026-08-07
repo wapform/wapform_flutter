@@ -8,7 +8,7 @@
 //  License: GNU Lesser General Public License v2.1, with the static
 //  linking exception (Modified LGPL).
 //
-//  Copyright (c) 2026 (your name or organization)
+//  Copyright (c) 2026 Minhong Information Co., Ltd. (wapform.com)
 // ═════════════════════════════════════════════════════════════════════════════
 // Revision History:
 //   2026-06-06  V2.0  Removed PdfColor; now HTML/CSS only, Flutter Color remains

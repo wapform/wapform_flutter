@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.2.1
+
+- Fixed a real name collision in the package's public API: a
+  never-called top-level `isNull(dynamic v)` helper in
+  `wapform_expression.dart` collided with `package:matcher`'s `isNull`
+  matcher, causing an `ambiguous_export` compile error in any file that
+  imported this package alongside `flutter_test` (e.g. every test
+  file). Renamed to `_isNull` (private) — unused anywhere in this
+  codebase, so this is not a behavioral change.
+- Fixed a syntax bug in `test/wapform_expression_test.dart`: an
+  unescaped `$` in a non-raw string literal (`'...via $ substitution'`)
+  is invalid Dart — `$` always starts an interpolation, raw or not,
+  unless escaped or the string is a raw string.
+
+## 0.2.0
+
+- Added `test/wapform_expression_test.dart`: unit tests for the WML
+  expression engine (`WapEvaluator`) — arithmetic, `cond()`, variable
+  management (`setVar`/`setRow`/`clearVars`), a sample of the `tt_*`
+  built-in function library, and `datasetResolver`-backed `$id.field`
+  expressions via a lightweight fake `ExprDataSet` (no network/DB
+  dependency, so this runs anywhere with `flutter test`). CI now runs
+  `flutter test` in addition to `flutter analyze`.
+- Added `example/`: a runnable Flutter app built around
+  `agp001.dart`'s "系統參數建檔" (system parameters master file)
+  screen — the real generator output for a single-table CRUD form,
+  unmodified apart from its import block. Includes the WapDb HTTP
+  gateway (`example/server/server.js`, `schema.sql`) needed to run it
+  end to end. See `example/README.md`.
+
 ## 0.1.1
 
 - Fixed `flutter analyze`'s one blocking error: `lazarus_db.dart` and

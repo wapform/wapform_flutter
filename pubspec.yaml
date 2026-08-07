@@ -5,7 +5,7 @@ description: >
   dbctrls/dbgrids/grids/stdctrls/extctrls units, plus original WapForm
   modules (expression evaluator, tag engine, lookup box, banded report
   builder) built on top of them.
-version: 0.1.0
+version: 0.2.1
 homepage: https://github.com/wapform/wapform_flutter
 repository: https://github.com/wapform/wapform_flutter
 

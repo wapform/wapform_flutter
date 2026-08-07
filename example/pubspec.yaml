@@ -1,0 +1,25 @@
+name: wapform_flutter_example
+description: >
+  Example app for wapform_flutter — a single "系統參數建檔" (system
+  parameters master file) screen, generator-style, talking to the
+  WapDb HTTP gateway in server/server.js.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: '>=3.19.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  wapform_flutter:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

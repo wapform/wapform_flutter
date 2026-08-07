@@ -6,7 +6,7 @@ together referred to in this repository as the "Modified LGPL".
   - COPYING.modifiedLGPL.txt  the static-linking exception that applies
                               on top of it
 
-Copyright (c) 2026 (your name or organization)
+Copyright (c) 2026 Minhong Information Co., Ltd. (wapform.com)
 
 Portions of this package (the `lazarus_*.dart` files) are Dart
 translations of Free Pascal FCL-DB / LCL source files:

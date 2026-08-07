@@ -10,7 +10,7 @@
 //  linking exception (Modified LGPL). See the accompanying
 //  COPYING.LGPL.txt and COPYING.modifiedLGPL.txt.
 //
-//  Copyright (c) 2026 (your name or organization)
+//  Copyright (c) 2026 Minhong Information Co., Ltd. (wapform.com)
 // ═════════════════════════════════════════════════════════════════════════════
 
 // lib/wap/wap_lookup_box.dart

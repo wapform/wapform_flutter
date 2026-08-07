@@ -19,7 +19,7 @@
 //      // aa ??? issue          —— deviates from upstream behavior to fix a defect
 //      // aa ### flutter extension —— a feature added for Flutter that upstream doesn't have
 //
-//  Translation: Copyright (c) 2026 (your name or organization)
+//  Translation: Copyright (c) 2026 Minhong Information Co., Ltd. (wapform.com)
 // ═════════════════════════════════════════════════════════════════════════════
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -4500,7 +4500,7 @@ class TSQLConnector extends TSQLConnection {
 //  License: GNU Lesser General Public License v2.1, with the static linking exception (Modified LGPL)
 //        See the accompanying COPYING.LGPL.txt and COPYING.modifiedLGPL.txt.
 //
-//  Copyright (c) 2026 (your name or organization)
+//  Copyright (c) 2026 Minhong Information Co., Ltd. (wapform.com)
 //
 //  @@@ This whole section is newly-written bridging code (not a translation of FPC source), occupying the
 //  @@@ position that each database driver unit (sqlite3conn.pp / mysqlconn.pp …) occupies in the FPC ecosystem:
