@@ -2,7 +2,7 @@ name: wapform_flutter
 description: >
   WapForm for Flutter Community Edition: an open-source Flutter port
   of a Lazarus/FPC WAP form and report engine for Web and mobile.
-version: 1.6.5
+version: 1.6.6
 homepage: https://github.com/wapform/wapform_flutter
 repository: https://github.com/wapform/wapform_flutter
 

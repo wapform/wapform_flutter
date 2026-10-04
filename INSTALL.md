@@ -122,8 +122,8 @@ The connection credentials hard-coded in `server.js` are
 **placeholders**, not a real working account:
 
 ```js
-user:     'wapform',
-password: 'wapform123',
+user:     'xyz',
+password: '123',
 ```
 
 `example/server/sales.sql` (Step 3) already creates this account. To create it by hand
@@ -131,8 +131,8 @@ in your MariaDB/MySQL instance (or to use
 `root`, though that's not recommended outside local development):
 
 ```sql
-CREATE USER 'wapform'@'localhost' IDENTIFIED BY 'wapform123';
-GRANT ALL PRIVILEGES ON sales.* TO 'wapform'@'localhost';
+CREATE USER 'xyz'@'localhost' IDENTIFIED BY '123';
+GRANT ALL PRIVILEGES ON sales.* TO 'xyz'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
@@ -148,7 +148,7 @@ cd example/server
 mysql -u root -p < sales.sql
 ```
 
-(Run it as `root` (or another admin account): it also creates the `wapform` account.)
+(Run it as `root` (or another admin account): it also creates the `xyz` account.)
 
 **This creates 12 tables** — `cu`, `em`, `fm`, `login`, `mnu`, `num`,
 `pa`, `sh`, `sn`, `sys`, `users`, `ve` — a real production
@@ -172,7 +172,7 @@ password `admin`. The menu includes a permanent entry for
 Verify afterward:
 
 ```bash
-mysql -u wapform -p -e "USE sales; SHOW TABLES; SELECT * FROM sys; SELECT * FROM users;"
+mysql -u xyz -p -e "USE sales; SHOW TABLES; SELECT * FROM sys; SELECT * FROM users;"
 ```
 
 You should see the `sys` table with one seed row already in it (from
@@ -203,8 +203,8 @@ const pool = mysql.createPool({
   host:     'localhost',
   port:     3306,
   database: 'sales',
-  user:     'wapform',
-  password: 'wapform123',
+  user:     'xyz',
+  password: '123',
   ...
 });
 ```
@@ -289,10 +289,10 @@ described.
 Check that Node.js is recent enough (18+ recommended) — packages like
 `mysql2` may not install on older versions.
 
-**`mysql -u wapform -p < sales.sql` fails with `Access denied`**
+**`mysql -u xyz -p < sales.sql` fails with `Access denied`**
 Wrong credentials, or Step 2's `GRANT` didn't actually run. Log in
 with `mysql -u root -p` and run
-`SELECT User, Host FROM mysql.user WHERE User='wapform';` to confirm the
+`SELECT User, Host FROM mysql.user WHERE User='xyz';` to confirm the
 account exists.
 
 **`curl http://localhost:3000/ping` gives connection refused**
@@ -304,12 +304,12 @@ account exists.
 `server.js` is running but can't reach the database — recheck Step
 4-2's `host`/`port`/`database`/`user`/`password` against your actual
 MariaDB/MySQL setup, and confirm the database server itself is
-running (`mysql -u wapform -p -e "SELECT 1;"` tests the database
+running (`mysql -u xyz -p -e "SELECT 1;"` tests the database
 connection on its own, ruling `server.js`'s config in or out).
 
 **Flutter app's login fails with "Account does not exist" or "Password error" even though `admin`/`admin` is right**
 Step 3's seed `INSERT`s into `users` probably didn't run — reconnect
-and check: `mysql -u wapform -p -e "USE sales; SELECT * FROM users;"`
+and check: `mysql -u xyz -p -e "USE sales; SELECT * FROM users;"`
 should show one row with `USERID='admin'`.
 
 **Flutter app's login hangs or throws a connection error**
@@ -332,7 +332,7 @@ Not expected — `sales.sql` is a real data export, so every table
 (other than `num`, which the app populates itself) should already
 have rows to show. A blank screen or error here means something in
 Step 3 didn't fully apply; re-run
-`mysql -u wapform -p -e "USE sales; SELECT COUNT(*) FROM cu;"` (swap in
+`mysql -u xyz -p -e "USE sales; SELECT COUNT(*) FROM cu;"` (swap in
 whichever table's page is blank) and confirm it's non-zero. If the
 count looks right and you still get an actual error message, that's
 worth investigating further (e.g. a grouped report like `app012` may

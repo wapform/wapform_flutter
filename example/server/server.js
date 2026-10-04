@@ -32,8 +32,8 @@ const pool = mysql.createPool({
   host:              'localhost',
   port:              3306,
   database:          'sales',
-  user:              'wapform',
-  password:          'wapform123',
+  user:              'xyz',
+  password:          '123',
   charset:           'utf8mb4',
   timezone:          '+08:00',
   // @@@ Return DATE/DATETIME as plain strings, bypassing the JS Date

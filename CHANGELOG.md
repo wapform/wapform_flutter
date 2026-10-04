@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.6
+
+- **Example database account is now `xyz` / `123`** (simulated sample
+  values), the same account used by every WapForm sample
+  (`example/lib/wapform.ini`, `example/server/server.js`,
+  `example/server/sales.sql`, `INSTALL.md`).
+
 ## 1.6.5
 
 - **Example pages updated to the latest generator output** (`app*.dart`,

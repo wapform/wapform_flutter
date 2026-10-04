@@ -49,8 +49,8 @@ CREATE DATABASE IF NOT EXISTS `sales`
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- MySQL account used by the example (wapform.ini, server.js): simulated sample values
-CREATE USER IF NOT EXISTS 'wapform'@'localhost' IDENTIFIED BY 'wapform123';
-GRANT ALL PRIVILEGES ON `sales`.* TO 'wapform'@'localhost';
+CREATE USER IF NOT EXISTS 'xyz'@'localhost' IDENTIFIED BY '123';
+GRANT ALL PRIVILEGES ON `sales`.* TO 'xyz'@'localhost';
 FLUSH PRIVILEGES;
 USE `sales`;
 
