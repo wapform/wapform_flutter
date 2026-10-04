@@ -102,7 +102,8 @@ class _WapFilterState extends State<WapFilter> {
       }
     });
 
-    String rSubstitution = conditions.isNotEmpty ? conditions.join(' and ') : '1=1';
+    String rSubstitution =
+        conditions.isNotEmpty ? conditions.join(' and ') : '1=1';
     String finalSql = widget.sqlTemplate.replaceAll('\$R', rSubstitution);
     widget.onQuery(finalSql);
   }
@@ -232,22 +233,30 @@ class _WapFilterState extends State<WapFilter> {
     return (w + 1) * 7.0 + 3;
   }
 
-  Widget _filterBtn({required String label, required IconData icon, required Color color, required VoidCallback onPressed}) =>
-    SizedBox(height: 30,
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 14),
-        label: Text(label, style: const TextStyle(fontSize: 13)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color, foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-          elevation: 0),
-      ),
-    );
+  Widget _filterBtn(
+          {required String label,
+          required IconData icon,
+          required Color color,
+          required VoidCallback onPressed}) =>
+      SizedBox(
+        height: 30,
+        child: ElevatedButton.icon(
+          onPressed: onPressed,
+          icon: Icon(icon, size: 14),
+          label: Text(label, style: const TextStyle(fontSize: 13)),
+          style: ElevatedButton.styleFrom(
+              backgroundColor: color,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4)),
+              elevation: 0),
+        ),
+      );
 
-  OutlineInputBorder _ob(Color color, {bool focused = false}) => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(4),
-    borderSide: BorderSide(color: color, width: focused ? 1.5 : 1.0),
-  );
+  OutlineInputBorder _ob(Color color, {bool focused = false}) =>
+      OutlineInputBorder(
+        borderRadius: BorderRadius.circular(4),
+        borderSide: BorderSide(color: color, width: focused ? 1.5 : 1.0),
+      );
 }

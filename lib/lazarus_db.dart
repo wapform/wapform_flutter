@@ -1,3 +1,4 @@
+// ignore_for_file: constant_identifier_names -- resource string names match FPC FCL-DB (dbconst.pas)
 // ═════════════════════════════════════════════════════════════════════════════
 //  lazarus_db.dart
 //
@@ -6385,13 +6386,15 @@ class TDataSet extends TComponent {
 
     if (!controlsDisabled() && _state != TDataSetState.dsBlockRead) {
       if (myDataSourceCount > 0) {
-        print('[DEBUG7 dataEvent] name=$name event=$event actually notified $myDataSourceCount DataSource(s)');
+        print(
+            '[DEBUG7 dataEvent] name=$name event=$event actually notified $myDataSourceCount DataSource(s)');
       }
       for (var i = 0; i < myDataSourceCount; i++) {
         myDataSources(i).processEvent(event, info);
       }
     } else if (controlsDisabled() && myDataSourceCount > 0) {
-      print('[DEBUG7 dataEvent] name=$name event=$event blocked by controlsDisabled (would have been $myDataSourceCount DataSource(s))');
+      print(
+          '[DEBUG7 dataEvent] name=$name event=$event blocked by controlsDisabled (would have been $myDataSourceCount DataSource(s))');
     }
   }
 
@@ -6436,10 +6439,12 @@ class TDataSet extends TComponent {
       return;
     }
     if (afterScroll != null) {
-      print('[DEBUG7 doAfterScroll] name=$name actually fired the afterScroll callback');
+      print(
+          '[DEBUG7 doAfterScroll] name=$name actually fired the afterScroll callback');
     }
     afterScroll?.call(this);
   }
+
   void doAfterRefresh() => afterRefresh?.call(this);
   void doBeforeCancel() => beforeCancel?.call(this);
   void doBeforeClose() {

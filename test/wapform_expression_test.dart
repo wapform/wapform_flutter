@@ -140,7 +140,8 @@ void main() {
       expect(ev.eval('sh.amount'), 1540);
     });
 
-    test('arithmetic on a resolved numeric field stays numeric, '
+    test(
+        'arithmetic on a resolved numeric field stays numeric, '
         'not string concatenation', () {
       // The parser's '+' operator does numeric addition when both
       // operands are numeric, string concatenation when either is a

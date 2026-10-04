@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- **Supported platforms declared: Android and Web** (`platforms:` in
+  `pubspec.yaml`). Web builds were verified with `flutter build web` of
+  the example; pub.dev previously inferred Android / iOS only from
+  `flutter_native_html_to_pdf`.
+- **`LICENSE` is now the plain LGPL-2.1 text** so pub.dev / GitHub can
+  recognize it. The FPC static-linking exception is unchanged and still
+  applies; it is in `COPYING.modifiedLGPL.txt`.
+- `dart fix` / `dart format` applied to `lib` and `test`; the FPC
+  resource-string names (`lazarus_db.dart`) and WML function names
+  (`wapform_expression.dart`) keep their original spelling
+  (`ignore_for_file` for the naming lints). Analyzer issues 394 -> 54.
+
 ## 1.6.6
 
 - **Example database account is now `xyz` / `123`** (simulated sample

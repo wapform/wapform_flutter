@@ -20,6 +20,12 @@ environment:
   sdk: '>=3.3.0 <4.0.0'
   flutter: '>=3.19.0'
 
+# Supported platforms. Web builds were verified (flutter build web of the example);
+# flutter_native_html_to_pdf is only used on Android / iOS at run time.
+platforms:
+  android:
+  web:
+
 dependencies:
   flutter:
     sdk: flutter

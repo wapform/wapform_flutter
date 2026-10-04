@@ -855,7 +855,8 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
     // on _hScrollHeader above for why they can't just share one controller
     // now that the vertical scrollbar sits outside the horizontal one).
     _hScroll.addListener(() {
-      if (_hScrollHeader.hasClients && _hScrollHeader.offset != _hScroll.offset) {
+      if (_hScrollHeader.hasClients &&
+          _hScrollHeader.offset != _hScroll.offset) {
         _hScrollHeader.jumpTo(_hScroll.offset);
       }
       if (_hScrollBar.hasClients && _hScrollBar.offset != _hScroll.offset) {
@@ -864,7 +865,8 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
     });
     _hScrollBar.addListener(() {
       if (_hScroll.hasClients && _hScroll.offset != _hScrollBar.offset) {
-        _hScroll.jumpTo(_hScrollBar.offset); // dragging the pinned scrollbar itself must also scroll the content
+        _hScroll.jumpTo(_hScrollBar
+            .offset); // dragging the pinned scrollbar itself must also scroll the content
       }
     });
     _dataLink = TComponentDataLink();
@@ -1608,11 +1610,9 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
       final totalWidth = _totalColsWidth(cols);
       final gridH = widget.height ?? 300;
       const kScrollbarThickness = 14.0;
-      final bodyHeight = (gridH -
-              (showTitles ? 28 : 0) -
-              kScrollbarThickness -
-              2)
-          .clamp(0.0, double.infinity);
+      final bodyHeight =
+          (gridH - (showTitles ? 28 : 0) - kScrollbarThickness - 2)
+              .clamp(0.0, double.infinity);
       table = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -1621,7 +1621,8 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
             SingleChildScrollView(
               controller: _hScrollHeader,
               scrollDirection: Axis.horizontal,
-              physics: const NeverScrollableScrollPhysics(), // only follows the body's movement in sync, not directly draggable by the user
+              physics:
+                  const NeverScrollableScrollPhysics(), // only follows the body's movement in sync, not directly draggable by the user
               child: SizedBox(width: totalWidth, child: _buildHeader(cols)),
             ),
           SizedBox(
@@ -1640,8 +1641,7 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        for (var r = 0; r < _rowCount; r++)
-                          _buildRow(r, cols),
+                        for (var r = 0; r < _rowCount; r++) _buildRow(r, cols),
                       ],
                     ),
                   ),

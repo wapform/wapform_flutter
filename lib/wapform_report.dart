@@ -377,9 +377,9 @@ abstract class WapReport {
         'total, reusing the on-screen preview CSS, print font size derived '
         'from the $kRulerChars-character ruler line), handing off to the '
         'native WebView for PDF conversion...');
-    final result =
-        await HtmlToPdfConverter().convertHtmlToPdfBytes(html: html);
-    debugPrint('[buildPdf] step 2/2 PDF generation complete (${result.length} bytes)');
+    final result = await HtmlToPdfConverter().convertHtmlToPdfBytes(html: html);
+    debugPrint(
+        '[buildPdf] step 2/2 PDF generation complete (${result.length} bytes)');
     return result;
   }
 
@@ -748,7 +748,8 @@ Future<String> wapFontFaceCss(String fontAsset) async {
     _fontFaceCssCache[fontAsset] = css;
     return css;
   } catch (e) {
-    debugPrint('[wapform_report] Font embedding failed, falling back to the system default font: $e');
+    debugPrint(
+        '[wapform_report] Font embedding failed, falling back to the system default font: $e');
     return '';
   }
 }
@@ -1104,8 +1105,7 @@ ${reportCssScreen(paperWidthPx(widget.paper, widget.orient))}
 ${reportCssSrc(size)}
 ${printChromeResetCss(size, widget.paper, widget.orient)}
 </style></head><body>$body</body></html>''';
-    final bytes =
-        await HtmlToPdfConverter().convertHtmlToPdfBytes(html: html);
+    final bytes = await HtmlToPdfConverter().convertHtmlToPdfBytes(html: html);
     await Printing.sharePdf(bytes: bytes, filename: '${widget.title}.pdf');
   }
 

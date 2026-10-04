@@ -1,3 +1,4 @@
+// ignore_for_file: non_constant_identifier_names -- WML function names (ABS, IIF, ...) keep their WML spelling
 // ═════════════════════════════════════════════════════════════════════════════
 //  wapform_expression.dart
 //  WML expression engine (MyParser / WapEvaluator)
@@ -2371,7 +2372,8 @@ dynamic tt_AsPct(dynamic v1, dynamic v2) {
 dynamic tt_AsSci(dynamic v1, dynamic v2) {
   final val = varToDouble(v1);
   final d = varToInt(v2);
-  final s = val.toStringAsExponential(d.clamp(0, 20)); // e.g. "1.23e+4" or "1.23e-4"
+  final s =
+      val.toStringAsExponential(d.clamp(0, 20)); // e.g. "1.23e+4" or "1.23e-4"
   final parts = s.split('e');
   final mantissa = parts[0];
   final expNum = int.parse(parts[1]);
