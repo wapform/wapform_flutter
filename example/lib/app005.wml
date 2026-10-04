@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<wml>
+	<card id="P" title="Employee Master" width="1000">
+		<dbquery id="em">
+			<![CDATA[select * from em order by eno]]>
+			<field fieldname="ENo" displaylabel="Employee ID"/>
+			<field fieldname="EName" displaylabel="Employee Name"/>
+			<field fieldname="ID" displaylabel="National ID"/>
+			<field fieldname="Birthday" displaylabel="Date of Birth"/>
+			<field fieldname="City" displaylabel="Hometown"/>
+			<field fieldname="Sex" displaylabel="Gender"/>
+			<field fieldname="Maried" displaylabel="Marital Status"/>
+			<field fieldname="Army" displaylabel="Military Service"/>
+			<field fieldname="School" displaylabel="Education"/>
+			<field fieldname="Start" displaylabel="Start Date"/>
+			<field fieldname="Leave" displaylabel="Leave Date"/>
+			<field fieldname="Part" displaylabel="Department"/>
+			<field fieldname="Position" displaylabel="Job Title"/>
+			<field fieldname="Phone1" displaylabel="Contact Phone"/>
+			<field fieldname="Phone2" displaylabel="Permanent Phone"/>
+			<field fieldname="Addr1" displaylabel="Contact Address"/>
+			<field fieldname="Addr2" displaylabel="Permanent Address"/>
+			<field fieldname="Rem" displaylabel="Remarks"/>
+		</dbquery>
+		<datasource dataset="em">
+			<dbfilter result="R">
+				<item field="eno" size="16" />
+				<item field="ename" size="16" />
+				<onevent type="onfilter">
+					<dbquery id="em"><![CDATA[select * from em where $R order by eno]]></dbquery>
+				</onevent>
+			</dbfilter>
+			<p align="center">
+				<navigator/>
+			</p>
+			<table columns="2">
+			<tr>
+			<td width="500">
+			<fieldset>
+				Employee ID:<input field="ENo" size="6"/><br/>
+				Employee Name:<input field="EName" size="8"/><br/>
+				National ID:<input field="ID" size="14"/><br/>
+				Date of Birth:<input field="Birthday" size="10"/><br/>
+				Hometown:<input field="City" size="10"/><br/>
+				Gender:
+        <select field="Sex" width="150" height="50" title="Gender" columns="2">
+        <option value="M">Male</option>
+        <option value="F">Female</option>
+        </select>
+        <br/>
+        Marital Status:
+        <select field="Maried" width="150" height="50" title="Marital Status" columns="2">
+        <option value="Y">Married</option>
+        <option value="N">Single</option>
+        </select>
+        <br/>
+				Military Service:
+        <select field="Army" width="150" height="50" title="Military Service" columns="2">
+        <option value="Y">Completed</option>
+        <option value="N">Not Completed</option>
+        </select>
+        <br/>
+				Education:<input field="School" size="8"/><br/>
+			</fieldset>
+			</td>
+			<td width="500">
+			<fieldset>
+				Start Date:<input field="Start" size="10"/><br/>
+				Leave Date:<input field="Leave" size="10"/><br/>
+				Department:<input field="Part" size="8"/><br/>
+				Job Title:<input field="Position" size="8"/><br/>
+				Contact Phone:<input field="Phone1" size="14"/><br/>
+				Permanent Phone:<input field="Phone2" size="14"/><br/>
+				Contact Address:<input field="Addr1" size="40"/><br/>
+				Permanent Address:<input field="Addr2" size="40"/><br/>
+				Remarks:<input field="Rem" size="40"/>
+			</fieldset>
+			</td>
+			</tr>
+			</table>
+		</datasource>
+		<do type="prev" label="Close">
+			<prev/>
+		</do>
+	</card>
+</wml>

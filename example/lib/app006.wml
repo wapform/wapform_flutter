@@ -1,0 +1,753 @@
+<?xml version="1.0"?>
+<wml>
+	<card id="P" title="Shipment Order Master" margin="5" width="1200">
+		<setvar name="DOCDATE" value="FORMAT('%2.2d',YEAR(DATE)-1911)+FORMAT('%2.2d',MONTH(DATE))+FORMAT('%2.2d',DAY(DATE))"/>
+		<setvar name="BARCODEGUARD" value="0"/>
+		<setvar name="DeletingItems" value="0"/>
+		<setvar name="BookMark" value="0"/>
+		<setvar name="QUERYGUARD" value="0"/>
+
+		<setvar name="_SHIPDATE_FROM" value="''"/>
+		<setvar name="_SHIPDATE_TO" value="''"/>
+		<setvar name="_CUSTNO_FROM" value="''"/>
+		<setvar name="_CUSTNO_TO" value="''"/>
+		<setvar name="_REMARK_KW" value="''"/>
+		<setvar name="_CUSTSHORT_KW" value="''"/>
+		<setvar name="_TAXID_KW" value="''"/>
+		<setvar name="_BOARDNO_KW" value="''"/>
+		<setvar name="_CHKNO_KW" value="''"/>
+		<setvar name="_PAYTYPE_KW" value="''"/>
+		<setvar name="_AMOUNTTAX_EQ" value="''"/>
+		<setvar name="_SHIPPER_KW" value="''"/>
+
+		<dbquery id="sys"><![CDATA[select * from sys]]></dbquery>
+
+		<dbquery name="cu1" tablename="cu" filter="cno&lt;'D'">
+			select * from cu where cno&lt;'D' order by cno
+			<field fieldname="Cno" displaylabel="Customer Code"/>
+			<field fieldname="Cname" displaylabel="Customer Name"/>
+			<field fieldname="Cshort" displaylabel="Customer Short"/>
+			<field fieldname="Addr1" displaylabel="Address 1"/>
+			<field fieldname="Addr2" displaylabel="Address 2"/>
+			<field fieldname="AC" displaylabel="Tax ID"/>
+			<field fieldname="Zip" displaylabel="Zip Code"/>
+			<field fieldname="Ziq" displaylabel="Shipping Zone"/>
+			<field fieldname="Phone" displaylabel="Phone"/>
+			<field fieldname="FAX" displaylabel="Fax"/>
+			<field fieldname="GSM" displaylabel="Mobile"/>
+			<field fieldname="Charger" displaylabel="Owner"/>
+			<field fieldname="Contact" displaylabel="Contact"/>
+			<field fieldname="Rem" displaylabel="Customer Remarks"/>
+			<field fieldname="Remark" displaylabel="Company Remarks"/>
+		</dbquery>
+
+		<dbquery id="sh"><![CDATA[select * from sh where sno='XYZ' order by sno]]>
+			<field fieldname="sno" displaylabel="Shipment No"/>
+			<field fieldname="sdate" displaylabel="Ship Date"/>
+			<field fieldname="cno" displaylabel="Customer Code">
+				<onevent type="onchange">
+					<setvar name="shcshort" value="sh.cucshort"/>
+					<setvar name="shac" value="sh.cuac"/>
+					<setvar name="shpay" value="sh.cupay"/>
+					<setvar name="shAtype" value="sh.cutyp" cnd="sh.cutyp&lt;&gt;''"/>
+					<dbquery id="sa"><![CDATA[select sum(Amount+Tax) A, sum(Paid) B, sum(Amount+Tax-Paid) C
+          from sh where (cno='$sh.cno') and (sdate<'$sys.acbeg')]]></dbquery>
+					<alert message="$('Outstanding balance: '+STR(sa.c))" cnd="sa.c>0"/>
+				</onevent>
+			</field>
+
+			<dbtable tablename="cu" keyfields="cno" lookupkeyfields="cno">
+				<field fieldname="cname" displaylabel="Customer Name"/>
+				<field name="cucshort" fieldname="cshort" displaylabel="Customer Short"/>
+				<field fieldname="Addr1" displaylabel="Address 1"/>
+				<field name="cuac" fieldname="AC" displaylabel="Tax ID"/>
+				<field fieldname="cdate" displaylabel="Created Date"/>
+				<field fieldname="Zip" displaylabel="Zip Code"/>
+				<field fieldname="Ziq" displaylabel="Shipping Zone"/>
+				<field fieldname="Phone" displaylabel="Phone"/>
+				<field fieldname="FAX" displaylabel="Fax"/>
+				<field fieldname="email" displaylabel="email"/>
+				<field fieldname="Contact" displaylabel="Contact"/>
+				<field name="cupay" fieldname="Pay" displaylabel="Payment"/>
+				<field name="cutyp" fieldname="AType" displaylabel="Typ"/>
+				<field name="cuRem" fieldname="Rem" displaylabel="Remarks"/>
+				<field name="cuRemark" fieldname="Remark" displaylabel="Remarks"/>
+			</dbtable>
+
+			<field fieldname="cshort" displaylabel="Customer Short"/>
+			<field fieldname="AC" displaylabel="Tax ID"/>
+			<field fieldname="Pay" displaylabel="Payment"/>
+
+			<field fieldname="eno" displaylabel="Employee ID"/>
+			<dbtable tablename="em" keyfields="eno" lookupkeyfields="eno">
+				<field fieldname="ename" displaylabel="Employee Name"/>
+			</dbtable>
+			<field fieldname="fno" displaylabel="Shipper Code"/>
+			<dbtable tablename="fm" keyfields="fno" lookupkeyfields="fno">
+				<field name="fmfname" fieldname="fname" displaylabel="Shipper Name"/>
+			</dbtable>
+			<field fieldname="fname" displaylabel="Shipper Name"/>
+			<field fieldname="gno" displaylabel="Pallet No"/>
+			<field fieldname="fty" displaylabel="Qty of Pieces"/>
+			<field fieldname="ADate" displaylabel="ADate"/>
+			<field fieldname="AType" displaylabel="AType"/>
+			<field fieldname="ANo" displaylabel="ANo"/>
+			<field fieldname="Rem" displaylabel="Rem"/>
+			<field fieldname="Remark" displaylabel="Remark"/>
+			<field fieldname="pc" displaylabel="Order Status"/>
+			<field fieldname="source" displaylabel="Sales Channel"/>
+			<field fieldname="topic" displaylabel="topic"/>
+			<field fieldname="sales" displaylabel="sales"/>
+			<field fieldname="dm" displaylabel="dm"/>
+			<field fieldname="TaxRate" displaylabel="Sales Tax Rate"/>
+			<field fieldname="Amount" displaylabel="Shipment Amount"/>
+			<field fieldname="Tax" displaylabel="Tax"/>
+			<field fieldname="Taxx" displaylabel="Sales Tax" type="integer" value="sh.Amount*sh.TaxRate/100"/>
+			<field fieldname="AmountTax" displaylabel="AmountTax"/>
+			<field fieldname="AmountTaxx" displaylabel="Amount incl. Tax" type="integer" value="sh.Amount+sh.Taxx"/>
+			<field fieldname="Paid" displaylabel="Paid Amount"/>
+			<field fieldname="UnPaid" displaylabel="Balance Due" type="integer" value="sh.Amount+sh.Taxx-sh.Paid"/>
+			<onevent type="onnewrecord">
+				<dbquery id="ab"><![CDATA[select * from num where date='$DOCDATE']]></dbquery>
+				<if cnd="ab.count=0">
+					<dbquery><![CDATA[insert into num values ('$DOCDATE',0,0)]]></dbquery>
+				</if>
+				<dbquery><![CDATA[update num set sno=sno+1 where date='$DOCDATE']]></dbquery>
+				<dbquery id="maxno"><![CDATA[select sno from num where date='$DOCDATE']]></dbquery>
+				<setvar name="shsno" value="DOCDATE+FORMAT('%4.4d',maxno.sno)"/>
+				<setvar name="shCno" value="''"/>
+				<setvar name="shEno" value="''"/>
+				<setvar name="shTaxRate" value="5"/>
+				<setvar name="shSdate" value="DATE"/>
+				<setvar name="shAdate" value="DATE"/>
+				<setvar name="shAtype" value="'3'"/>
+				<invoke instance="sh" method="Post"/>
+			</onevent>
+			<onevent type="beforedelete">
+				<setvar name="DeletingItems" value="1"/>
+				<dbquery><![CDATA[delete from sn where sno='$shsno']]></dbquery>
+				<setvar name="DeletingItems" value="0"/>
+			</onevent>
+			<onevent type="beforepost">
+				<setvar name="shcshort" value="sh.cucshort"/>
+				<setvar name="shfname" value="sh.fmfname"/>
+				<setvar name="shac" value="sh.cuac"/>
+				<setvar name="shpay" value="sh.cupay"/>
+				<setvar name="shAtype" value="sh.cutyp" cnd="sh.cutyp&lt;&gt;''"/>
+				<setvar name="shTax" value="sh.Taxx"/>
+				<setvar name="shAmountTax" value="sh.AmountTaxx"/>
+			</onevent>
+			<onevent type="afterscroll">
+				<if cnd="BARCODEGUARD=1">
+					<dbquery id="sn"><![CDATA[select * from sn where sno='$sh.sno' order by sno, itm]]></dbquery>
+				</if>
+			</onevent>
+		</dbquery>
+
+		<function id="UpdateTotal">
+			<exit cnd="DeletingItems"/>
+			<invoke instance="sn" method="GetBookmark" result="BookMark"/>
+			<invoke instance="sn" method="DisableControls"/>
+			<invoke instance="sn" method="First"/>
+			<setvar name="TempTotal" value="0"/>
+			<while cnd="NOT(sn.EOF)">
+				<setvar name="TempTotal" value="TempTotal+sn.Total"/>
+				<invoke instance="sn" method="Next"/>
+			</while>
+			<setvar name="shAmount" value="TempTotal"/>
+			<invoke instance="sn" method="EnableControls"/>
+			<invoke instance="sn" method="GoToBookmark" params="BookMark"/>
+			<invoke instance="sn" method="FreeBookmark"/>
+		</function>
+
+		<dbquery id="sn"><![CDATA[select * from sn where sno='$sh.sno' order by sno, itm]]>
+			<field fieldname="sno" displaylabel="Shipment No"/>
+			<field fieldname="Itm" displaylabel="NO"/>
+			<field fieldname="sdate" displaylabel="Ship Date"/>
+			<field fieldname="cno" displaylabel="Customer Code"/>
+			<field fieldname="eno" displaylabel="Employee ID"/>
+			<field fieldname="PNo" displaylabel="Item No">
+				<onevent type="onchange">
+					<if cnd="BARCODEGUARD=0">
+						<dbquery id="bc"><![CDATA[select pno from pa where barcode='$snpno']]></dbquery>
+						<if cnd="bc.count&gt;0">
+							<setvar name="BARCODEGUARD" value="1"/>
+							<setvar name="snpno" value="bc.pno"/>
+							<setvar name="BARCODEGUARD" value="0"/>
+						</if>
+					</if>
+					<dbquery id="vp"><![CDATA[select nn.price from sh hh, sn nn where (hh.sno=nn.sno) and (hh.cno='$sh.cno') and (nn.pno='$sn.pno') order by nn.pno, hh.sdate desc]]></dbquery>
+					<setvar name="snPrice" value="vp.Price" cnd="vp.COUNT&gt;0"/>
+					<setvar name="snPrice" value="sn.price1" cnd="vp.COUNT=0"/>
+				</onevent>
+			</field>
+			<dbtable tablename="pa" keyfields="pno" lookupkeyfields="pno">
+				<field fieldname="des" displaylabel="Product Name"/>
+				<field fieldname="unit" displaylabel="Unit"/>
+				<field fieldname="price1" displaylabel="List Price"/>
+				<field fieldname="pricea" displaylabel="Standard Cost"/>
+			</dbtable>
+			<field fieldname="Qty" displaylabel="Quantity"/>
+			<field fieldname="Price" displaylabel="Unit Price"/>
+			<field fieldname="Total" displaylabel="Amount" type="integer" value="sn.Qty*sn.Price"/>
+			<field fieldname="Rem" displaylabel="Remarks"/>
+			<onevent type="onnewrecord">
+				<setvar name="snsno" value="shsno"/>
+				<dbquery id="maxitm"><![CDATA[select max(itm) as itm from sn where sno='$shsno']]></dbquery>
+				<setvar name="snitm" value="maxitm.itm+1"/>
+			</onevent>
+			<onevent type="beforeedit">
+				<invoke instance="sh" method="Edit"/>
+			</onevent>
+			<onevent type="beforeinsert">
+				<invoke instance="sh" method="Edit"/>
+			</onevent>
+			<onevent type="beforedelete">
+				<invoke instance="sh" method="Edit"/>
+			</onevent>
+			<onevent type="afterdelete">
+				<go href="@UpdateTotal"/>
+			</onevent>
+			<onevent type="afterpost">
+				<go href="@UpdateTotal"/>
+			</onevent>
+		</dbquery>
+
+		<dbquery id="xy"><![CDATA[
+    select
+    sh.sno,sh.sdate,sh.cno,cu.cshort,cu.AC,sh.Pay,sh.TaxRate,sh.Amount,sh.Tax,sh.AmountTax,sh.Paid,sh.GetDate,sh.PayDate,
+    sh.gno,sh.fty,sh.ChkNo,sh.fno,sh.fname,sh.rempay,
+    CASE
+    WHEN sh.pc='1' THEN "Order Received"
+    WHEN sh.pc='2' THEN "Preparing"
+    WHEN sh.pc='3' THEN "Shipped"
+    WHEN sh.pc='4' THEN "Transferring Stock"
+    ELSE ""
+    END AS st
+    from sh, cu
+    where sh.cno=cu.cno and sh.sno='XYZ'
+    order by sh.sno
+    ]]>
+			<field fieldname="sno" displaylabel="Shipment No"/>
+			<field fieldname="sdate" displaylabel="Ship Date"/>
+			<field fieldname="cno" displaylabel="Customer Code"/>
+			<field fieldname="cshort" displaylabel="Customer Short"/>
+			<field fieldname="st" displaylabel="Order Status"/>
+			<field fieldname="AC" displaylabel="Tax ID"/>
+			<field fieldname="Pay" displaylabel="Payment"/>
+			<field fieldname="TaxRate" displaylabel="Sales Tax Rate"/>
+			<field fieldname="Amount" displaylabel="Shipment Amount"/>
+			<field fieldname="Tax" displaylabel="Tax Rate"/>
+			<field fieldname="AmountTax" displaylabel="Amount incl. Tax"/>
+			<field fieldname="Paid" displaylabel="Received Amount"/>
+			<field fieldname="Taxx" displaylabel="Sales Tax" type="integer" value="xy.Amount*xy.TaxRate/100"/>
+			<field fieldname="UnPaid" displaylabel="Balance Due" type="integer" value="xy.Amount+xy.Taxx-xy.Paid"/>
+			<field fieldname="GetDate" displaylabel="Receipt Date"/>
+			<field fieldname="PayDate" displaylabel="Due Date"/>
+			<field fieldname="gno" displaylabel="Pallet No"/>
+			<field fieldname="fty" displaylabel="Qty of Pieces"/>
+			<field fieldname="ChkNo" displaylabel="Check No"/>
+			<field fieldname="fno" displaylabel="Shipper Code"/>
+			<field fieldname="fname" displaylabel="Shipper Name"/>
+			<field fieldname="RemPay" displaylabel="Remarks"/>
+		</dbquery>  
+
+		<function id="xyz">
+			<setvar name="QUERYGUARD" value="QUERYGUARD+1"/>
+			<if cnd="QUERYGUARD=1">
+				<setvar name="SQL_WHERE" value="' AND 2>1'"/>
+				<setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.sdate &gt;= '''+SHIPDATE_FROM+''''" cnd="SHIPDATE_FROM&lt;&gt;''"/>
+				<setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.sdate &lt;= '''+SHIPDATE_TO+''''" cnd="SHIPDATE_TO&lt;&gt;''"/>
+				<if cnd="CUSTNO_TO=''">
+					<setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.cno like '''+CUSTNO_FROM+'%'''" cnd="CUSTNO_FROM&lt;&gt;''"/>
+					<else/>
+					<setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.cno &gt;= '''+CUSTNO_FROM+''''" cnd="CUSTNO_FROM&lt;&gt;''"/>
+					<setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.cno &lt;= '''+CUSTNO_TO+''''" cnd="CUSTNO_TO&lt;&gt;''"/>
+				</if>
+				<setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.rempay like ''%'+REMARK_KW+'%'''" cnd="REMARK_KW&lt;&gt;''"/>
+				<setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.cshort like '''+CUSTSHORT_KW+'%'''" cnd="CUSTSHORT_KW&lt;&gt;''"/>
+				<setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.ac like '''+TAXID_KW+'%'''" cnd="TAXID_KW&lt;&gt;''"/>
+				<setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.gno like '''+BOARDNO_KW+'%'''" cnd="BOARDNO_KW&lt;&gt;''"/>
+				<setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.chkno like '''+CHKNO_KW+'%'''" cnd="CHKNO_KW&lt;&gt;''"/>
+				<setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.amounttax = '+AMOUNTTAX_EQ" cnd="AMOUNTTAX_EQ&lt;&gt;''"/>
+				<setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.pay like '''+PAYTYPE_KW+''''" cnd="PAYTYPE_KW&lt;&gt;''"/>
+				<setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.AmountTax-ifnull(sh.Paid,0)>0'" cnd="UNPAID_ONLY='Y'"/>
+				<setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.fno like '''+SHIPPER_KW+''''" cnd="SHIPPER_KW&lt;&gt;''"/>
+				<setvar name="SQL_WHERE" value="' AND sh.sno=''XYZ'''" cnd="SQL_WHERE=' AND 2>1'"/>
+
+				<dbquery id="xy"><![CDATA[select
+    sh.sno,sh.sdate,sh.cno,cu.cshort,cu.AC,sh.Pay,sh.TaxRate,sh.Amount,sh.Tax,sh.AmountTax,sh.Paid,sh.GetDate,sh.PayDate,
+    sh.gno,sh.fty,sh.ChkNo,sh.fno,sh.fname,sh.rempay,
+    CASE
+    WHEN sh.pc='1' THEN "Order Received"
+    WHEN sh.pc='2' THEN "Preparing"
+    WHEN sh.pc='3' THEN "Shipped"
+    WHEN sh.pc='4' THEN "Transferring Stock"
+    ELSE ""
+    END AS st
+    from sh, cu
+    where sh.cno=cu.cno $SQL_WHERE
+    order by sh.sno]]>
+				</dbquery>
+
+				<log id="xy"><![CDATA[select
+    sh.sno,sh.sdate,sh.cno,cu.cshort,cu.AC,sh.Pay,sh.TaxRate,sh.Amount,sh.Tax,sh.AmountTax,sh.Paid,sh.GetDate,sh.PayDate,
+    sh.gno,sh.fty,sh.ChkNo,sh.fno,sh.fname,sh.rempay,
+    CASE
+    WHEN sh.pc='1' THEN "Order Received"
+    WHEN sh.pc='2' THEN "Preparing"
+    WHEN sh.pc='3' THEN "Shipped"
+    WHEN sh.pc='4' THEN "Transferring Stock"
+    ELSE ""
+    END AS st
+    from sh, cu
+    where sh.cno=cu.cno $SQL_WHERE
+    order by sh.sno]]>
+				</log>
+				
+				<dbquery id="sh"><![CDATA[select * from sh where 1 $SQL_WHERE order by sno]]></dbquery>
+
+			</if>
+			<setvar name="QUERYGUARD" value="0"/>
+		</function>
+
+<function id="clr">
+  <setvar name="SHIPDATE_FROM"  value="''"/>
+  <setvar name="SHIPDATE_TO"  value="''"/>
+  <setvar name="CUSTNO_FROM" value="''"/>
+  <setvar name="CUSTNO_TO" value="''"/>
+  <setvar name="REMARK_KW" value="''"/>
+  <setvar name="CUSTSHORT_KW" value="''"/>
+  <setvar name="TAXID_KW" value="''"/>
+  <setvar name="BOARDNO_KW" value="''"/>
+  <setvar name="CHKNO_KW" value="''"/>
+  <setvar name="PAYTYPE_KW" value="''"/>
+  <setvar name="AMOUNTTAX_EQ" value="''"/>
+  <setvar name="SHIPPER_KW" value="''"/>
+  <setvar name="UNPAID_ONLY"     value="''"/>
+  <go href="@xyz"/>
+</function>
+
+<function id="set">
+  <setvar name="_SHIPDATE_FROM"  value="SHIPDATE_FROM"/>
+  <setvar name="_SHIPDATE_TO"  value="SHIPDATE_TO"/>
+  <setvar name="_CUSTNO_FROM" value="CUSTNO_FROM"/>
+  <setvar name="_CUSTNO_TO" value="CUSTNO_TO"/>
+  <setvar name="_REMARK_KW" value="REMARK_KW"/>
+  <setvar name="_CUSTSHORT_KW" value="CUSTSHORT_KW"/>
+  <setvar name="_TAXID_KW" value="TAXID_KW"/>
+  <setvar name="_BOARDNO_KW" value="BOARDNO_KW"/>
+  <setvar name="_CHKNO_KW" value="CHKNO_KW"/>
+  <setvar name="_PAYTYPE_KW" value="PAYTYPE_KW"/>
+  <setvar name="_AMOUNTTAX_EQ" value="AMOUNTTAX_EQ"/>
+  <setvar name="_SHIPPER_KW" value="SHIPPER_KW"/>
+  <setvar name="_UNPAID_ONLY"     value="UNPAID_ONLY"/>
+</function>
+	 	
+		<pagecontrol name="pagecontrol" activepageindex="1">
+			<tabsheet caption="Shipment Entry">
+
+				<datasource dataset="sh">
+					<p align="center"><navigator/></p>
+					<table columns="3" align="LLL" border="1">
+						<tr>
+							<td _width="460">
+								Shipment No:<input field="Sno" size="14" readonly="true"/><br/>
+								Ship Date:<input field="Sdate" size="14"/>(1.Before Noon 2.Afternoon 3.Anytime)<br/>
+								Customer Code:<input field="Cno" size="14" lookup="cu;cno;cname"/>
+								<input field="cshort" readonly="true" size="10"/>
+								<input field="cupay" size="10"/><br/>
+								Created Date:<input field="cdate" size="14"/><br/>
+							</td>
+							<td _width="300">
+								Employee ID:<input field="eno" size="14" lookup="em;eno;ename"/>
+								<input field="ename" size="10"/><br/>
+								Shipper Code:<input field="fno" size="14" lookup="fm;fno;fname"/>
+								<input field="fmfname" size="10"/><br/>
+								Pallet No:<input field="gno" size="14"/><br/>
+								Qty of Pieces:<input field="fty" size="14"/><br/>
+							</td>
+							<td _width="460">
+								Sales Tax Rate:<input field="TaxRate" size="1"/><br/>
+								Order Status:<input field="pc" size="1"/>(1.Order Received 2.Preparing 3.Shipped 4.Transferring)<br/>
+								Sales Channel:<input field="source" size="1"/>(1.In-Store 2.Online)<br/>
+							</td>
+						</tr>
+					</table>
+					<datasource dataset="sn" masterfields="sno">
+						<p align="center"><navigator/></p>
+						<dbgrid height="200">
+							<item field="sno" size="12"/>
+							<item field="Pno" size="12" lookup="pa;pno;des"/>
+							<item field="des" size="40"/>
+							<item field="unit" size="12"/>
+							<item field="Price1" size="12"/>
+							<item field="Qty" size="12"/>
+							<item field="Price" size="12" oncustomdlg="#PRICE"/>
+							<item field="Total" size="12"/>
+							<item field="Rem" size="12"/>
+						</dbgrid>
+					</datasource>
+					<br/>
+					<table columns="3" align="LLR">
+						<tr>
+							<td width="400">
+								Shipment Remarks<br/><input field="Rem" type="memo" size="50"/><br/>
+							</td>
+							<td width="400">
+								Online Customer Note<br/><input field="topic" type="memo" size="50" readonly="yes"/><br/>
+							</td>
+							<td width="200" align="right">
+								<br/>
+								Subtotal:<input field="Amount" size="11" readonly="true"/><br/>
+								Sales Tax:<input field="Taxx" size="11"/><br/>
+								Paid Amount:<input field="Paid" size="11"/><br/>
+								Balance Due:<input field="UnPaid" size="11"/><br/>
+							</td>
+						</tr>
+					</table>
+				</datasource>
+
+			</tabsheet>
+			<tabsheet caption="Shipment Search">
+
+				<table columns="7" align="LLLLLLL" border="1">
+					<tr>
+						<td width="180">Ship Date Fr:<input name="SHIPDATE_FROM" value="$_SHIPDATE_FROM" size="12"/><br/>Ship Date To:<input name="SHIPDATE_TO" size="12"/></td>
+						<td width="180">Cust Code Fr:<input name="CUSTNO_FROM" value="$_CUSTNO_FROM" size="12" lookup="cu;cno;cshort"/><br/>Cust Code To:<input name="CUSTNO_TO" value="$_CUSTNO_TO" size="12" lookup="cu;cno;cshort"/></td>
+						<td width="160">Short Name:<input name="CUSTSHORT_KW" value="$_CUSTSHORT_KW" size="10"/><br/>Tax ID:<input name="TAXID_KW" value="$_TAXID_KW" size="10"/></td>
+						<td width="160">Incl. Tax:<input name="AMOUNTTAX_EQ" value="$_AMOUNTTAX_EQ" size="12"/><br/>Payment:<input name="PAYTYPE_KW" value="$_PAYTYPE_KW" size="12"/></td>
+						<td width="160">Pallet No:<input name="BOARDNO_KW" value="$_BOARDNO_KW" size="12"/><br/>Check No:<input name="CHKNO_KW" value="$_CHKNO_KW" size="12"/></td>
+						<td width="180">Shipper:<input name="SHIPPER_KW" value="$_SHIPPER_KW" size="12" lookup="fm;fno;fname"/><br/>Remarks:<input name="REMARK_KW" value="$_REMARK_KW" size="12"/><br/>Unpaid:<input type="checkbox" name="UNPAID_ONLY" value="Y"/></td>
+						<td width="100"><input name="BTN_SEARCH" value="Search" type="button" onclick="@xyz"/><br/><input name="BTN_CLEAR" value="Clear" type="button" onclick="@clr"/></td>
+					</tr>
+				</table>
+
+				<datasource dataset="xy">
+					<p align="center"><navigator/></p>
+					<dbgrid height="450">
+						<item field="sno" size="14"/>
+						<item field="sdate" size="14"/>
+						<item field="cno" size="16" lookup="cu;cno;cshort"/>
+						<item field="cshort" size="20"/>
+						<item field="ac" size="12"/>
+						<item field="st" size="12" align="center"/>
+						<item field="AmountTax" size="16"/>
+						<item field="pay" size="12" align="center"/>
+						<item field="Paid" size="16"/>
+						<item field="UnPaid" size="16"/>
+						<item field="GetDate" size="12"/>
+						<item field="PayDate" size="12"/>
+						<item field="gno" size="12"/>
+						<item field="ChkNo" size="12"/>
+						<item field="fty" size="16"/>
+						<item field="RemPay" size="40"/>
+						<item field="fname" size="20"/>
+						<onevent type="ondblclick">
+							<go href="@set"/>
+							<setprop name="pagecontrol" prop="ActivePageIndex" value="0"/>
+							<invoke instance="sh" method="locate" arg1="'sno'" arg2="[xy.sno]" arg3="[loCaseInsensitive,loPartialKey]"/>
+						</onevent>
+					</dbgrid>
+				</datasource>
+
+			</tabsheet>
+		</pagecontrol>
+
+		<setvar name="BARCODEGUARD" value="1"/>
+
+		<do type="accept" label="Shipment Order">
+			<go href="#P1"/>
+		</do>
+		<do type="accept" label="Purchase Order">
+			<go href="#P2"/>
+		</do>
+		<do type="prev" label="Close">
+			<prev/>
+		</do>
+	</card>
+	<card id="PRICE" title="Customer Price Lookup">
+		<dbquery id="cp">
+			<![CDATA[
+    SELECT
+      hh.sno, hh.sdate, nn.price
+    FROM
+      sh hh, sn nn
+    WHERE
+      hh.sno=nn.sno and hh.cno = '$sh.cno' and nn.pno='$sn.pno'
+    ORDER BY
+      hh.sno desc, hh.sdate
+    ]]>
+		</dbquery>
+		<datasource dataset="cp">
+			<navigator/>
+			<br/>
+			<dbgrid width="560" height="240">
+				<item field="sno" title="Order No" size="12"/>
+				<item field="sdate" title="Date" size="12"/>
+				<item field="Price" title="Price" size="12"/>
+			</dbgrid>
+		</datasource>
+		<do type="prev" label="Close">
+			<prev/>
+		</do>
+	</card>
+	<card id="P1" title="Shipment Order" device="PRV" paper="8.5x5.5">
+		<setvar name="PAGENO" value="1"/>
+		<setvar name="LINECOUNT" value="0"/>
+
+		<function id="header">
+			<![CDATA[<table width="740" align="center"><tr><td>]]>
+			<p align="center"><big><b>$sys.company<br/><u>Shipment Order</u></b></big></p>
+			<table border="0" cellspacing="0" width="100%">
+				<tr>
+					<td width="350">Customer Name:$sh.cname[$sh.cno]</td>
+					<td>&#160;</td>
+					<td width="150">Ship Date:$sh.sdate</td>
+				</tr>
+				<tr>
+					<td>Tax ID:$sh.ac</td>
+					<td>Phone:$sh.phone</td>
+					<td>Shipment No:$sh.sno</td>
+				</tr>
+				<tr>
+					<td>Contact&#160;&#160;Person:$sh.contact</td>
+					<td>&#160;</td>
+					<td>Invoice Date:$sh.adate</td>
+				</tr>
+				<tr>
+					<td>Sales&#160;&#160;Rep:$sh.ename</td>
+					<td>Fax:$sh.fax</td>
+					<td>Invoice Type:$(IF(sh.atype=2,'2-Part',IF(sh.atype=3,'3-Part','None')))</td>
+				</tr>
+				<tr>
+					<td colspan="2">Delivery Address:$sh.addr1</td>
+					<td>Invoice No:$sh.ano</td>
+				</tr>
+			</table>
+<p align="center">123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890</p>
+			<![CDATA[<table class="p10" width="100%">]]>
+			<tr>
+				<th width="80">Item No</th>
+				<th width="250">Item Name / Spec</th>
+				<th width="60">Quantity</th>
+				<th width="50">Unit</th>
+				<th width="60">Unit Price</th>
+				<th width="70">Amount</th>
+				<th>Remarks</th>
+			</tr>
+		</function>
+
+		<function id="normal">
+			<tr>
+				<td>$(sn.pno)</td>
+				<td><p align="left">$(sn.des)</p></td>
+				<td><p align="center">$(FORMAT('%6.0n',sn.qty*1.0))</p></td>
+				<td><p align="center">$(sn.unit)</p></td>
+				<td><p align="right">$(FORMAT('%6.1n',sn.price*1.0))</p></td>
+				<td><p align="right">$(FORMAT('%8.0n',sn.total*1.0))</p></td>
+				<td><p>$(sn.rem)</p></td>
+			</tr>
+		</function>
+
+		<function id="space">
+			<tr>
+				<td>AAA</td>
+				<td>&#160;</td>
+				<td>&#160;</td>
+				<td>&#160;</td>
+				<td>&#160;</td>
+				<td>&#160;</td>
+				<td>&#160;</td>
+			</tr>
+		</function>
+
+		<function id="footer">
+			<![CDATA[</table>]]>
+			<![CDATA[<table class="b10" width="100%">]]>
+			<tr>
+				<td width="500" colspan="4">&#160;</td>
+				<td width="100"><p align="center">Subtotal<br/>Tax&#160;&#160;&#160;&#160;<br/>Total</p></td>
+				<td width="100"><p align="right">&#160;<br/>&#160;<br/>&#160;</p></td>
+			</tr>
+			<![CDATA[</table>]]>
+			<br/>
+			<![CDATA[<table border="0" cellspacing="0" width="100%"><tr><td>Shipped by:</td><td>Issued by:</td><td>Checked by:</td><td><p align="right">Page:$(CEIL(sn.count / 9))-$PAGENO</p></td></tr></table>]]>
+			<![CDATA[</td></tr></table>]]>
+		</function>
+
+		<function id="summary">
+			<![CDATA[</table>]]>
+			<![CDATA[<table class="b10" width="100%">]]>
+			<tr>
+				<td width="500" colspan="4">Remarks:$sh.rem</td>
+				<td width="100"><p align="center">Subtotal<br/>Tax&#160;&#160;&#160;&#160;<br/>Total</p></td>
+				<td width="100"><p align="right">$(FORMAT('%8.0n',sh.amount*1.0))<br/>
+						$(FORMAT('%8.0n',sh.tax*1.0))<br/>$(FORMAT('%8.0n',(sh.amount+sh.tax)*1.0))<br/></p></td>
+			</tr>
+			<![CDATA[</table>]]>
+			<br/>
+			<![CDATA[<table border="0" cellspacing="0" width="100%"><tr><td>Shipped by:</td><td>Issued by:</td><td>Checked by:</td><td><p align="right">Page:$(CEIL(sn.count / 9))-$PAGENO</p></td></tr></table>]]>
+			<![CDATA[</td></tr></table>]]>
+		</function>
+
+		<if cnd="sn.state&lt;&gt;'BROWSE'"><invoke instance="sn" method="post"/></if>
+		<if cnd="sh.state&lt;&gt;'BROWSE'"><invoke instance="sh" method="post"/></if>
+		<invoke instance="sn" method="GetBookmark" result="BookMark"/>
+		<invoke instance="sn" method="DisableControls"/>
+		<invoke instance="sn" method="First"/>
+		<go href="@header"/>
+		<while cnd="NOT(sn.EOF)">
+			<setvar name="LINECOUNT" value="LINECOUNT+1"/>
+			<if cnd="LINECOUNT>9">
+				<go href="@footer"/>
+				<newpage/>
+				<setvar name="PAGENO" value="PAGENO+1"/>
+				<setvar name="LINECOUNT" value="1"/>
+				<go href="@header"/>
+			</if>
+			<go href="@normal"/>
+			<invoke instance="sn" method="Next"/>
+		</while>
+		<while cnd="LINECOUNT&lt;9">
+			<setvar name="LINECOUNT" value="LINECOUNT+1"/>
+			<go href="@space"/>
+		</while>
+		<go href="@summary"/>
+		<invoke instance="sn" method="EnableControls"/>
+		<invoke instance="sn" method="GoToBookmark" params="BookMark"/>
+		<invoke instance="sn" method="FreeBookmark"/>
+	</card>
+	<card id="P2" title="Purchase Order" device="PRV" paper="8.5x5.5">
+		<setvar name="PAGENO" value="1"/>
+		<setvar name="LINECOUNT" value="0"/>
+
+		<function id="header">
+			<![CDATA[<table width="760" align="center"><tr><td>]]>
+			<p align="center"><big><b>$sys.company<br/><u>Purchase Order</u></b></big></p>
+			<table border="0" width="100%">
+				<tr>
+					<td width="350">Customer Name:$sh.cname[$sh.cno]</td>
+					<td>&#160;</td>
+					<td width="150">Ship Date:$sh.sdate</td>
+				</tr>
+				<tr>
+					<td>Tax ID:$sh.ac</td>
+					<td>Phone:$sh.phone</td>
+					<td>Shipment No:$sh.sno</td>
+				</tr>
+				<tr>
+					<td>Contact&#160;&#160;Person:$sh.contact</td>
+					<td>&#160;</td>
+					<td>Invoice Date:$sh.adate</td>
+				</tr>
+				<tr>
+					<td>Sales&#160;&#160;Rep:$sh.ename</td>
+					<td>Fax:$sh.fax</td>
+					<td>Invoice Type:$(IF(sh.atype=2,'2-Part',IF(sh.atype=3,'3-Part','None')))</td>
+				</tr>
+				<tr>
+					<td colspan="2">Delivery Address:$sh.addr1</td>
+					<td>Invoice No:$sh.ano</td>
+				</tr>
+			</table>
+			<![CDATA[<table border="1" cellspacing="0" width="100%">]]>
+			<tr>
+				<th width="100">Item No</th>
+				<th width="200">Item Name / Spec</th>
+				<th width="45">Unit</th>
+				<th width="90">Quantity</th>
+				<th width="90">Unit Price</th>
+				<th width="90">Amount</th>
+				<th>Remarks</th>
+			</tr>
+			<![CDATA[</table>]]>
+			<![CDATA[<table border="0" width="100%">]]>
+		</function>
+
+		<function id="normal">
+			<setvar name="LINE_SUBTOTAL" value="sn.qty*sn.pricea"/>
+			<setvar name="TempTotal" value="TempTotal+LINE_SUBTOTAL"/>
+			<tr>
+				<td>$(sn.pno)</td>
+				<td><p align="left">$(sn.des)</p></td>
+				<td><p align="center">$(sn.unit)</p></td>
+				<td><p align="right">$(FORMAT('%6.0n',sn.qty*1.0))</p></td>
+				<td><p align="right">$(FORMAT('%6.1n',sn.pricea*1.0))</p></td>
+				<td><p align="right">$(FORMAT('%8.0n',LINE_SUBTOTAL*1.0))</p></td>
+				<td><p>$(sn.rem)</p></td>
+			</tr>
+		</function>
+
+		<function id="space">
+			<tr>
+				<td>AAA</td>
+				<td>&#160;</td>
+				<td>&#160;</td>
+				<td>&#160;</td>
+				<td>&#160;</td>
+				<td>&#160;</td>
+				<td>&#160;</td>
+			</tr>
+		</function>
+
+		<function id="footer">
+			<![CDATA[</table>]]>
+			<![CDATA[<table border="1" cellspacing="0" width="100%">]]>
+			<tr>
+				<td width="500" colspan="4">&#160;</td>
+				<td width="100"><p align="center">Subtotal<br/>Tax&#160;&#160;&#160;&#160;<br/>Total</p></td>
+				<td width="100"><p align="right">&#160;<br/>&#160;<br/>&#160;</p></td>
+			</tr>
+			<![CDATA[</table>]]>
+			<![CDATA[<p align="center">Page:$(CEIL(sn.count / 9))-$PAGENO</p>]]>
+			<p align="center">123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890</p>
+			<![CDATA[</td></tr></table>]]>
+		</function>
+
+		<function id="summary">
+			<![CDATA[</table>]]>
+			<![CDATA[<table border="1" cellspacing="0" width="100%">]]>
+			<tr>
+				<td width="500" colspan="4">Remarks:$sh.rem</td>
+				<td width="100"><p align="center">Subtotal<br/>Tax&#160;&#160;&#160;&#160;<br/>Total</p></td>
+				<td width="100"><p align="right">$(FORMAT('%8.0n',TempTotal*1.0))<br/>
+						$(FORMAT('%8.0n',ROUND(TempTotal*sh.taxrate/100,0)*1.0))<br/>
+						$(FORMAT('%8.0n',(TempTotal+(ROUND(TempTotal*sh.taxrate/100,0)))*1.0))<br/></p></td>
+			</tr>
+			<![CDATA[</table>]]>
+			<![CDATA[<p align="center">Page:$(CEIL(sn.count / 9))-$PAGENO</p>]]>
+			<p align="center">123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890</p>
+			<![CDATA[</td></tr></table>]]>
+		</function>
+
+		<setvar name="LINE_SUBTOTAL" value="0"/>
+		<setvar name="TempTotal" value="0"/>
+		<if cnd="sn.state&lt;&gt;'BROWSE'"><invoke instance="sn" method="post"/></if>
+		<if cnd="sh.state&lt;&gt;'BROWSE'"><invoke instance="sh" method="post"/></if>
+		<invoke instance="sn" method="GetBookmark" result="BookMark"/>
+		<invoke instance="sn" method="DisableControls"/>
+		<invoke instance="sn" method="First"/>
+		<go href="@header"/>
+		<while cnd="NOT(sn.EOF)">
+			<setvar name="LINECOUNT" value="LINECOUNT+1"/>
+			<if cnd="LINECOUNT>9">
+				<go href="@footer"/>
+				<newpage/>
+				<setvar name="PAGENO" value="PAGENO+1"/>
+				<setvar name="LINECOUNT" value="1"/>
+				<go href="@header"/>
+			</if>
+			<go href="@normal"/>
+			<invoke instance="sn" method="Next"/>
+		</while>
+		<while cnd="LINECOUNT&lt;9">
+			<setvar name="LINECOUNT" value="LINECOUNT+1"/>
+			<go href="@space"/>
+		</while>
+		<go href="@summary"/>
+		<invoke instance="sn" method="EnableControls"/>
+		<invoke instance="sn" method="GoToBookmark" params="BookMark"/>
+		<invoke instance="sn" method="FreeBookmark"/>
+	</card>
+</wml>

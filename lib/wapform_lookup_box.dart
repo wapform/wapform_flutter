@@ -52,16 +52,19 @@
 //        onTabPrev:      () => previousCell,
 //      )
 //
-// Revision History:
-//   2026-06-12  V1.0  Merged _LookupEdit + _LookupAutoComplete
+// File history (this file's own internal edit log — unrelated to the
+// package version in pubspec.yaml):
+//   2026-06-12  rev1  Merged _LookupEdit + _LookupAutoComplete
+//   2026-08-22  rev2  Don't cache the lookup map while the dataset isn't
+//                     open yet -- see the note above _cols below
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 // @@@ Lazarus version: uses lazarus_sqldb's TSQLQuery (lookupMap is added on top of it)
 import 'lazarus_sqldb.dart';
 
-const _kBlue     = Color(0xFF1A6FB5);
-const _kBorder   = Color(0xFFD3D1C7);
+const _kBlue = Color(0xFF1A6FB5);
+const _kBorder = Color(0xFFD3D1C7);
 const _kReadOnly = Color(0xFFF0EFE9);
 
 class WapLookupBox extends StatefulWidget {
@@ -123,22 +126,22 @@ class WapLookupBox extends StatefulWidget {
   const WapLookupBox({
     super.key,
     required this.value,
-    this.width            = 130,
-    this.height           = 28,
-    this.readOnly         = false,
+    this.width = 130,
+    this.height = 28,
+    this.readOnly = false,
     this.lookupItems,
     this.lookupColumns,
     this.dataSet,
     this.keyField,
     this.displayFields,
-    this.colWidths        = const [],
+    this.colWidths = const [],
     this.onChanged,
-    this.forGrid          = false,
+    this.forGrid = false,
     this.onTab,
     this.onTabPrev,
     this.textStyle,
     this.tapRegionGroupId,
-    this.autofocus        = false,
+    this.autofocus = false,
     this.onPicked,
   });
 
@@ -148,9 +151,9 @@ class WapLookupBox extends StatefulWidget {
 
 class _WapLookupBoxState extends State<WapLookupBox> {
   late TextEditingController _ctrl;
-  final _focus      = FocusNode();
+  final _focus = FocusNode();
   final _scrollCtrl = ScrollController();
-  final _layerLink  = LayerLink();
+  final _layerLink = LayerLink();
   OverlayEntry? _overlay;
 
   @override
@@ -226,7 +229,20 @@ class _WapLookupBoxState extends State<WapLookupBox> {
   Map<String, List<String>> get _cols {
     final ds = widget.dataSet;
     if (ds != null && widget.keyField != null && widget.displayFields != null) {
-      final n = ds.active ? ds.recordCount : -1;
+      // @@@ 2026-08-22: don't build the cache while the dataset isn't
+      //   open yet. This used to compute and cache once regardless of
+      //   open state -- while closed, lookupMap() returned empty and
+      //   _colsCount got recorded as -1; once the dataset later actually
+      //   opened, if its recordCount at that point happened to also make
+      //   `_colsCount != n` false, it would never recompute, and the
+      //   picker list would stay empty forever.
+      //   Dynamically-created sources like lookup="sql;<id>;<SELECT>"
+      //   are especially prone to this -- they open later than a dataset
+      //   declared via <dbtable>.
+      //   While closed, just return an empty Map without writing the
+      //   cache, so the next build tries again.
+      if (!ds.active) return const {};
+      final n = ds.recordCount;
       if (_colsCache == null || _colsCount != n || !identical(_colsDs, ds)) {
         _colsCache = ds.lookupMap(widget.keyField!, widget.displayFields!);
         _colsCount = n;
@@ -246,10 +262,11 @@ class _WapLookupBoxState extends State<WapLookupBox> {
   List<MapEntry<String, String>>? _searchIdx;
 
   List<MapEntry<String, String>> get _idx {
-    final c = _cols; // make sure the cache is fresh first (may also clear _searchIdx as a side effect)
+    final c =
+        _cols; // make sure the cache is fresh first (may also clear _searchIdx as a side effect)
     return _searchIdx ??= [
       for (final e in c.entries)
-        MapEntry(e.key, (e.key + ' ' + e.value.join(' ')).toLowerCase())
+        MapEntry(e.key, ('${e.key} ${e.value.join(' ')}').toLowerCase())
     ];
   }
 
@@ -283,14 +300,19 @@ class _WapLookupBoxState extends State<WapLookupBox> {
   double get _dropW {
     final n = _cols.values.firstOrNull?.length ?? 0;
     double w = 80 + 20;
-    for (int i = 0; i < n; i++) w += 8 + _colW(i);
+    for (int i = 0; i < n; i++) {
+      w += 8 + _colW(i);
+    }
     return w.clamp(160.0, 500.0);
   }
 
   void _onText() {
     if (!mounted) return;
-    if (_focus.hasFocus) _showOverlay();
-    else _closeOverlay();
+    if (_focus.hasFocus) {
+      _showOverlay();
+    } else {
+      _closeOverlay();
+    }
   }
 
   void _showOverlay() {
@@ -368,20 +390,19 @@ class _WapLookupBoxState extends State<WapLookupBox> {
                               horizontal: 10, vertical: 7),
                           child: Row(children: [
                             SizedBox(
-                              width: 80,
-                              child: Text(k,
-                                  style: style.copyWith(
-                                      color: _kBlue,
-                                      fontWeight: FontWeight.w600),
-                                  overflow: TextOverflow.ellipsis)),
+                                width: 80,
+                                child: Text(k,
+                                    style: style.copyWith(
+                                        color: _kBlue,
+                                        fontWeight: FontWeight.w600),
+                                    overflow: TextOverflow.ellipsis)),
                             for (int ci = 0; ci < nCols; ci++) ...[
                               const SizedBox(width: 8),
                               SizedBox(
-                                width: _colW(ci),
-                                child: Text(
-                                    ci < vals.length ? vals[ci] : "",
-                                    style: style,
-                                    overflow: TextOverflow.ellipsis)),
+                                  width: _colW(ci),
+                                  child: Text(ci < vals.length ? vals[ci] : "",
+                                      style: style,
+                                      overflow: TextOverflow.ellipsis)),
                             ],
                           ]),
                         ),
@@ -456,7 +477,8 @@ class _WapLookupBoxState extends State<WapLookupBox> {
                 border: OutlineInputBorder(borderSide: BorderSide.none),
               ),
               onChanged: (v) {
-                widget.onChanged?.call(v);  // typing directly also writes back to the grid
+                widget.onChanged
+                    ?.call(v); // typing directly also writes back to the grid
                 _showOverlay();
               },
               onTap: _showOverlay,

@@ -36,30 +36,30 @@ import 'package:crypto/crypto.dart';
 
 /// Corresponds to Pascal TExprToken
 enum ExprToken {
-  equal,    // =
-  ne,       // <>
-  lt,       // <
-  gt,       // >
-  le,       // <=
-  ge,       // >=
-  plus,     // +
-  minus,    // -
-  or_,      // OR
-  star,     // *
-  slash,    // /
-  div_,     // DIV
-  mod_,     // MOD
-  and_,     // AND
+  equal, // =
+  ne, // <>
+  lt, // <
+  gt, // >
+  le, // <=
+  ge, // >=
+  plus, // +
+  minus, // -
+  or_, // OR
+  star, // *
+  slash, // /
+  div_, // DIV
+  mod_, // MOD
+  and_, // AND
   identifier,
   number,
   hex,
   string_,
   dot,
-  not_,     // NOT
-  lParen,   // (
-  rParen,   // )
-  lArray,   // [
-  rArray,   // ]
+  not_, // NOT
+  lParen, // (
+  rParen, // )
+  lArray, // [
+  rArray, // ]
   name,
   comma,
   end_,
@@ -73,7 +73,8 @@ typedef Func0 = dynamic Function();
 typedef Func1 = dynamic Function(dynamic v);
 typedef Func2 = dynamic Function(dynamic v1, dynamic v2);
 typedef Func3 = dynamic Function(dynamic v1, dynamic v2, dynamic v3);
-typedef Func4 = dynamic Function(dynamic v1, dynamic v2, dynamic v3, dynamic v4);
+typedef Func4 = dynamic Function(
+    dynamic v1, dynamic v2, dynamic v3, dynamic v4);
 typedef FuncA = dynamic Function(List<dynamic> values);
 
 /// Corresponds to Pascal TStIdentRec
@@ -111,7 +112,6 @@ class IdentRecord {
 // expr_utils.dart  —  Helper functions (encryption, string conversion, rounding)
 // ============================================================
 
-
 // ──────────────────────────────────────────────────────────────
 // StrToHex / HexToStr
 // ──────────────────────────────────────────────────────────────
@@ -119,7 +119,9 @@ class IdentRecord {
 /// String → UTF-8 hex string
 String strToHex(String source) {
   final bytes = utf8.encode(source);
-  return bytes.map((b) => b.toRadixString(16).padLeft(2, "0").toUpperCase()).join();
+  return bytes
+      .map((b) => b.toRadixString(16).padLeft(2, "0").toUpperCase())
+      .join();
 }
 
 /// UTF-8 hex string → string
@@ -283,7 +285,6 @@ DateTime? varToDateTime(dynamic v) {
 // expr_builtins.dart  —  Built-in functions (corresponds to Pascal's _XXX function group)
 // ============================================================
 
-
 // ──────────────────────────────────────────────────────────────
 // ANSI / UTF8 (unified to String under Flutter; UTF-8 is handled transparently)
 // ──────────────────────────────────────────────────────────────
@@ -342,6 +343,7 @@ dynamic fnFrac(dynamic value) {
   final v = varToDouble(value);
   return v - v.truncateToDouble();
 }
+
 dynamic fnTrunc(dynamic value) => varToDouble(value).truncate();
 dynamic fnInt(dynamic value) => varToDouble(value).truncate();
 dynamic fnFloat(dynamic value) => varToDouble(value);
@@ -349,10 +351,12 @@ dynamic fnSqr(dynamic value) {
   final v = varToDouble(value);
   return v * v;
 }
+
 dynamic fnSqrt(dynamic value) => sqrt(varToDouble(value));
 dynamic fnExp(dynamic value) => exp(varToDouble(value));
 dynamic fnLn(dynamic value) => log(varToDouble(value));
-dynamic fnPower(dynamic v1, dynamic v2) => pow(varToDouble(v1), varToDouble(v2)).toDouble();
+dynamic fnPower(dynamic v1, dynamic v2) =>
+    pow(varToDouble(v1), varToDouble(v2)).toDouble();
 dynamic fnSin(dynamic value) => sin(varToDouble(value));
 dynamic fnCos(dynamic value) => cos(varToDouble(value));
 dynamic fnTan(dynamic value) => tan(varToDouble(value));
@@ -369,9 +373,13 @@ dynamic fnRound(dynamic v) {
 dynamic fnRoundTo(dynamic v1, dynamic v2) {
   final e = varToDouble(v1);
   final d = varToInt(v2);
-  // Delphi RoundTo(x, -n): -n already means "n decimal places", digit uses d directly (not negated)
-  // RoundTo(3.14159, -2) → mySimpleRoundTo(3.14159, -2) → 3.14
-  return mySimpleRoundTo(e, d);
+  // WapForm's public-facing ROUND/ROUNDTO follows the spreadsheet
+  // convention: a positive d means decimal places, negative means integer
+  // places (e.g. ROUND(-50.55,-2) → -100). But mySimpleRoundTo follows
+  // Delphi's native RoundTo convention, where the sign is exactly
+  // inverted (Delphi's RoundTo(x,-2) is what actually means "round to 2
+  // decimal places"), so the sign has to be flipped here first.
+  return mySimpleRoundTo(e, -d);
 }
 
 dynamic fnOdd(dynamic value) {
@@ -425,7 +433,8 @@ dynamic fnCOPY(dynamic v1, dynamic v2, dynamic v3) {
   return s.substring(index, (index + count).clamp(0, s.length));
 }
 
-dynamic fnDELETE(dynamic v1, dynamic v2, dynamic v3) => fnAnsiDelete(v1, v2, v3);
+dynamic fnDELETE(dynamic v1, dynamic v2, dynamic v3) =>
+    fnAnsiDelete(v1, v2, v3);
 
 dynamic fnINSERT(dynamic v1, dynamic v2, dynamic v3) {
   final substr = varToStr(v1);
@@ -526,7 +535,8 @@ dynamic fnFORMAT(dynamic v1, dynamic v2) {
 String _sprintfSimple(String fmt, dynamic value) {
   // Basic implementation: replaces common formats like %d, %f, %s, %2.2d
   return fmt.replaceAllMapped(
-    RegExp(r"%(\d*\.?\d*)([dfsxXnmge])"), // @@@ added n = thousands-separated number
+    RegExp(
+        r"%(\d*\.?\d*)([dfsxXnmge])"), // @@@ added n = thousands-separated number
     (m) {
       final spec = m.group(2)!;
       final width = m.group(1) ?? '';
@@ -668,13 +678,15 @@ String _commaFormat(String s) {
 // Date/time
 // ──────────────────────────────────────────────────────────────
 
-dynamic fnDATE() => DateTime.now().toLocal().copyWith(
-      hour: 0, minute: 0, second: 0, millisecond: 0);
+dynamic fnDATE() => DateTime.now()
+    .toLocal()
+    .copyWith(hour: 0, minute: 0, second: 0, millisecond: 0);
 
 dynamic fnNOW() => DateTime.now();
 
-dynamic fnTODAY() => DateTime.now().toLocal().copyWith(
-      hour: 0, minute: 0, second: 0, millisecond: 0);
+dynamic fnTODAY() => DateTime.now()
+    .toLocal()
+    .copyWith(hour: 0, minute: 0, second: 0, millisecond: 0);
 
 dynamic fnTIME() => DateTime.now();
 
@@ -728,7 +740,8 @@ dynamic fnWEEK(dynamic value) {
   if (dt == null) return 0;
   // ISO week number
   final startOfYear = DateTime(dt.year, 1, 1);
-  return ((dt.difference(startOfYear).inDays + startOfYear.weekday - 1) ~/ 7) + 1;
+  return ((dt.difference(startOfYear).inDays + startOfYear.weekday - 1) ~/ 7) +
+      1;
 }
 
 dynamic fnDaysInAMonth(dynamic v1, dynamic v2) {
@@ -751,44 +764,66 @@ dynamic fnDateTimeToStr(dynamic value) {
 dynamic fnDateToStr(dynamic value) {
   final dt = _toDateTime(value);
   if (dt == null) return '';
-  return '${dt.year}-${dt.month.toString().padLeft(2,'0')}-${dt.day.toString().padLeft(2,'0')}';
+  return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
 }
 
 dynamic fnTimeToStr(dynamic value) {
   final dt = _toDateTime(value);
   if (dt == null) return '';
-  return '${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}:${dt.second.toString().padLeft(2,'0')}';
+  return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
 }
 
 dynamic fnStrToDate(dynamic value) {
   var s = varToStr(value).replaceAll("/", "-");
-  return DateTime.tryParse(s);
+  final dt = DateTime.tryParse(s);
+  if (dt == null) return null;
+  // Takes only the date portion, zeroing the time, so that if the string
+  // carries a time component it doesn't get counted into the fractional part.
+  return _toDelphiSerial(DateTime(dt.year, dt.month, dt.day));
 }
 
 dynamic fnStrToDateTime(dynamic value) {
   var s = varToStr(value).replaceAll("/", "-");
-  return DateTime.tryParse(s);
+  final dt = DateTime.tryParse(s);
+  if (dt == null) return null;
+  return _toDelphiSerial(dt);
 }
 
-dynamic fnStrToTime(dynamic value) => DateTime.tryParse("1970-01-01T${varToStr(value)}");
+dynamic fnStrToTime(dynamic value) {
+  final dt = DateTime.tryParse("1970-01-01T${varToStr(value)}");
+  if (dt == null) return null;
+  // Pure time: counts only what fraction of the day the time-of-day is,
+  // no date-serial component.
+  return (dt.hour * 3600 + dt.minute * 60 + dt.second) / 86400.0;
+}
+
+dynamic fnDateSerialValue(dynamic y, dynamic m, dynamic d) {
+  final dt = DateTime(varToInt(y), varToInt(m), varToInt(d));
+  return _toDelphiSerial(dt);
+}
+
+dynamic fnTimeSerialValue(dynamic h, dynamic m, dynamic s) {
+  final hh = varToInt(h), mm = varToInt(m), ss = varToInt(s);
+  return (hh * 3600 + mm * 60 + ss) / 86400.0;
+}
 
 dynamic fnMyDate(dynamic value) {
   final dt = _toDateTime(value);
   if (dt == null) return '';
-  return '${dt.year.toString().padLeft(4,'0')}-${dt.month.toString().padLeft(2,'0')}-${dt.day.toString().padLeft(2,'0')}';
+  return '${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
 }
 
 dynamic fnMyDateTime(dynamic value) {
   final dt = _toDateTime(value);
   if (dt == null) return '';
-  return '${dt.year.toString().padLeft(4,'0')}-${dt.month.toString().padLeft(2,'0')}-${dt.day.toString().padLeft(2,'0')} '
-      '${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}:${dt.second.toString().padLeft(2,'0')}';
+  return '${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
+      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
 }
 
 dynamic fnTDATE() {
   final dt = DateTime.now();
   final roc = dt.year - 1911;
-  return '${roc.toString().padLeft(3,'0')}${dt.month.toString().padLeft(2,'0')}${dt.day.toString().padLeft(2,'0')}';
+  return '${roc.toString().padLeft(3, '0')}${dt.month.toString().padLeft(2, '0')}${dt.day.toString().padLeft(2, '0')}';
 }
 
 dynamic fnBDATE(dynamic value) {
@@ -800,9 +835,9 @@ dynamic fnBDATE(dynamic value) {
   final m = int.tryParse(parts[0]) ?? 0;
   final d = int.tryParse(parts[1]) ?? 0;
   final roc = y + 11 - 1911;
-  return roc.toString().padLeft(2,"0") +
-      m.toString().padLeft(2,"0") +
-      d.toString().padLeft(2,"0");
+  return roc.toString().padLeft(2, "0") +
+      m.toString().padLeft(2, "0") +
+      d.toString().padLeft(2, "0");
 }
 
 dynamic fnYesterday() {
@@ -834,6 +869,14 @@ DateTime? _toDateTime(dynamic v) {
   if (v is DateTime) return v;
   if (v is String) return DateTime.tryParse(v);
   return null;
+}
+
+/// Dart DateTime → Delphi TDateTime numeric serial (epoch 1899-12-30,
+/// integer part is the day count, fractional part is what fraction of
+/// the day the time-of-day is).
+double _toDelphiSerial(DateTime dt) {
+  final epoch = DateTime(1899, 12, 30);
+  return dt.difference(epoch).inMicroseconds / (24 * 60 * 60 * 1000000.0);
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -904,7 +947,8 @@ dynamic fnGetFreeRes() => '(fnGetFreeRes: not available on Flutter)';
 
 dynamic fnGetPhysMem() => '(fnGetPhysMem: not available on Flutter)';
 
-dynamic fnGetMacPhysicalAddress() => '(fnGetMacPhysicalAddress: not available on Flutter)';
+dynamic fnGetMacPhysicalAddress() =>
+    '(fnGetMacPhysicalAddress: not available on Flutter)';
 
 dynamic fnCPU() => '(fnCPU: not available on Flutter)';
 
@@ -914,21 +958,28 @@ dynamic fnLoPartialKey() => true;
 
 dynamic fnColorToHex(dynamic value) {
   final color = varToInt(value);
-  final r = (color >> 16) & 0xFF;
+  // Delphi's TColor is internally stored as 0x00BBGGRR (BGR, R in the
+  // low byte), not the intuitively-expected 0xRRGGBB -- the r/b byte
+  // positions were previously swapped.
+  final r = color & 0xFF;
   final g = (color >> 8) & 0xFF;
-  final b = color & 0xFF;
-  return '${r.toRadixString(16).padLeft(2,'0').toUpperCase()}'
-      '${g.toRadixString(16).padLeft(2,'0').toUpperCase()}'
-      '${b.toRadixString(16).padLeft(2,'0').toUpperCase()}';
+  final b = (color >> 16) & 0xFF;
+  return '${r.toRadixString(16).padLeft(2, '0').toUpperCase()}'
+      '${g.toRadixString(16).padLeft(2, '0').toUpperCase()}'
+      '${b.toRadixString(16).padLeft(2, '0').toUpperCase()}';
 }
 
 dynamic fnHexToColor(dynamic value) {
   var s = varToStr(value).trim().replaceAll("#", "");
-  if (s.length != 6) return 0xFFFFFFFF;
+  if (s.length != 6) return 0x00FFFFFF;
   final r = int.tryParse(s.substring(0, 2), radix: 16) ?? 255;
   final g = int.tryParse(s.substring(2, 4), radix: 16) ?? 255;
   final b = int.tryParse(s.substring(4, 6), radix: 16) ?? 255;
-  return (0xFF << 24) | (r << 16) | (g << 8) | b;
+  // Delphi's TColor is a 24-bit 0x00BBGGRR (BGR, no alpha channel),
+  // not Flutter's 0xAARRGGBB -- an alpha byte was previously being added
+  // that shouldn't be there, and the input RGB wasn't being converted to
+  // Delphi's BGR byte order.
+  return (b << 16) | (g << 8) | r;
 }
 
 dynamic fnMD5(dynamic value) {
@@ -942,6 +993,13 @@ dynamic fnNAME(dynamic value) {
   final p = s.indexOf("=");
   if (p < 0) return '';
   return s.substring(0, p);
+}
+
+dynamic fnCODE(dynamic value) {
+  final s = varToStr(value);
+  final p = s.indexOf("=");
+  if (p < 0) return '';
+  return s.substring(p + 1);
 }
 
 dynamic fnVALUE(dynamic value) {
@@ -984,7 +1042,8 @@ dynamic fnLIKE(dynamic v1, dynamic v2) {
     for (var j = 0; j < s2.length; j++) {
       if (s1[i] == s2[j]) {
         var k = 0;
-        while (i + k < s1.length && j + k < s2.length && s1[i + k] == s2[j + k]) {
+        while (
+            i + k < s1.length && j + k < s2.length && s1[i + k] == s2[j + k]) {
           k++;
         }
         if (k > best.length) {
@@ -999,28 +1058,37 @@ dynamic fnLIKE(dynamic v1, dynamic v2) {
 dynamic fnINCVal(dynamic v1, dynamic v2) => varToDouble(v1) + varToDouble(v2);
 dynamic fnDECVal(dynamic v1, dynamic v2) => varToDouble(v1) - varToDouble(v2);
 
-dynamic fnCompareStr(dynamic v1, dynamic v2) => varToStr(v1).compareTo(varToStr(v2));
+dynamic fnCompareStr(dynamic v1, dynamic v2) =>
+    varToStr(v1).compareTo(varToStr(v2));
 dynamic fnCompareText(dynamic v1, dynamic v2) =>
     varToStr(v1).toLowerCase().compareTo(varToStr(v2).toLowerCase());
-dynamic fnAnsiCompareStr(dynamic v1, dynamic v2) => varToStr(v1).compareTo(varToStr(v2));
+dynamic fnAnsiCompareStr(dynamic v1, dynamic v2) =>
+    varToStr(v1).compareTo(varToStr(v2));
 dynamic fnAnsiCompareText(dynamic v1, dynamic v2) =>
     varToStr(v1).toLowerCase().compareTo(varToStr(v2).toLowerCase());
 dynamic fnAnsiLowerCase(dynamic value) => varToStr(value).toLowerCase();
 dynamic fnAnsiUpperCase(dynamic value) => varToStr(value).toUpperCase();
 
-dynamic fnLeadByte(dynamic v1, dynamic v2) => false; // Flutter uses UTF-16, no LeadBytes concept
+dynamic fnLeadByte(dynamic v1, dynamic v2) =>
+    false; // Flutter uses UTF-16, no LeadBytes concept
 
 dynamic fnImg(dynamic v1, dynamic v2) => varToStr(v1); // simplified version
 
+int _lastPathSep(String s) {
+  final a = s.lastIndexOf("/");
+  final b = s.lastIndexOf("\\");
+  return a > b ? a : b;
+}
+
 dynamic fnExtractFilePath(dynamic value) {
   final s = varToStr(value);
-  final i = s.lastIndexOf("/");
+  final i = _lastPathSep(s);
   return i < 0 ? '' : s.substring(0, i + 1);
 }
 
 dynamic fnExtractFileDir(dynamic value) {
   final s = varToStr(value);
-  final i = s.lastIndexOf("/");
+  final i = _lastPathSep(s);
   return i < 0 ? '' : s.substring(0, i);
 }
 
@@ -1032,7 +1100,7 @@ dynamic fnExtractFileDrive(dynamic value) {
 
 dynamic fnExtractFileName(dynamic value) {
   final s = varToStr(value);
-  final i = s.lastIndexOf("/");
+  final i = _lastPathSep(s);
   return i < 0 ? s : s.substring(i + 1);
 }
 
@@ -1053,7 +1121,6 @@ dynamic fnExtractFileExt(dynamic value) {
 // myexp.pas → Flutter/Dart converted version
 // expr_tt_functions.dart  —  tt_ custom function library V1.3~V1.6
 // ============================================================
-
 
 // ──────────────────────────────────────────────────────────────
 // String — advanced processing
@@ -1089,7 +1156,9 @@ dynamic tt_LPAD(dynamic v1, dynamic v2, dynamic v3) {
   final n = varToInt(v2);
   var ch = varToStr(v3);
   if (ch.isEmpty) ch = ' ';
-  while (s.length < n) s = ch[0] + s;
+  while (s.length < n) {
+    s = ch[0] + s;
+  }
   return s.substring(s.length - n);
 }
 
@@ -1099,7 +1168,9 @@ dynamic tt_RPAD(dynamic v1, dynamic v2, dynamic v3) {
   final n = varToInt(v2);
   var ch = varToStr(v3);
   if (ch.isEmpty) ch = ' ';
-  while (s.length < n) s = s + ch[0];
+  while (s.length < n) {
+    s = s + ch[0];
+  }
   return s.substring(0, n);
 }
 
@@ -1291,11 +1362,16 @@ dynamic tt_DATEADD(dynamic v1, dynamic v2, dynamic v3) {
   var u = varToStr(v3).trim().toUpperCase();
   if (u.isEmpty) u = 'D';
   switch (u[0]) {
-    case 'D': return d.add(Duration(days: n));
-    case 'W': return d.add(Duration(days: n * 7));
-    case 'M': return DateTime(d.year, d.month + n, d.day, d.hour, d.minute, d.second);
-    case 'Y': return DateTime(d.year + n, d.month, d.day, d.hour, d.minute, d.second);
-    default:  return d.add(Duration(days: n));
+    case 'D':
+      return d.add(Duration(days: n));
+    case 'W':
+      return d.add(Duration(days: n * 7));
+    case 'M':
+      return DateTime(d.year, d.month + n, d.day, d.hour, d.minute, d.second);
+    case 'Y':
+      return DateTime(d.year + n, d.month, d.day, d.hour, d.minute, d.second);
+    default:
+      return d.add(Duration(days: n));
   }
 }
 
@@ -1307,11 +1383,16 @@ dynamic tt_DATEDIFF(dynamic v1, dynamic v2, dynamic v3) {
   var u = varToStr(v3).trim().toUpperCase();
   if (u.isEmpty) u = 'D';
   switch (u[0]) {
-    case 'D': return d2.difference(d1).inDays;
-    case 'W': return d2.difference(d1).inDays ~/ 7;
-    case 'M': return (d2.year - d1.year) * 12 + (d2.month - d1.month);
-    case 'Y': return d2.year - d1.year;
-    default:  return d2.difference(d1).inDays;
+    case 'D':
+      return d2.difference(d1).inDays;
+    case 'W':
+      return d2.difference(d1).inDays ~/ 7;
+    case 'M':
+      return (d2.year - d1.year) * 12 + (d2.month - d1.month);
+    case 'Y':
+      return d2.year - d1.year;
+    default:
+      return d2.difference(d1).inDays;
   }
 }
 
@@ -1322,13 +1403,16 @@ dynamic tt_DATESTART(dynamic v1, dynamic v2) {
   var u = varToStr(v2).trim().toUpperCase();
   if (u.isEmpty) u = 'M';
   switch (u[0]) {
-    case 'M': return DateTime(d.year, d.month, 1);
-    case 'Y': return DateTime(d.year, 1, 1);
+    case 'M':
+      return DateTime(d.year, d.month, 1);
+    case 'Y':
+      return DateTime(d.year, 1, 1);
     case 'W':
       // go back to Monday of this week
       final diff = d.weekday - 1; // Mon=1
       return d.subtract(Duration(days: diff));
-    default: return d;
+    default:
+      return d;
   }
 }
 
@@ -1339,9 +1423,12 @@ dynamic tt_DATEEND(dynamic v1, dynamic v2) {
   var u = varToStr(v2).trim().toUpperCase();
   if (u.isEmpty) u = 'M';
   switch (u[0]) {
-    case 'M': return DateTime(d.year, d.month + 1, 0);
-    case 'Y': return DateTime(d.year, 12, 31);
-    default: return d;
+    case 'M':
+      return DateTime(d.year, d.month + 1, 0);
+    case 'Y':
+      return DateTime(d.year, 12, 31);
+    default:
+      return d;
   }
 }
 
@@ -1371,15 +1458,15 @@ dynamic tt_QUARTER(dynamic value) {
 dynamic tt_RDATE(dynamic value) {
   final dt = _vToDateTime(value);
   if (dt == null) return '';
-  return '${(dt.year - 1911).toString().padLeft(3,'0')}/${dt.month.toString().padLeft(2,'0')}/${dt.day.toString().padLeft(2,'0')}';
+  return '${(dt.year - 1911).toString().padLeft(3, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
 }
 
 /// tt_RDATETIME(date): ROC-calendar-year date-time string YYY/MM/DD HH:MM:SS
 dynamic tt_RDATETIME(dynamic value) {
   final dt = _vToDateTime(value);
   if (dt == null) return '';
-  return '${(dt.year - 1911).toString().padLeft(3,'0')}/${dt.month.toString().padLeft(2,'0')}/${dt.day.toString().padLeft(2,'0')} '
-      '${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}:${dt.second.toString().padLeft(2,'0')}';
+  return '${(dt.year - 1911).toString().padLeft(3, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')} '
+      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -1507,7 +1594,11 @@ dynamic tt_ELLIPSIS(dynamic v1, dynamic v2) {
 /// tt_CAPWORDS(str): capitalizes the first letter of each word
 dynamic tt_CAPWORDS(dynamic value) {
   final s = varToStr(value);
-  return s.split(" ").map((w) => w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1).toLowerCase()).join(" ");
+  return s
+      .split(" ")
+      .map((w) =>
+          w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1).toLowerCase())
+      .join(" ");
 }
 
 /// tt_CHARAT(str, n): gets the nth character (1-based)
@@ -1552,22 +1643,22 @@ dynamic tt_ONLYDIGITS(dynamic value) =>
     varToStr(value).split("").where((c) => RegExp(r"\d").hasMatch(c)).join();
 
 /// tt_ONLYALPHA(str): keeps only English letters
-dynamic tt_ONLYALPHA(dynamic value) =>
-    varToStr(value).split("").where((c) => RegExp(r"[A-Za-z]").hasMatch(c)).join();
+dynamic tt_ONLYALPHA(dynamic value) => varToStr(value)
+    .split("")
+    .where((c) => RegExp(r"[A-Za-z]").hasMatch(c))
+    .join();
 
-/// tt_MASK(str, mask, pad): mask formatting (# is the digit placeholder)
+/// tt_MASK(str, mask, placeholder): mask formatting (placeholder defaults to '#')
 dynamic tt_MASK(dynamic v1, dynamic v2, dynamic v3) {
   final src = varToStr(v1).replaceAll(RegExp(r"\D"), "");
   final mask = varToStr(v2);
+  final phStr = varToStr(v3);
+  final ph = phStr.isNotEmpty ? phStr[0] : '#';
   var si = 0;
   final buf = StringBuffer();
   for (final c in mask.split("")) {
-    if (c == '#') {
-      if (si < src.length) {
-        buf.write(src[si++]);
-      } else {
-        buf.write(varToStr(v3).isNotEmpty ? varToStr(v3)[0] : "_");
-      }
+    if (c == ph) {
+      buf.write(si < src.length ? src[si++] : '_');
     } else {
       buf.write(c);
     }
@@ -1575,13 +1666,15 @@ dynamic tt_MASK(dynamic v1, dynamic v2, dynamic v3) {
   return buf.toString();
 }
 
-/// tt_UNMASK(str, mask): removes the mask, keeping only characters at # positions
-dynamic tt_UNMASK(dynamic v1, dynamic v2) {
+/// tt_UNMASK(str, mask, placeholder): removes the mask, keeping only the characters at placeholder positions (placeholder defaults to '#')
+dynamic tt_UNMASK(dynamic v1, dynamic v2, dynamic v3) {
   final s = varToStr(v1);
   final mask = varToStr(v2);
+  final phStr = varToStr(v3);
+  final ph = phStr.isNotEmpty ? phStr[0] : '#';
   final buf = StringBuffer();
   for (var i = 0; i < mask.length && i < s.length; i++) {
-    if (mask[i] == '#') buf.write(s[i]);
+    if (mask[i] == ph) buf.write(s[i]);
   }
   return buf.toString();
 }
@@ -1602,7 +1695,7 @@ dynamic tt_TRUNCWORDS(dynamic v1, dynamic v2) {
   final n = varToInt(v2);
   final words = s.split(RegExp(r"\s+"));
   if (words.length <= n) return s;
-  return words.take(n).join(" ");
+  return '${words.take(n).join(" ")}...';
 }
 
 /// tt_CRLF2BR(str): newline → <br/>
@@ -1610,8 +1703,8 @@ dynamic tt_CRLF2BR(dynamic value) =>
     varToStr(value).replaceAll("\r\n", "<br/>").replaceAll("\n", "<br/>");
 
 /// tt_BR2CRLF(str): <br/> → newline
-dynamic tt_BR2CRLF(dynamic value) =>
-    varToStr(value).replaceAll(RegExp(r"<br\s*/?>",caseSensitive: false), "\r\n");
+dynamic tt_BR2CRLF(dynamic value) => varToStr(value)
+    .replaceAll(RegExp(r"<br\s*/?>", caseSensitive: false), "\r\n");
 
 /// tt_HTMLENCODE(str): HTML special-character encoding
 dynamic tt_HTMLENCODE(dynamic value) {
@@ -1700,7 +1793,7 @@ dynamic tt_RAD2DEG(dynamic value) => varToDouble(value) * 180.0 / pi;
 /// tt_CBRT(x): cube root
 dynamic tt_CBRT(dynamic value) {
   final x = varToDouble(value);
-  return x >= 0 ? pow(x, 1/3) : -pow(-x, 1/3);
+  return x >= 0 ? pow(x, 1 / 3) : -pow(-x, 1 / 3);
 }
 
 /// tt_EVEN(n): the smallest even number ≥ n
@@ -1728,7 +1821,9 @@ dynamic tt_SUMSQ(List<dynamic> values) {
 /// tt_PRODUCT(values): product of the values Π(xᵢ)
 dynamic tt_PRODUCT(List<dynamic> values) {
   double p = 1;
-  for (final v in values) p *= varToDouble(v);
+  for (final v in values) {
+    p *= varToDouble(v);
+  }
   return p;
 }
 
@@ -1755,7 +1850,15 @@ dynamic tt_GEOMEAN(List<dynamic> values) {
     if (x <= 0) return 0.0;
     logSum += log(x);
   }
-  return exp(logSum / n);
+  final r = exp(logSum / n);
+  // @@@ a log/exp round trip produces tiny floating-point noise (e.g.
+  //     (1*3*9)^(1/3) is theoretically exactly 3, but actually computes
+  //     to 3.0000000000000004) -- rounded to 12 decimal places to clear
+  //     the noise. The log/exp algorithm itself is kept (rather than
+  //     switching to direct multiply-then-root) because with many input
+  //     values at large magnitudes, direct multiplication can overflow;
+  //     log/exp is more numerically robust.
+  return double.parse(r.toStringAsFixed(12));
 }
 
 /// tt_QUARTILE(values, q): quartile; q=1 Q1, q=2 median, q=3 Q3
@@ -1856,7 +1959,7 @@ dynamic tt_ADDWORKDAYS(dynamic v1, dynamic v2) {
   n = n.abs();
   while (n > 0) {
     d = d!.add(Duration(days: step));
-    if (d!.weekday <= 5) n--;
+    if (d.weekday <= 5) n--;
   }
   return d;
 }
@@ -1905,7 +2008,7 @@ dynamic tt_FISCALYEAR(dynamic v1, dynamic v2) {
 /// value used by WML output, not a comment, so it is intentionally left
 /// untranslated; translating it would change the function's runtime behavior)
 dynamic tt_DAYNAME(dynamic value) {
-  const names = ['週一',"週二","週三","週四","週五","週六","週日"];
+  const names = ['週一', "週二", "週三", "週四", "週五", "週六", "週日"];
   final dt = _vToDateTime(value);
   if (dt == null) return '';
   return names[dt.weekday - 1];
@@ -1914,8 +2017,20 @@ dynamic tt_DAYNAME(dynamic value) {
 /// tt_MONTHNAME(date): month name (returned in Chinese — see the note on
 /// tt_DAYNAME above)
 dynamic tt_MONTHNAME(dynamic value) {
-  const names = ['一月',"二月","三月","四月","五月","六月",
-                  "七月","八月","九月","十月","十一月","十二月"];
+  const names = [
+    '一月',
+    "二月",
+    "三月",
+    "四月",
+    "五月",
+    "六月",
+    "七月",
+    "八月",
+    "九月",
+    "十月",
+    "十一月",
+    "十二月"
+  ];
   final dt = _vToDateTime(value);
   if (dt == null) return '';
   return names[dt.month - 1];
@@ -2001,25 +2116,28 @@ dynamic tt_GUID() {
   bytes[6] = (bytes[6] & 0x0F) | 0x40;
   bytes[8] = (bytes[8] & 0x3F) | 0x80;
   final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, "0")).toList();
-  return '${hex.sublist(0,4).join()}-${hex.sublist(4,6).join()}-${hex.sublist(6,8).join()}-${hex.sublist(8,10).join()}-${hex.sublist(10).join()}';
+  return '${hex.sublist(0, 4).join()}-${hex.sublist(4, 6).join()}-${hex.sublist(6, 8).join()}-${hex.sublist(8, 10).join()}-${hex.sublist(10).join()}';
 }
 
 /// tt_RANDOMSTR(len, chars): generates a random string of the given length
 dynamic tt_RANDOMSTR(dynamic v1, dynamic v2) {
   final len = varToInt(v1);
   var chars = varToStr(v2);
-  if (chars.isEmpty) chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  if (chars.isEmpty)
+    chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   final rng = Random();
   return List.generate(len, (_) => chars[rng.nextInt(chars.length)]).join();
 }
 
 /// tt_TOHEX(n): converts an integer to a hex string (no padding)
-dynamic tt_TOHEX(dynamic value) => varToInt(value).toRadixString(16).toUpperCase();
+dynamic tt_TOHEX(dynamic value) =>
+    varToInt(value).toRadixString(16).toUpperCase();
 
 /// tt_FROMHEX(str): converts a hex string to an integer
 dynamic tt_FROMHEX(dynamic value) {
   var s = varToStr(value).trim();
-  if (s.length >= 2 && s[0] == '0' && s[1].toUpperCase() == 'X') s = s.substring(2);
+  if (s.length >= 2 && s[0] == '0' && s[1].toUpperCase() == 'X')
+    s = s.substring(2);
   return int.tryParse(s, radix: 16) ?? 0;
 }
 
@@ -2055,8 +2173,10 @@ dynamic tt_BITAND(dynamic v1, dynamic v2) => varToInt(v1) & varToInt(v2);
 /// tt_BITXOR(a, b): bitwise XOR
 dynamic tt_BITXOR(dynamic v1, dynamic v2) => varToInt(v1) ^ varToInt(v2);
 
-/// tt_BITNOT(a): bitwise NOT (32-bit)
-dynamic tt_BITNOT(dynamic value) => ~varToInt(value);
+/// tt_BITNOT(a): bitwise NOT (uses the pure-arithmetic equivalent -x-1
+/// instead of the ~ operator, to guard against possible bitwise-op
+/// discrepancies under Web compilation)
+dynamic tt_BITNOT(dynamic value) => -varToInt(value) - 1;
 
 /// tt_BITSHL(a, n): shift left n bits
 dynamic tt_BITSHL(dynamic v1, dynamic v2) => varToInt(v1) << varToInt(v2);
@@ -2081,7 +2201,9 @@ dynamic tt_HASH(dynamic value) {
 dynamic tt_CHECKSUM(dynamic value) {
   final s = varToStr(value);
   int cs = 0;
-  for (final c in s.codeUnits) cs ^= c;
+  for (final c in s.codeUnits) {
+    cs ^= c;
+  }
   return cs;
 }
 
@@ -2094,8 +2216,8 @@ dynamic tt_PMT(dynamic v1, dynamic v2, dynamic v3) {
   final rate = varToDouble(v1);
   final nper = varToInt(v2);
   final pv = varToDouble(v3);
-  if (rate == 0) return pv / nper;
-  return pv * rate / (1 - pow(1 + rate, -nper));
+  if (rate == 0) return -pv / nper;
+  return -pv * rate / (1 - pow(1 + rate, -nper));
 }
 
 /// tt_PV(rate, nper, pmt): present value
@@ -2103,8 +2225,8 @@ dynamic tt_PV(dynamic v1, dynamic v2, dynamic v3) {
   final rate = varToDouble(v1);
   final nper = varToInt(v2);
   final pmt = varToDouble(v3);
-  if (rate == 0) return pmt * nper;
-  return pmt / rate * (1 - pow(1 + rate, -nper));
+  if (rate == 0) return -pmt * nper;
+  return -pmt / rate * (1 - pow(1 + rate, -nper));
 }
 
 /// tt_FV(rate, nper, pmt, pv): future value
@@ -2135,8 +2257,10 @@ dynamic tt_RATE(dynamic v1, dynamic v2, dynamic v3) {
   for (var i = 0; i < 100; i++) {
     final f = pv * pow(1 + rate, nper) + pmt * (pow(1 + rate, nper) - 1) / rate;
     final df = pv * nper * pow(1 + rate, nper - 1) +
-        pmt * (nper * rate * pow(1 + rate, nper - 1) * rate - (pow(1 + rate, nper) - 1)) /
-        (rate * rate);
+        pmt *
+            (nper * rate * pow(1 + rate, nper - 1) * rate -
+                (pow(1 + rate, nper) - 1)) /
+            (rate * rate);
     if (df.abs() < 1e-12) break;
     rate -= f / df;
     if (f.abs() < 1e-8) break;
@@ -2155,7 +2279,7 @@ dynamic tt_IPMT(dynamic v1, dynamic v2, dynamic v3, dynamic v4) {
   for (var i = 1; i < per; i++) {
     balance = balance - (pmt - balance * rate);
   }
-  return balance * rate;
+  return -balance * rate;
 }
 
 /// tt_PPMT(rate, per, nper, pv): principal portion of payment n
@@ -2243,11 +2367,17 @@ dynamic tt_AsPct(dynamic v1, dynamic v2) {
   return '${val.toStringAsFixed(d.clamp(0, 20))}%';
 }
 
-/// tt_AsSci(v, d): scientific-notation string
+/// tt_AsSci(v, d): scientific-notation string, formatted as 1.23E+04 (uppercase E, exponent zero-padded to 2 digits)
 dynamic tt_AsSci(dynamic v1, dynamic v2) {
   final val = varToDouble(v1);
   final d = varToInt(v2);
-  return val.toStringAsExponential(d.clamp(0, 20));
+  final s = val.toStringAsExponential(d.clamp(0, 20)); // e.g. "1.23e+4" or "1.23e-4"
+  final parts = s.split('e');
+  final mantissa = parts[0];
+  final expNum = int.parse(parts[1]);
+  final sign = expNum < 0 ? '-' : '+';
+  final expStr = expNum.abs().toString().padLeft(2, '0');
+  return '${mantissa}E$sign$expStr';
 }
 
 /// tt_AsYN(v)：Boolean → 'Y'/'N'
@@ -2270,14 +2400,17 @@ dynamic tt_AsHex(dynamic v1, dynamic v2) {
 }
 
 /// tt_AsOct(v): integer → octal
-dynamic tt_AsOct(dynamic value) =>
-    varToInt(value).toRadixString(8);
+dynamic tt_AsOct(dynamic value) => varToInt(value).toRadixString(8);
 
 /// tt_AsISO(v): ISO 8601 date string
 dynamic tt_AsISO(dynamic value) {
   final dt = _vToDateTime(value);
   if (dt == null) return '';
-  return dt.toIso8601String().substring(0, 10);
+  // @@@ this used to truncate to 10 characters, keeping only the date and
+  //     cutting off the time entirely -- the function's own documentation
+  //     specifies the format as 'YYYY-MM-DDTHH:MM:SS' (19 characters),
+  //     not a plain date.
+  return dt.toIso8601String().substring(0, 19);
 }
 
 /// tt_AsRDate(v): ROC-calendar-year date
@@ -2298,11 +2431,13 @@ dynamic tt_AsLower(dynamic value) => varToStr(value).toLowerCase();
 /// tt_AsTrimmed(v): trims whitespace from both ends
 dynamic tt_AsTrimmed(dynamic value) => varToStr(value).trim();
 
-/// tt_AsQuoted(v): wrapped in single quotes
-dynamic tt_AsQuoted(dynamic value) => "'${varToStr(value)}'";
+/// tt_AsQuoted(v): wrapped in single quotes, internal quotes doubled (escaped)
+dynamic tt_AsQuoted(dynamic value) =>
+    "'${varToStr(value).replaceAll("'", "''")}'";
 
-/// tt_AsDQuoted(v): wrapped in double quotes
-dynamic tt_AsDQuoted(dynamic value) => '"${varToStr(value)}"';
+/// tt_AsDQuoted(v): wrapped in double quotes, internal quotes backslash-escaped
+dynamic tt_AsDQuoted(dynamic value) =>
+    '"${varToStr(value).replaceAll('"', '\\"')}"';
 
 /// tt_AsSQLStr(v): SQL-safe string (inside single quotes, ' becomes '')
 dynamic tt_AsSQLStr(dynamic value) =>
@@ -2338,20 +2473,386 @@ dynamic tt_AsJson(dynamic value) {
 dynamic tt_AsCsv(List<dynamic> values) {
   final cells = values.map((v) {
     final s = varToStr(v);
-    final needQuote = s.contains(",") || s.contains('"') ||
-        s.contains("\r") || s.contains("\n");
+    final needQuote = s.contains(",") ||
+        s.contains('"') ||
+        s.contains("\r") ||
+        s.contains("\n");
     if (needQuote) return '"${s.replaceAll('"', '""')}"';
     return s;
   });
   return cells.join(",");
 }
 
+// ──────────────────────────────────────────────────────────────
+// Added functions: these have no corresponding version in the tt_ series -- genuinely missing implementations
+// ──────────────────────────────────────────────────────────────
+
+/// ConcatenateStr(values): concatenates multiple strings (no separator)
+dynamic fnConcatenateStr(List<dynamic> values) => values.map(varToStr).join();
+
+/// StoredCharLength(str): the effective length after trimming trailing whitespace
+dynamic fnStoredCharLength(dynamic value) {
+  final s = varToStr(value);
+  var end = s.length;
+  while (end > 0 && s[end - 1] == ' ') end--;
+  return end;
+}
+
+/// ReverseStr(str): reverses a string
+dynamic fnReverseStr(dynamic value) =>
+    String.fromCharCodes(varToStr(value).runes.toList().reversed);
+
+/// SubstituteStr(values): [str, old1, new1, old2, new2, ...] replaces each pair in sequence, case-sensitive
+dynamic fnSubstituteStr(List<dynamic> values) {
+  if (values.isEmpty) return '';
+  var s = varToStr(values[0]);
+  for (var i = 1; i + 1 < values.length; i += 2) {
+    s = s.replaceAll(varToStr(values[i]), varToStr(values[i + 1]));
+  }
+  return s;
+}
+
+/// SubstituteCaseStr(values): same as SubstituteStr, but case-insensitive matching
+dynamic fnSubstituteCaseStr(List<dynamic> values) {
+  if (values.isEmpty) return '';
+  var s = varToStr(values[0]);
+  for (var i = 1; i + 1 < values.length; i += 2) {
+    final oldS = varToStr(values[i]);
+    final newS = varToStr(values[i + 1]);
+    if (oldS.isEmpty) continue;
+    final re = RegExp(RegExp.escape(oldS), caseSensitive: false);
+    s = s.replaceAll(re, newS);
+  }
+  return s;
+}
+
+/// Factorial(n): factorial n!
+dynamic fnFactorial(dynamic value) {
+  final n = varToInt(value);
+  if (n < 0) return 0;
+  var r = 1;
+  for (var i = 2; i <= n; i++) r *= i;
+  return r;
+}
+
+/// EulerNumber: Euler's number e (no arguments)
+dynamic fnEulerNumber() => e;
+
+/// SignOf(n): returns -1, 0, or 1
+dynamic fnSignOf(dynamic value) {
+  final n = varToDouble(value);
+  if (n > 0) return 1;
+  if (n < 0) return -1;
+  return 0;
+}
+
+/// Annuity(rate, periods): present-value annuity factor per period (capital recovery factor)
+dynamic fnAnnuity(dynamic v1, dynamic v2) {
+  final rate = varToDouble(v1);
+  final n = varToInt(v2);
+  if (rate == 0) return n == 0 ? 0.0 : 1.0 / n;
+  return rate / (1 - pow(1 + rate, -n));
+}
+
+/// MeanValue(values): arithmetic mean
+dynamic fnMeanValue(List<dynamic> values) {
+  if (values.isEmpty) return 0.0;
+  return values.map(varToDouble).reduce((a, b) => a + b) / values.length;
+}
+
+/// MedianValue(values): median
+dynamic fnMedianValue(List<dynamic> values) {
+  if (values.isEmpty) return 0.0;
+  final nums = values.map(varToDouble).toList()..sort();
+  final n = nums.length;
+  if (n.isOdd) return nums[n ~/ 2];
+  return (nums[n ~/ 2 - 1] + nums[n ~/ 2]) / 2;
+}
+
+/// MidRangeValue(values): (max + min) / 2
+dynamic fnMidRangeValue(List<dynamic> values) {
+  if (values.isEmpty) return 0.0;
+  final nums = values.map(varToDouble);
+  return (nums.reduce((a, b) => a > b ? a : b) +
+          nums.reduce((a, b) => a < b ? a : b)) /
+      2;
+}
+
+/// RangeValue(values): range (max - min)
+dynamic fnRangeValue(List<dynamic> values) {
+  if (values.isEmpty) return 0.0;
+  final nums = values.map(varToDouble);
+  return nums.reduce((a, b) => a > b ? a : b) -
+      nums.reduce((a, b) => a < b ? a : b);
+}
+
+/// VarianceValue(values): variance (population, divided by N)
+dynamic fnVarianceValue(List<dynamic> values) {
+  if (values.isEmpty) return 0.0;
+  final nums = values.map(varToDouble).toList();
+  final mean = nums.reduce((a, b) => a + b) / nums.length;
+  final sq = nums.map((x) => (x - mean) * (x - mean));
+  return sq.reduce((a, b) => a + b) / nums.length;
+}
+
+/// StandardDeviation(values): standard deviation (population)
+dynamic fnStandardDeviation(List<dynamic> values) =>
+    sqrt(varToDouble(fnVarianceValue(values)));
+
+/// OrdMax(values): the 1-based position of the maximum value in the argument list
+dynamic fnOrdMax(List<dynamic> values) {
+  if (values.isEmpty) return 0;
+  final nums = values.map(varToDouble).toList();
+  var idx = 0;
+  for (var i = 1; i < nums.length; i++) {
+    if (nums[i] > nums[idx]) idx = i;
+  }
+  return idx + 1;
+}
+
+/// OrdMin(values): the 1-based position of the minimum value in the argument list
+dynamic fnOrdMin(List<dynamic> values) {
+  if (values.isEmpty) return 0;
+  final nums = values.map(varToDouble).toList();
+  var idx = 0;
+  for (var i = 1; i < nums.length; i++) {
+    if (nums[i] < nums[idx]) idx = i;
+  }
+  return idx + 1;
+}
+
+/// HighestAlgebraic(n): returns the maximum value representable by the argument's data type (this engine's numeric types can't be reliably distinguished, so it always returns the Int32 upper bound)
+dynamic fnHighestAlgebraic(dynamic value) => 2147483647;
+
+/// LowestAlgebraic(n): returns the minimum value representable by the argument's data type (this engine's numeric types can't be reliably distinguished, so it always returns the Int32 lower bound)
+dynamic fnLowestAlgebraic(dynamic value) => -2147483648;
+
+/// LOG(n): base-10 logarithm
+dynamic fnLog10Value(dynamic value) => log(varToDouble(value)) / log(10);
+
+/// RemainderValue(a, b): floating-point remainder, with the same sign as the dividend
+dynamic fnRemainderValue(dynamic v1, dynamic v2) {
+  final a = varToDouble(v1);
+  final b = varToDouble(v2);
+  if (b == 0) return 0.0;
+  return a - b * (a / b).truncateToDouble();
+}
+
+/// ToIntegerValue(n): the largest integer not exceeding the argument (rounds down)
+dynamic fnToIntegerValue(dynamic value) => varToDouble(value).floor();
+
+/// DateToYyyymmdd(yymmdd, pivot): converts a 6-digit date to 8 digits using a pivot year
+dynamic fnDateToYyyymmdd(dynamic v1, dynamic v2) {
+  final yymmdd = varToInt(v1);
+  var pivot = varToInt(v2);
+  if (pivot == 0) pivot = 50;
+  final yy = yymmdd ~/ 10000;
+  final rest = yymmdd % 10000;
+  final century = yy <= pivot ? 2000 : 1900;
+  return (century + yy) * 10000 + rest;
+}
+
+/// YearToYyyy(yy, pivot): converts a 2-digit year to 4 digits using a pivot year
+dynamic fnYearToYyyy(dynamic v1, dynamic v2) {
+  final yy = varToInt(v1);
+  var pivot = varToInt(v2);
+  if (pivot == 0) pivot = 50;
+  return (yy <= pivot ? 2000 : 1900) + yy;
+}
+
+/// TestDateYyyymmdd(yyyymmdd): validates whether it's a legal date; 0=valid, 1=invalid
+dynamic fnTestDateYyyymmdd(dynamic value) {
+  final n = varToInt(value);
+  final y = n ~/ 10000;
+  final m = (n ~/ 100) % 100;
+  final d = n % 100;
+  if (m < 1 || m > 12 || d < 1) return 1;
+  try {
+    final dt = DateTime(y, m, d);
+    return (dt.year == y && dt.month == m && dt.day == d) ? 0 : 1;
+  } catch (_) {
+    return 1;
+  }
+}
+
+/// TestDayYyyyddd(yyyyddd): validates whether it's a legal year-day; 0=valid, 1=invalid
+dynamic fnTestDayYyyyddd(dynamic value) {
+  final n = varToInt(value);
+  final y = n ~/ 1000;
+  final d = n % 1000;
+  if (y < 1601 || d < 1) return 1;
+  final isLeap = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
+  final maxDay = isLeap ? 366 : 365;
+  return d <= maxDay ? 0 : 1;
+}
+
+/// StandardCompare(a, b): ordinal string comparison, returns '<'/'='/'>'
+dynamic fnStandardCompare(dynamic v1, dynamic v2) {
+  final c = varToStr(v1).compareTo(varToStr(v2));
+  return c < 0 ? '<' : (c > 0 ? '>' : '=');
+}
+
+/// Ord(v): converts a character to its ordinal value; returns as-is if already an integer
+dynamic fnOrd(dynamic value) {
+  if (value is String && value.length == 1) return value.codeUnitAt(0);
+  return varToInt(value);
+}
+
+/// AsSqlStr(v): escapes single quotes (doesn't add the surrounding quotes)
+dynamic fnAsSqlStr(dynamic value) => varToStr(value).replaceAll("'", "''");
+
+/// ByteLength(str): the string's UTF-8 byte length
+dynamic fnByteLength(dynamic value) => utf8.encode(varToStr(value)).length;
+
+// ──────────────────────────────────────────────────────────────
+// A few in the tt_ series return a raw DateTime, but the WML tests
+// expect a Delphi numeric serial -- wrapped with a conversion layer
+// without touching the tt_ originals (to avoid affecting other call sites).
+// ──────────────────────────────────────────────────────────────
+
+dynamic fnBomDateSerial(dynamic v1, dynamic v2) {
+  final dt = tt_BOMDATE(v1, v2) as DateTime;
+  return _toDelphiSerial(dt);
+}
+
+dynamic fnEomDateSerial(dynamic v1, dynamic v2) {
+  final dt = tt_EOMDATE(v1, v2) as DateTime;
+  return _toDelphiSerial(dt);
+}
+
+dynamic fnDateAddValueSerial(dynamic v1, dynamic v2, dynamic v3) {
+  final dt = tt_DATEADD(v1, v2, v3) as DateTime?;
+  if (dt == null) return null;
+  return _toDelphiSerial(dt);
+}
+
+dynamic fnDatePeriodEndSerial(dynamic v1, dynamic v2) {
+  final dt = tt_DATEEND(v1, v2) as DateTime?;
+  if (dt == null) return null;
+  return _toDelphiSerial(dt);
+}
+
+dynamic fnDatePeriodStartSerial(dynamic v1, dynamic v2) {
+  final dt = tt_DATESTART(v1, v2) as DateTime?;
+  if (dt == null) return null;
+  return _toDelphiSerial(dt);
+}
+
+dynamic fnNextWeekDaySerial(dynamic v1, dynamic v2) {
+  final dt = tt_NEXTWDAY(v1, v2) as DateTime?;
+  if (dt == null) return null;
+  return _toDelphiSerial(dt);
+}
+
+dynamic fnPrevWeekDaySerial(dynamic v1, dynamic v2) {
+  final dt = tt_PREVWDAY(v1, v2) as DateTime?;
+  if (dt == null) return null;
+  return _toDelphiSerial(dt);
+}
+
+dynamic fnAddWorkDaysSerial(dynamic v1, dynamic v2) {
+  final dt = tt_ADDWORKDAYS(v1, v2) as DateTime?;
+  if (dt == null) return null;
+  return _toDelphiSerial(dt);
+}
+
+// ──────────────────────────────────────────────────────────────
+// COBOL internal date integer = Delphi date serial + 109205
+// ──────────────────────────────────────────────────────────────
+const int _kCobolDateOffset = 109205;
+
+/// CombinedDateTime(dateInt, seconds): combines a COBOL internal date integer and seconds into a serial
+dynamic fnCombinedDateTime(dynamic v1, dynamic v2) =>
+    varToInt(v1) * 86400 + varToInt(v2);
+
+/// DateOfInteger(cobolInt): converts a COBOL internal date integer to YYYYMMDD
+dynamic fnDateOfInteger(dynamic value) {
+  final serial = varToInt(value) - _kCobolDateOffset;
+  final dt = DateTime(1899, 12, 30).add(Duration(days: serial));
+  return dt.year * 10000 + dt.month * 100 + dt.day;
+}
+
+/// DayOfInteger(cobolInt): converts a COBOL internal date integer to YYYYDDD
+dynamic fnDayOfInteger(dynamic value) {
+  final serial = varToInt(value) - _kCobolDateOffset;
+  final dt = DateTime(1899, 12, 30).add(Duration(days: serial));
+  final doy = dt.difference(DateTime(dt.year, 1, 1)).inDays + 1;
+  return dt.year * 1000 + doy;
+}
+
+/// IntegerOfDate(yyyymmdd): converts YYYYMMDD to a COBOL internal date integer
+dynamic fnIntegerOfDate(dynamic value) {
+  final n = varToInt(value);
+  final y = n ~/ 10000, m = (n ~/ 100) % 100, d = n % 100;
+  final serial = _toDelphiSerial(DateTime(y, m, d));
+  return serial.round() + _kCobolDateOffset;
+}
+
+/// IntegerOfDay(yyyyddd): converts YYYYDDD to a COBOL internal date integer
+dynamic fnIntegerOfDay(dynamic value) {
+  final n = varToInt(value);
+  final y = n ~/ 1000, doy = n % 1000;
+  final dt = DateTime(y, 1, 1).add(Duration(days: doy - 1));
+  final serial = _toDelphiSerial(dt);
+  return serial.round() + _kCobolDateOffset;
+}
+
+// ──────────────────────────────────────────────────────────────
+// A few other miscellaneous added functions
+// ──────────────────────────────────────────────────────────────
+
+/// FillChar(count, ch): fills a string of length count with the given character
+dynamic fnFillChar(dynamic v1, dynamic v2) {
+  final n = varToInt(v1);
+  final ch = varToStr(v2);
+  return (ch.isNotEmpty ? ch[0] : ' ') * (n < 0 ? 0 : n);
+}
+
+/// Exp10Value(n): 10 raised to the argument's power
+dynamic fnExp10Value(dynamic value) => pow(10, varToDouble(value));
+
+/// ToIntSafe(v): safely converts to an integer, returning 0 on failure
+dynamic fnToIntSafe(dynamic value) => int.tryParse(varToStr(value)) ?? 0;
+
+/// ToFloatSafe(v): safely converts to a float, returning 0 on failure
+dynamic fnToFloatSafe(dynamic value) => double.tryParse(varToStr(value)) ?? 0.0;
+
+/// NumValC(str, currencySymbol): converts a string with a currency symbol and thousands-separator commas to a number
+dynamic fnNumValC(dynamic v1, dynamic v2) {
+  var s = varToStr(v1);
+  final sym = varToStr(v2);
+  if (sym.isNotEmpty) s = s.replaceAll(sym, '');
+  s = s.replaceAll(',', '').trim();
+  return double.tryParse(s) ?? 0.0;
+}
+
+/// NumValF(str): converts a floating-point string in scientific notation to a number
+dynamic fnNumValF(dynamic value) => double.tryParse(varToStr(value)) ?? 0.0;
+
+/// TestNumVal(str): tests whether a string can safely convert to a number; 0=yes, 1=no
+dynamic fnTestNumVal(dynamic value) =>
+    double.tryParse(varToStr(value)) != null ? 0 : 1;
+
+/// TestNumValC(str, currencySymbol): the currency-symbol-aware version of the safety test
+dynamic fnTestNumValC(dynamic v1, dynamic v2) {
+  var s = varToStr(v1);
+  final sym = varToStr(v2);
+  if (sym.isNotEmpty) s = s.replaceAll(sym, '');
+  s = s.replaceAll(',', '').trim();
+  return double.tryParse(s) != null ? 0 : 1;
+}
+
+/// HIGH(values): the array's maximum index (0-based)
+dynamic fnHIGH(List<dynamic> values) => values.length - 1;
+
+/// LOW(values): the array's minimum index (always 0)
+dynamic fnLOW(List<dynamic> values) => 0;
+
 // ══ expr_cob_functions.dart ══
 // ============================================================
 // myexp.pas → Flutter/Dart converted version
 // expr_cob_functions.dart  —  GnuCOBOL Intrinsic Functions wrapper (prefixed COB_)
 // ============================================================
-
 
 // ──────────────────────────────────────────────────────────────
 // Math operations
@@ -2405,7 +2906,9 @@ dynamic COB_FACTORIAL(dynamic value) {
   final n = varToInt(value);
   if (n < 0) return 0;
   int r = 1;
-  for (var i = 2; i <= n; i++) r *= i;
+  for (var i = 2; i <= n; i++) {
+    r *= i;
+  }
   return r;
 }
 
@@ -2543,8 +3046,7 @@ dynamic COB_LOWEST_ALGEBRAIC(dynamic value) {
 // String processing
 // ──────────────────────────────────────────────────────────────
 
-dynamic COB_CONCATENATE(List<dynamic> values) =>
-    values.map(varToStr).join();
+dynamic COB_CONCATENATE(List<dynamic> values) => values.map(varToStr).join();
 
 dynamic COB_LENGTH(dynamic value) => varToStr(value).length;
 
@@ -2578,8 +3080,7 @@ dynamic COB_LOWER_CASE(dynamic value) => varToStr(value).toLowerCase();
 
 dynamic COB_UPPER_CASE(dynamic value) => varToStr(value).toUpperCase();
 
-dynamic COB_REVERSE(dynamic value) =>
-    varToStr(value).split("").reversed.join();
+dynamic COB_REVERSE(dynamic value) => varToStr(value).split("").reversed.join();
 
 /// TRIM(str, mode)  mode: 'LEADING' | 'TRAILING' | '' (both ends)
 dynamic COB_TRIM(dynamic v1, dynamic v2) {
@@ -2695,9 +3196,9 @@ dynamic COB_CURRENT_DATE() {
   final absOffset = offset.abs();
   final bh = absOffset.inHours;
   final bm = absOffset.inMinutes % 60;
-  return '${now.year.toString().padLeft(4,'0')}${now.month.toString().padLeft(2,'0')}${now.day.toString().padLeft(2,'0')}'
-      '${now.hour.toString().padLeft(2,'0')}${now.minute.toString().padLeft(2,'0')}${now.second.toString().padLeft(2,'0')}'
-      '${(now.millisecond ~/ 10).toString().padLeft(2,'0')}$sign${bh.toString().padLeft(2,'0')}${bm.toString().padLeft(2,'0')}';
+  return '${now.year.toString().padLeft(4, '0')}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}'
+      '${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}'
+      '${(now.millisecond ~/ 10).toString().padLeft(2, '0')}$sign${bh.toString().padLeft(2, '0')}${bm.toString().padLeft(2, '0')}';
 }
 
 /// WHEN-COMPILED: same as CURRENT-DATE
@@ -2795,7 +3296,7 @@ dynamic COB_TEST_DAY_YYYYDDD(dynamic value) {
 
 dynamic COB_LOCALE_DATE(dynamic value) {
   final dt = _cobIntToDateTime(varToInt(value));
-  return '${dt.year}-${dt.month.toString().padLeft(2,'0')}-${dt.day.toString().padLeft(2,'0')}';
+  return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
 }
 
 dynamic COB_LOCALE_TIME(dynamic value) {
@@ -2803,7 +3304,7 @@ dynamic COB_LOCALE_TIME(dynamic value) {
   final h = secs ~/ 3600;
   final m = (secs % 3600) ~/ 60;
   final s = secs % 60;
-  return '${h.toString().padLeft(2,'0')}:${m.toString().padLeft(2,'0')}:${s.toString().padLeft(2,'0')}';
+  return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
 }
 
 /// LOCALE-COMPARE(s1, s2) → '<' '=' '>'
@@ -2840,7 +3341,8 @@ dynamic COB_RANDOM(dynamic value) {
 dynamic COB_BOOLEAN_OF_INTEGER(dynamic v1, dynamic v2) {
   final n = varToInt(v1);
   final len = varToInt(v2);
-  return List.generate(len, (i) => ((n >> (len - 1 - i)) & 1) == 1 ? '1' : "0").join();
+  return List.generate(len, (i) => ((n >> (len - 1 - i)) & 1) == 1 ? '1' : "0")
+      .join();
 }
 
 /// INTEGER-OF-BOOLEAN(s): converts a bit string to an integer
@@ -2867,7 +3369,6 @@ dynamic COB_STANDARD_COMPARE(dynamic v1, dynamic v2) {
 // my_parser.dart  —  the MyParser main class (lexing + parsing + stack)
 // ============================================================
 
-
 /// Corresponds to Pascal TmyParser
 /// Corresponds to Delphi's TDataSet/TField: the evaluator can register datasets, and expressions read values via
 /// Dataset.COUNT / .BOF / .EOF / .STATE / .field (FindField).
@@ -2883,7 +3384,7 @@ abstract class ExprDataSet {
 class MyParser {
   // ── Public properties ──────────────────────────────────────────────────
   String expression = '';
-  bool nul = false;        // Null-substitution mode
+  bool nul = false; // Null-substitution mode
   String error = '';
   dynamic value;
 
@@ -2913,8 +3414,8 @@ class MyParser {
 
   /// Clears only user variables (variable/constant), keeps built-in functions (function_)
   void clearUserVars() {
-    _identList.removeWhere((r) =>
-        r.kind == IdentKind.variable || r.kind == IdentKind.constant);
+    _identList.removeWhere(
+        (r) => r.kind == IdentKind.variable || r.kind == IdentKind.constant);
   }
 
   /// Gets all user-set variables
@@ -2945,7 +3446,8 @@ class MyParser {
   final Map<String, ExprDataSet> _legacyDatasets = {};
   void registerDataSet(String name, ExprDataSet ds) =>
       _legacyDatasets[name.toUpperCase()] = ds;
-  void unregisterDataSet(String name) => _legacyDatasets.remove(name.toUpperCase());
+  void unregisterDataSet(String name) =>
+      _legacyDatasets.remove(name.toUpperCase());
   void clearDataSets() => _legacyDatasets.clear();
 
   int findIdent(String name) {
@@ -2997,40 +3499,50 @@ class MyParser {
   void addFunction0Param(String name, Func0 fn) {
     if (findIdent(name) >= 0) return;
     _identList.add(IdentRecord(
-      name: name.toUpperCase(), kind: IdentKind.function_,
-      pCount: 0, func0: fn,
+      name: name.toUpperCase(),
+      kind: IdentKind.function_,
+      pCount: 0,
+      func0: fn,
     ));
   }
 
   void addFunction1Param(String name, Func1 fn) {
     if (findIdent(name) >= 0) return;
     _identList.add(IdentRecord(
-      name: name.toUpperCase(), kind: IdentKind.function_,
-      pCount: 1, func1: fn,
+      name: name.toUpperCase(),
+      kind: IdentKind.function_,
+      pCount: 1,
+      func1: fn,
     ));
   }
 
   void addFunction2Param(String name, Func2 fn) {
     if (findIdent(name) >= 0) return;
     _identList.add(IdentRecord(
-      name: name.toUpperCase(), kind: IdentKind.function_,
-      pCount: 2, func2: fn,
+      name: name.toUpperCase(),
+      kind: IdentKind.function_,
+      pCount: 2,
+      func2: fn,
     ));
   }
 
   void addFunction3Param(String name, Func3 fn) {
     if (findIdent(name) >= 0) return;
     _identList.add(IdentRecord(
-      name: name.toUpperCase(), kind: IdentKind.function_,
-      pCount: 3, func3: fn,
+      name: name.toUpperCase(),
+      kind: IdentKind.function_,
+      pCount: 3,
+      func3: fn,
     ));
   }
 
   void addFunction4Param(String name, Func4 fn) {
     if (findIdent(name) >= 0) return;
     _identList.add(IdentRecord(
-      name: name.toUpperCase(), kind: IdentKind.function_,
-      pCount: 4, func4: fn,
+      name: name.toUpperCase(),
+      kind: IdentKind.function_,
+      pCount: 4,
+      func4: fn,
     ));
   }
 
@@ -3110,21 +3622,27 @@ class MyParser {
     _tokenString = '';
 
     // skip whitespace
-    while (_pos < _source.length && _source[_pos].codeUnitAt(0) <= 32) _pos++;
+    while (_pos < _source.length && _source[_pos].codeUnitAt(0) <= 32) {
+      _pos++;
+    }
 
     // skip /* ... */ comments
     if (_pos < _source.length - 1 &&
-        _source[_pos] == '/' && _source[_pos + 1] == '*') {
+        _source[_pos] == '/' &&
+        _source[_pos + 1] == '*') {
       _pos += 2;
       while (_pos < _source.length) {
         if (_pos < _source.length - 1 &&
-            _source[_pos] == '*' && _source[_pos + 1] == '/') {
+            _source[_pos] == '*' &&
+            _source[_pos + 1] == '/') {
           _pos += 2;
           break;
         }
         _pos++;
       }
-      while (_pos < _source.length && _source[_pos].codeUnitAt(0) <= 32) _pos++;
+      while (_pos < _source.length && _source[_pos].codeUnitAt(0) <= 32) {
+        _pos++;
+      }
     }
 
     if (_pos >= _source.length) {
@@ -3232,8 +3750,8 @@ class MyParser {
     // number
     if (RegExp(r"[0-9]").hasMatch(c)) {
       final start = _pos;
-      while (_pos < _source.length &&
-          RegExp(r"[0-9.]").hasMatch(_source[_pos])) {
+      while (
+          _pos < _source.length && RegExp(r"[0-9.]").hasMatch(_source[_pos])) {
         _pos++;
       }
       _tokenString = _source.substring(start, _pos);
@@ -3249,7 +3767,7 @@ class MyParser {
           RegExp(r"[0-9A-Fa-f]").hasMatch(_source[_pos])) {
         _pos++;
       }
-      _tokenString = '#' + _source.substring(start, _pos);
+      _tokenString = '#${_source.substring(start, _pos)}';
       _token = ExprToken.hex;
       return;
     }
@@ -3257,32 +3775,59 @@ class MyParser {
     // single-character token
     _pos++;
     switch (c) {
-      case '(': _token = ExprToken.lParen; break;
-      case ')': _token = ExprToken.rParen; break;
-      case '[': _token = ExprToken.lArray; break;
-      case ']': _token = ExprToken.rArray; break;
-      case ',': _token = ExprToken.comma; break;
-      case '+': _token = ExprToken.plus; break;
-      case '-': _token = ExprToken.minus; break;
-      case '*': _token = ExprToken.star; break;
-      case '/': _token = ExprToken.slash; break;
-      case '.': _token = ExprToken.dot; break;
+      case '(':
+        _token = ExprToken.lParen;
+        break;
+      case ')':
+        _token = ExprToken.rParen;
+        break;
+      case '[':
+        _token = ExprToken.lArray;
+        break;
+      case ']':
+        _token = ExprToken.rArray;
+        break;
+      case ',':
+        _token = ExprToken.comma;
+        break;
+      case '+':
+        _token = ExprToken.plus;
+        break;
+      case '-':
+        _token = ExprToken.minus;
+        break;
+      case '*':
+        _token = ExprToken.star;
+        break;
+      case '/':
+        _token = ExprToken.slash;
+        break;
+      case '.':
+        _token = ExprToken.dot;
+        break;
       case '=':
         _token = ExprToken.equal;
         _tokenString = '=';
         break;
       case '<':
         if (_pos < _source.length) {
-          if (_source[_pos] == '=') { _pos++; _token = ExprToken.le; }
-          else if (_source[_pos] == '>') { _pos++; _token = ExprToken.ne; }
-          else { _token = ExprToken.lt; }
+          if (_source[_pos] == '=') {
+            _pos++;
+            _token = ExprToken.le;
+          } else if (_source[_pos] == '>') {
+            _pos++;
+            _token = ExprToken.ne;
+          } else {
+            _token = ExprToken.lt;
+          }
         } else {
           _token = ExprToken.lt;
         }
         break;
       case '>':
         if (_pos < _source.length && _source[_pos] == '=') {
-          _pos++; _token = ExprToken.ge;
+          _pos++;
+          _token = ExprToken.ge;
         } else {
           _token = ExprToken.gt;
         }
@@ -3299,9 +3844,12 @@ class MyParser {
   void _parseExpression() {
     _parseSimpleExpression();
 
-    if (_token == ExprToken.equal || _token == ExprToken.ne ||
-        _token == ExprToken.lt  || _token == ExprToken.gt  ||
-        _token == ExprToken.le  || _token == ExprToken.ge) {
+    if (_token == ExprToken.equal ||
+        _token == ExprToken.ne ||
+        _token == ExprToken.lt ||
+        _token == ExprToken.gt ||
+        _token == ExprToken.le ||
+        _token == ExprToken.ge) {
       final op = _token;
       _nextToken();
       _parseSimpleExpression();
@@ -3318,13 +3866,26 @@ class MyParser {
       }
 
       switch (op) {
-        case ExprToken.equal:  _push(_compare(a, b) == 0); break;
-        case ExprToken.ne:     _push(_compare(a, b) != 0); break;
-        case ExprToken.lt:     _push(_compare(a, b) < 0);  break;
-        case ExprToken.gt:     _push(_compare(a, b) > 0);  break;
-        case ExprToken.le:     _push(_compare(a, b) <= 0); break;
-        case ExprToken.ge:     _push(_compare(a, b) >= 0); break;
-        default: break;
+        case ExprToken.equal:
+          _push(_compare(a, b) == 0);
+          break;
+        case ExprToken.ne:
+          _push(_compare(a, b) != 0);
+          break;
+        case ExprToken.lt:
+          _push(_compare(a, b) < 0);
+          break;
+        case ExprToken.gt:
+          _push(_compare(a, b) > 0);
+          break;
+        case ExprToken.le:
+          _push(_compare(a, b) <= 0);
+          break;
+        case ExprToken.ge:
+          _push(_compare(a, b) >= 0);
+          break;
+        default:
+          break;
       }
     }
   }
@@ -3361,9 +3922,9 @@ class MyParser {
       }
     }
 
-    while (_token == ExprToken.plus  ||
-           _token == ExprToken.minus ||
-           _token == ExprToken.or_) {
+    while (_token == ExprToken.plus ||
+        _token == ExprToken.minus ||
+        _token == ExprToken.or_) {
       final op = _token;
       _nextToken();
       _parseTerm();
@@ -3398,11 +3959,11 @@ class MyParser {
   void _parseTerm() {
     _parseFactor();
 
-    while (_token == ExprToken.star  ||
-           _token == ExprToken.slash ||
-           _token == ExprToken.div_  ||
-           _token == ExprToken.mod_  ||
-           _token == ExprToken.and_) {
+    while (_token == ExprToken.star ||
+        _token == ExprToken.slash ||
+        _token == ExprToken.div_ ||
+        _token == ExprToken.mod_ ||
+        _token == ExprToken.and_) {
       final op = _token;
       _nextToken();
       _parseFactor();
@@ -3531,7 +4092,8 @@ class MyParser {
           _push(ds.state);
         } else if (ds.hasField(fld)) {
           var v = ds.fieldValue(fld);
-          if (nul && v == null) v = ''; // Null mode: a Null field → an empty string
+          if (nul && v == null)
+            v = ''; // Null mode: a Null field → an empty string
           _push(v);
         } else {
           _raiseError("Field not found: $fld"); // corresponds to aField = nil
@@ -3565,7 +4127,9 @@ class MyParser {
           final idx = _pop();
           if (_token == ExprToken.rArray) _nextToken();
           final arr = ident.value as List;
-          final iIdx = (idx is int) ? idx : (idx is num ? idx.toInt() : int.tryParse("$idx") ?? -1);
+          final iIdx = (idx is int)
+              ? idx
+              : (idx is num ? idx.toInt() : int.tryParse("$idx") ?? -1);
           if (iIdx >= 0 && iIdx < arr.length) {
             _push(arr[iIdx]);
           } else {
@@ -3584,7 +4148,9 @@ class MyParser {
           final idx = _pop();
           if (_token == ExprToken.rArray) _nextToken();
           final arr = ident.value as List;
-          final iIdx = (idx is int) ? idx : (idx is num ? idx.toInt() : int.tryParse("$idx") ?? -1);
+          final iIdx = (idx is int)
+              ? idx
+              : (idx is num ? idx.toInt() : int.tryParse("$idx") ?? -1);
           if (iIdx >= 0 && iIdx < arr.length) {
             _push(arr[iIdx]);
           } else {
@@ -3715,6 +4281,20 @@ class MyParser {
       if (_token == ExprToken.comma) _nextToken();
     }
     if (_token == ExprToken.rParen) _nextToken();
+    // @@@ WapForm convention: array-like/variadic functions are always
+    //     called with a single array literal, e.g. SumOfSquares([1,2,3]),
+    //     SwitchValue([2,1,'One',2,'Two']). The loop above only looks at
+    //     commas at the "outermost parenthesis" level; commas inside an
+    //     array literal sit inside square brackets and don't get treated
+    //     as separating multiple arguments, so only "one expression" (the
+    //     whole array itself) gets parsed, landing in params as
+    //     params=[[1,2,3]] -- the array was never unpacked, and the
+    //     function received "one element, which is an array" instead of
+    //     "three elements". This adds: when there's exactly one argument
+    //     and it's itself a List, unpack it into genuinely multiple values.
+    if (params.length == 1 && params[0] is List) {
+      return List<dynamic>.from(params[0] as List);
+    }
     return params;
   }
 
@@ -3760,7 +4340,7 @@ class MyParser {
     addFunction2Param("AnsiPos", fnAnsiPos);
     addFunction1Param("CHR", fnCHR);
     addFunction1Param("CHAR", fnCHR);
-    addFunction1Param("CODE", (_) => null);
+    addFunction1Param("CODE", fnCODE);
     addFunction3Param("DELETE", fnDELETE);
     addFunction3Param("DEL", fnDELETE);
     addFunction3Param("DELA", fnAnsiDelete);
@@ -3790,7 +4370,7 @@ class MyParser {
     addFunction3Param("REPLACEA", fnREPLACE);
     addFunction3Param("REPLACEB", fnREPLACE);
     addFunction3Param("REPLACEAT", fnReplaceAt);
-    addFunction2Param("REPT", (v1, v2) => null);
+    addFunction2Param("REPT", (v1, v2) => varToStr(v1) * varToInt(v2));
     addFunction1Param("RTRIM", fnRTRIM);
     addFunction1Param("TRIM", fnTRIM);
     addFunction1Param("TrimLeft", fnTrimLeft);
@@ -3817,6 +4397,8 @@ class MyParser {
     addFunction1Param("StrToDate", fnStrToDate);
     addFunction1Param("StrToDateTime", fnStrToDateTime);
     addFunction1Param("StrToTime", fnStrToTime);
+    addFunction3Param("DateSerialValue", fnDateSerialValue);
+    addFunction3Param("TimeSerialValue", fnTimeSerialValue);
     addFunction1Param("StrToHex", fnStrToHex);
     addFunction1Param("HexToStr", fnHexToStr);
     addFunction2Param("IntToHex", fnIntToHex);
@@ -3824,7 +4406,7 @@ class MyParser {
     addFunction1Param("ColorToHex", fnColorToHex);
     addFunction1Param("HexToColor", fnHexToColor);
     addFunction1Param("HTML", fnHTML);
-    addFunction1Param("LEADBYTE", (v) => false);
+    addFunction2Param("LEADBYTE", fnLeadByte);
     addFunction2Param("LEADBYTEB", fnLeadByte);
 
     // ── Numeric ────────────────────────────────────────────────────
@@ -3847,9 +4429,11 @@ class MyParser {
     addFunction1Param("ArcCos", fnArcCos);
     addFunction1Param("ArcTan", fnArcTan);
     addFunction0Param("Pi", fnPi);
-    addFunctionAParam("Round",        (args) => args.length >= 2
-        ? fnRoundTo(args[0], args[1])
-        : fnRound(args.isNotEmpty ? args[0] : 0));
+    addFunctionAParam(
+        "Round",
+        (args) => args.length >= 2
+            ? fnRoundTo(args[0], args[1])
+            : fnRound(args.isNotEmpty ? args[0] : 0));
     addFunction2Param("RoundTo", fnRoundTo);
     addFunction1Param("Odd", fnOdd);
     addFunction2Param("MAX", fnMax);
@@ -3875,6 +4459,7 @@ class MyParser {
     addFunction0Param("NULL", fnNULL);
     addFunction0Param("NBSP", fnNBSP);
     addFunction0Param("DBX", fnDBX);
+    addFunction0Param("NTIER", fnDBX);
 
     // ── Date helpers ────────────────────────────────────────────────
     addFunction1Param("DateTimeToStr", fnDateTimeToStr);
@@ -3920,49 +4505,49 @@ class MyParser {
     // ============================================================
 
     // String — advanced
-    addFunction2Param("tt_PADL",       tt_PADL);
-    addFunction2Param("tt_PADR",       tt_PADR);
-    addFunction2Param("tt_PADC",       tt_PADC);
-    addFunction3Param("tt_LPAD",       tt_LPAD);
-    addFunction3Param("tt_RPAD",       tt_RPAD);
-    addFunction2Param("tt_REPEAT",     tt_REPEAT);
-    addFunction2Param("tt_COUNTSTR",   tt_COUNTSTR);
+    addFunction2Param("tt_PADL", tt_PADL);
+    addFunction2Param("tt_PADR", tt_PADR);
+    addFunction2Param("tt_PADC", tt_PADC);
+    addFunction3Param("tt_LPAD", tt_LPAD);
+    addFunction3Param("tt_RPAD", tt_RPAD);
+    addFunction2Param("tt_REPEAT", tt_REPEAT);
+    addFunction2Param("tt_COUNTSTR", tt_COUNTSTR);
     addFunction2Param("tt_STARTSWITH", tt_STARTSWITH);
-    addFunction2Param("tt_ENDSWITH",   tt_ENDSWITH);
-    addFunction2Param("tt_CONTAINS",   tt_CONTAINS);
-    addFunction2Param("tt_WRAP",       tt_WRAP);
+    addFunction2Param("tt_ENDSWITH", tt_ENDSWITH);
+    addFunction2Param("tt_CONTAINS", tt_CONTAINS);
+    addFunction2Param("tt_WRAP", tt_WRAP);
 
     // String — numeric formatting
-    addFunction2Param("tt_ZFILL",    tt_ZFILL);
-    addFunction2Param("tt_NUMFMT",   tt_NUMFMT);
+    addFunction2Param("tt_ZFILL", tt_ZFILL);
+    addFunction2Param("tt_NUMFMT", tt_NUMFMT);
     addFunction1Param("tt_COMMAFMT", tt_COMMAFMT);
 
     // Math — advanced
-    addFunction2Param("tt_GCD",       tt_GCD);
-    addFunction2Param("tt_LCM",       tt_LCM);
-    addFunction3Param("tt_CLAMP",     tt_CLAMP);
-    addFunction3Param("tt_LERP",      tt_LERP);
-    addFunction3Param("tt_BETWEEN",   tt_BETWEEN);
-    addFunction2Param("tt_PERCENT",   tt_PERCENT);
+    addFunction2Param("tt_GCD", tt_GCD);
+    addFunction2Param("tt_LCM", tt_LCM);
+    addFunction3Param("tt_CLAMP", tt_CLAMP);
+    addFunction3Param("tt_LERP", tt_LERP);
+    addFunction3Param("tt_BETWEEN", tt_BETWEEN);
+    addFunction2Param("tt_PERCENT", tt_PERCENT);
     addFunction2Param("tt_ROUNDBANK", tt_ROUNDBANK);
 
     // Date — advanced
-    addFunction3Param("tt_DATEADD",   tt_DATEADD);
-    addFunction3Param("tt_DATEDIFF",  tt_DATEDIFF);
+    addFunction3Param("tt_DATEADD", tt_DATEADD);
+    addFunction3Param("tt_DATEDIFF", tt_DATEDIFF);
     addFunction2Param("tt_DATESTART", tt_DATESTART);
-    addFunction2Param("tt_DATEEND",   tt_DATEEND);
-    addFunction2Param("tt_WORKDAYS",  tt_WORKDAYS);
-    addFunction1Param("tt_QUARTER",   tt_QUARTER);
-    addFunction1Param("tt_RDATE",     tt_RDATE);
+    addFunction2Param("tt_DATEEND", tt_DATEEND);
+    addFunction2Param("tt_WORKDAYS", tt_WORKDAYS);
+    addFunction1Param("tt_QUARTER", tt_QUARTER);
+    addFunction1Param("tt_RDATE", tt_RDATE);
     addFunction1Param("tt_RDATETIME", tt_RDATETIME);
 
     // Type checking / safe conversion
-    addFunction2Param("tt_NVL",      tt_NVL);
-    addFunction3Param("tt_NVL2",     tt_NVL2);
+    addFunction2Param("tt_NVL", tt_NVL);
+    addFunction3Param("tt_NVL2", tt_NVL2);
     addFunctionAParam("tt_COALESCE", tt_COALESCE);
-    addFunction1Param("tt_TOINT",    tt_TOINT);
-    addFunction1Param("tt_TOFLOAT",  tt_TOFLOAT);
-    addFunction1Param("tt_TODATE",   tt_TODATE);
+    addFunction1Param("tt_TOINT", tt_TOINT);
+    addFunction1Param("tt_TOFLOAT", tt_TOFLOAT);
+    addFunction1Param("tt_TODATE", tt_TODATE);
     addFunction1Param("tt_TYPENAME", tt_TYPENAME);
 
     // Logic / control flow
@@ -3974,190 +4559,190 @@ class MyParser {
     // ============================================================
 
     // String, advanced
-    addFunction3Param("tt_SPLIT",        tt_SPLIT);
-    addFunction2Param("tt_SPLITCOUNT",   tt_SPLITCOUNT);
-    addFunction2Param("tt_JOIN",         tt_JOIN);
-    addFunction3Param("tt_TOKENAT",      tt_TOKENAT);
-    addFunction2Param("tt_ELLIPSIS",     tt_ELLIPSIS);
-    addFunction1Param("tt_CAPWORDS",     tt_CAPWORDS);
-    addFunction2Param("tt_CHARAT",       tt_CHARAT);
-    addFunction3Param("tt_INDEXOF",      tt_INDEXOF);
-    addFunction2Param("tt_LASTINDEXOF",  tt_LASTINDEXOF);
-    addFunction2Param("tt_REMOVECHARS",  tt_REMOVECHARS);
-    addFunction2Param("tt_KEEPCHARS",    tt_KEEPCHARS);
-    addFunction1Param("tt_ONLYDIGITS",   tt_ONLYDIGITS);
-    addFunction1Param("tt_ONLYALPHA",    tt_ONLYALPHA);
-    addFunction3Param("tt_MASK",         tt_MASK);
-    addFunction2Param("tt_UNMASK",       tt_UNMASK);
-    addFunction1Param("tt_SLUGIFY",      tt_SLUGIFY);
-    addFunction2Param("tt_TRUNCWORDS",   tt_TRUNCWORDS);
-    addFunction1Param("tt_CRLF2BR",      tt_CRLF2BR);
-    addFunction1Param("tt_BR2CRLF",      tt_BR2CRLF);
-    addFunction1Param("tt_HTMLENCODE",   tt_HTMLENCODE);
-    addFunction1Param("tt_HTMLDECODE",   tt_HTMLDECODE);
-    addFunction1Param("tt_URLENCODE",    tt_URLENCODE);
+    addFunction3Param("tt_SPLIT", tt_SPLIT);
+    addFunction2Param("tt_SPLITCOUNT", tt_SPLITCOUNT);
+    addFunction2Param("tt_JOIN", tt_JOIN);
+    addFunction3Param("tt_TOKENAT", tt_TOKENAT);
+    addFunction2Param("tt_ELLIPSIS", tt_ELLIPSIS);
+    addFunction1Param("tt_CAPWORDS", tt_CAPWORDS);
+    addFunction2Param("tt_CHARAT", tt_CHARAT);
+    addFunction3Param("tt_INDEXOF", tt_INDEXOF);
+    addFunction2Param("tt_LASTINDEXOF", tt_LASTINDEXOF);
+    addFunction2Param("tt_REMOVECHARS", tt_REMOVECHARS);
+    addFunction2Param("tt_KEEPCHARS", tt_KEEPCHARS);
+    addFunction1Param("tt_ONLYDIGITS", tt_ONLYDIGITS);
+    addFunction1Param("tt_ONLYALPHA", tt_ONLYALPHA);
+    addFunction3Param("tt_MASK", tt_MASK);
+    addFunction3Param("tt_UNMASK", tt_UNMASK);
+    addFunction1Param("tt_SLUGIFY", tt_SLUGIFY);
+    addFunction2Param("tt_TRUNCWORDS", tt_TRUNCWORDS);
+    addFunction1Param("tt_CRLF2BR", tt_CRLF2BR);
+    addFunction1Param("tt_BR2CRLF", tt_BR2CRLF);
+    addFunction1Param("tt_HTMLENCODE", tt_HTMLENCODE);
+    addFunction1Param("tt_HTMLDECODE", tt_HTMLDECODE);
+    addFunction1Param("tt_URLENCODE", tt_URLENCODE);
 
     // Math, advanced
-    addFunction1Param("tt_ISPRIME",      tt_ISPRIME);
-    addFunction1Param("tt_FIB",          tt_FIB);
-    addFunction1Param("tt_LOG2",         tt_LOG2);
-    addFunction2Param("tt_LOGN",         tt_LOGN);
-    addFunction2Param("tt_HYPOT",        tt_HYPOT);
-    addFunction1Param("tt_DEG2RAD",      tt_DEG2RAD);
-    addFunction1Param("tt_RAD2DEG",      tt_RAD2DEG);
-    addFunction1Param("tt_CBRT",         tt_CBRT);
-    addFunction1Param("tt_EVEN",         tt_EVEN);
-    addFunction1Param("tt_ODD",          tt_ODD);
-    addFunctionAParam("tt_SUMSQ",        tt_SUMSQ);
-    addFunctionAParam("tt_PRODUCT",      tt_PRODUCT);
-    addFunctionAParam("tt_HARMEAN",      tt_HARMEAN);
-    addFunctionAParam("tt_GEOMEAN",      tt_GEOMEAN);
-    addFunctionAParam("tt_QUARTILE",     tt_QUARTILE);
-    addFunctionAParam("tt_NPV",          tt_NPV);
-    addFunctionAParam("tt_IRR",          tt_IRR);
+    addFunction1Param("tt_ISPRIME", tt_ISPRIME);
+    addFunction1Param("tt_FIB", tt_FIB);
+    addFunction1Param("tt_LOG2", tt_LOG2);
+    addFunction2Param("tt_LOGN", tt_LOGN);
+    addFunction2Param("tt_HYPOT", tt_HYPOT);
+    addFunction1Param("tt_DEG2RAD", tt_DEG2RAD);
+    addFunction1Param("tt_RAD2DEG", tt_RAD2DEG);
+    addFunction1Param("tt_CBRT", tt_CBRT);
+    addFunction1Param("tt_EVEN", tt_EVEN);
+    addFunction1Param("tt_ODD", tt_ODD);
+    addFunctionAParam("tt_SUMSQ", tt_SUMSQ);
+    addFunctionAParam("tt_PRODUCT", tt_PRODUCT);
+    addFunctionAParam("tt_HARMEAN", tt_HARMEAN);
+    addFunctionAParam("tt_GEOMEAN", tt_GEOMEAN);
+    addFunctionAParam("tt_QUARTILE", tt_QUARTILE);
+    addFunctionAParam("tt_NPV", tt_NPV);
+    addFunctionAParam("tt_IRR", tt_IRR);
 
     // Date, advanced
-    addFunction1Param("tt_ISWEEKEND",     tt_ISWEEKEND);
-    addFunction1Param("tt_ISWEEKDAY",     tt_ISWEEKDAY);
-    addFunction2Param("tt_NEXTWDAY",      tt_NEXTWDAY);
-    addFunction2Param("tt_PREVWDAY",      tt_PREVWDAY);
-    addFunction2Param("tt_EOMDATE",       tt_EOMDATE);
-    addFunction2Param("tt_BOMDATE",       tt_BOMDATE);
-    addFunction2Param("tt_ADDWORKDAYS",   tt_ADDWORKDAYS);
-    addFunction2Param("tt_YEARFRAC",      tt_YEARFRAC);
-    addFunction2Param("tt_AGE",           tt_AGE);
+    addFunction1Param("tt_ISWEEKEND", tt_ISWEEKEND);
+    addFunction1Param("tt_ISWEEKDAY", tt_ISWEEKDAY);
+    addFunction2Param("tt_NEXTWDAY", tt_NEXTWDAY);
+    addFunction2Param("tt_PREVWDAY", tt_PREVWDAY);
+    addFunction2Param("tt_EOMDATE", tt_EOMDATE);
+    addFunction2Param("tt_BOMDATE", tt_BOMDATE);
+    addFunction2Param("tt_ADDWORKDAYS", tt_ADDWORKDAYS);
+    addFunction2Param("tt_YEARFRAC", tt_YEARFRAC);
+    addFunction2Param("tt_AGE", tt_AGE);
     addFunction2Param("tt_FISCALQUARTER", tt_FISCALQUARTER);
-    addFunction2Param("tt_FISCALYEAR",    tt_FISCALYEAR);
-    addFunction1Param("tt_DAYNAME",       tt_DAYNAME);
-    addFunction1Param("tt_MONTHNAME",     tt_MONTHNAME);
-    addFunction3Param("tt_DATESERIAL",    tt_DATESERIAL);
-    addFunction3Param("tt_TIMESERIAL",    tt_TIMESERIAL);
+    addFunction2Param("tt_FISCALYEAR", tt_FISCALYEAR);
+    addFunction1Param("tt_DAYNAME", tt_DAYNAME);
+    addFunction1Param("tt_MONTHNAME", tt_MONTHNAME);
+    addFunction3Param("tt_DATESERIAL", tt_DATESERIAL);
+    addFunction3Param("tt_TIMESERIAL", tt_TIMESERIAL);
 
     // Array / collection
-    addFunctionAParam("tt_ARRJOIN",      tt_ARRJOIN);
-    addFunctionAParam("tt_ARRMAX",       tt_ARRMAX);
-    addFunctionAParam("tt_ARRMIN",       tt_ARRMIN);
-    addFunctionAParam("tt_ARRSUM",       tt_ARRSUM);
-    addFunctionAParam("tt_ARRAVG",       tt_ARRAVG);
-    addFunctionAParam("tt_ARRCONTAINS",  tt_ARRCONTAINS);
-    addFunctionAParam("tt_ARRUNIQ",      tt_ARRUNIQ);
-    addFunctionAParam("tt_CHOOSE",       tt_CHOOSE);
+    addFunctionAParam("tt_ARRJOIN", tt_ARRJOIN);
+    addFunctionAParam("tt_ARRMAX", tt_ARRMAX);
+    addFunctionAParam("tt_ARRMIN", tt_ARRMIN);
+    addFunctionAParam("tt_ARRSUM", tt_ARRSUM);
+    addFunctionAParam("tt_ARRAVG", tt_ARRAVG);
+    addFunctionAParam("tt_ARRCONTAINS", tt_ARRCONTAINS);
+    addFunctionAParam("tt_ARRUNIQ", tt_ARRUNIQ);
+    addFunctionAParam("tt_CHOOSE", tt_CHOOSE);
 
     // System / misc
-    addFunction0Param("tt_GUID",         tt_GUID);
-    addFunction2Param("tt_RANDOMSTR",    tt_RANDOMSTR);
-    addFunction1Param("tt_TOHEX",        tt_TOHEX);
-    addFunction1Param("tt_FROMHEX",      tt_FROMHEX);
-    addFunction2Param("tt_TOBIN",        tt_TOBIN);
-    addFunction1Param("tt_FROMBIN",      tt_FROMBIN);
-    addFunction2Param("tt_BITOR",        tt_BITOR);
-    addFunction2Param("tt_BITAND",       tt_BITAND);
-    addFunction2Param("tt_BITXOR",       tt_BITXOR);
-    addFunction1Param("tt_BITNOT",       tt_BITNOT);
-    addFunction2Param("tt_BITSHL",       tt_BITSHL);
-    addFunction2Param("tt_BITSHR",       tt_BITSHR);
-    addFunction1Param("tt_BYTESIZE",     tt_BYTESIZE);
-    addFunction1Param("tt_HASH",         tt_HASH);
-    addFunction1Param("tt_CHECKSUM",     tt_CHECKSUM);
+    addFunction0Param("tt_GUID", tt_GUID);
+    addFunction2Param("tt_RANDOMSTR", tt_RANDOMSTR);
+    addFunction1Param("tt_TOHEX", tt_TOHEX);
+    addFunction1Param("tt_FROMHEX", tt_FROMHEX);
+    addFunction2Param("tt_TOBIN", tt_TOBIN);
+    addFunction1Param("tt_FROMBIN", tt_FROMBIN);
+    addFunction2Param("tt_BITOR", tt_BITOR);
+    addFunction2Param("tt_BITAND", tt_BITAND);
+    addFunction2Param("tt_BITXOR", tt_BITXOR);
+    addFunction1Param("tt_BITNOT", tt_BITNOT);
+    addFunction2Param("tt_BITSHL", tt_BITSHL);
+    addFunction2Param("tt_BITSHR", tt_BITSHR);
+    addFunction1Param("tt_BYTESIZE", tt_BYTESIZE);
+    addFunction1Param("tt_HASH", tt_HASH);
+    addFunction1Param("tt_CHECKSUM", tt_CHECKSUM);
 
     // Finance, advanced
-    addFunction3Param("tt_PMT",          tt_PMT);
-    addFunction3Param("tt_PV",           tt_PV);
-    addFunction4Param("tt_FV",           tt_FV);
-    addFunction3Param("tt_NPER",         tt_NPER);
-    addFunction3Param("tt_RATE",         tt_RATE);
-    addFunction4Param("tt_IPMT",         tt_IPMT);
-    addFunction4Param("tt_PPMT",         tt_PPMT);
-    addFunctionAParam("tt_CUMIPMT",      tt_CUMIPMT);
+    addFunction3Param("tt_PMT", tt_PMT);
+    addFunction3Param("tt_PV", tt_PV);
+    addFunction4Param("tt_FV", tt_FV);
+    addFunction3Param("tt_NPER", tt_NPER);
+    addFunction3Param("tt_RATE", tt_RATE);
+    addFunction4Param("tt_IPMT", tt_IPMT);
+    addFunction4Param("tt_PPMT", tt_PPMT);
+    addFunctionAParam("tt_CUMIPMT", tt_CUMIPMT);
 
     // AsXxx series
-    addFunction1Param("tt_AsString",    tt_AsString);
-    addFunction1Param("tt_AsInt",       tt_AsInt);
-    addFunction1Param("tt_AsFloat",     tt_AsFloat);
-    addFunction1Param("tt_AsBool",      tt_AsBool);
-    addFunction1Param("tt_AsDate",      tt_AsDate);
-    addFunction1Param("tt_AsTime",      tt_AsTime);
-    addFunction1Param("tt_AsDateTime",  tt_AsDateTime);
-    addFunction2Param("tt_AsFixed",     tt_AsFixed);
-    addFunction2Param("tt_AsCurr",      tt_AsCurr);
-    addFunction2Param("tt_AsPct",       tt_AsPct);
-    addFunction2Param("tt_AsSci",       tt_AsSci);
-    addFunction1Param("tt_AsYN",        tt_AsYN);
-    addFunction1Param("tt_AsTF",        tt_AsTF);
-    addFunction1Param("tt_As10",        tt_As10);
-    addFunction1Param("tt_AsBit",       tt_AsBit);
-    addFunction2Param("tt_AsHex",       tt_AsHex);
-    addFunction1Param("tt_AsOct",       tt_AsOct);
-    addFunction1Param("tt_AsISO",       tt_AsISO);
-    addFunction1Param("tt_AsRDate",     tt_AsRDate);
+    addFunction1Param("tt_AsString", tt_AsString);
+    addFunction1Param("tt_AsInt", tt_AsInt);
+    addFunction1Param("tt_AsFloat", tt_AsFloat);
+    addFunction1Param("tt_AsBool", tt_AsBool);
+    addFunction1Param("tt_AsDate", tt_AsDate);
+    addFunction1Param("tt_AsTime", tt_AsTime);
+    addFunction1Param("tt_AsDateTime", tt_AsDateTime);
+    addFunction2Param("tt_AsFixed", tt_AsFixed);
+    addFunction2Param("tt_AsCurr", tt_AsCurr);
+    addFunction2Param("tt_AsPct", tt_AsPct);
+    addFunction2Param("tt_AsSci", tt_AsSci);
+    addFunction1Param("tt_AsYN", tt_AsYN);
+    addFunction1Param("tt_AsTF", tt_AsTF);
+    addFunction1Param("tt_As10", tt_As10);
+    addFunction1Param("tt_AsBit", tt_AsBit);
+    addFunction2Param("tt_AsHex", tt_AsHex);
+    addFunction1Param("tt_AsOct", tt_AsOct);
+    addFunction1Param("tt_AsISO", tt_AsISO);
+    addFunction1Param("tt_AsRDate", tt_AsRDate);
     addFunction1Param("tt_AsRDateTime", tt_AsRDateTime);
-    addFunction1Param("tt_AsSlug",      tt_AsSlug);
-    addFunction1Param("tt_AsUpper",     tt_AsUpper);
-    addFunction1Param("tt_AsLower",     tt_AsLower);
-    addFunction1Param("tt_AsTrimmed",   tt_AsTrimmed);
-    addFunction1Param("tt_AsQuoted",    tt_AsQuoted);
-    addFunction1Param("tt_AsDQuoted",   tt_AsDQuoted);
-    addFunction1Param("tt_AsSQLStr",    tt_AsSQLStr);
-    addFunction1Param("tt_AsNullable",  tt_AsNullable);
-    addFunction2Param("tt_AsDefault",   tt_AsDefault);
-    addFunction1Param("tt_AsJson",      tt_AsJson);
-    addFunctionAParam("tt_AsCsv",       tt_AsCsv);
+    addFunction1Param("tt_AsSlug", tt_AsSlug);
+    addFunction1Param("tt_AsUpper", tt_AsUpper);
+    addFunction1Param("tt_AsLower", tt_AsLower);
+    addFunction1Param("tt_AsTrimmed", tt_AsTrimmed);
+    addFunction1Param("tt_AsQuoted", tt_AsQuoted);
+    addFunction1Param("tt_AsDQuoted", tt_AsDQuoted);
+    addFunction1Param("tt_AsSQLStr", tt_AsSQLStr);
+    addFunction1Param("tt_AsNullable", tt_AsNullable);
+    addFunction2Param("tt_AsDefault", tt_AsDefault);
+    addFunction1Param("tt_AsJson", tt_AsJson);
+    addFunctionAParam("tt_AsCsv", tt_AsCsv);
 
     // ============================================================
     // COB_ GnuCOBOL Intrinsic Functions
     // ============================================================
 
-    addFunction1Param("COB_ABS",        COB_ABS);
-    addFunction1Param("COB_ACOS",       COB_ACOS);
-    addFunction1Param("COB_ASIN",       COB_ASIN);
-    addFunction1Param("COB_ATAN",       COB_ATAN);
-    addFunction1Param("COB_COS",        COB_COS);
-    addFunction1Param("COB_SIN",        COB_SIN);
-    addFunction1Param("COB_TAN",        COB_TAN);
-    addFunction1Param("COB_SQRT",       COB_SQRT);
-    addFunction1Param("COB_EXP",        COB_EXP);
-    addFunction1Param("COB_EXP10",      COB_EXP10);
-    addFunction1Param("COB_LOG",        COB_LOG);
-    addFunction1Param("COB_LOG10",      COB_LOG10);
-    addFunction2Param("COB_MOD",        COB_MOD);
-    addFunction2Param("COB_REM",        COB_REM);
-    addFunction1Param("COB_INTEGER",    COB_INTEGER);
+    addFunction1Param("COB_ABS", COB_ABS);
+    addFunction1Param("COB_ACOS", COB_ACOS);
+    addFunction1Param("COB_ASIN", COB_ASIN);
+    addFunction1Param("COB_ATAN", COB_ATAN);
+    addFunction1Param("COB_COS", COB_COS);
+    addFunction1Param("COB_SIN", COB_SIN);
+    addFunction1Param("COB_TAN", COB_TAN);
+    addFunction1Param("COB_SQRT", COB_SQRT);
+    addFunction1Param("COB_EXP", COB_EXP);
+    addFunction1Param("COB_EXP10", COB_EXP10);
+    addFunction1Param("COB_LOG", COB_LOG);
+    addFunction1Param("COB_LOG10", COB_LOG10);
+    addFunction2Param("COB_MOD", COB_MOD);
+    addFunction2Param("COB_REM", COB_REM);
+    addFunction1Param("COB_INTEGER", COB_INTEGER);
     addFunction1Param("COB_INTEGER_PART", COB_INTEGER_PART);
     addFunction1Param("COB_FRACTION_PART", COB_FRACTION_PART);
-    addFunction1Param("COB_FACTORIAL",  COB_FACTORIAL);
-    addFunction0Param("COB_E",          COB_E);
-    addFunction0Param("COB_PI",         COB_PI);
-    addFunction1Param("COB_SIGN",       COB_SIGN);
-    addFunction2Param("COB_ANNUITY",    COB_ANNUITY);
+    addFunction1Param("COB_FACTORIAL", COB_FACTORIAL);
+    addFunction0Param("COB_E", COB_E);
+    addFunction0Param("COB_PI", COB_PI);
+    addFunction1Param("COB_SIGN", COB_SIGN);
+    addFunction2Param("COB_ANNUITY", COB_ANNUITY);
     addFunctionAParam("COB_PRESENT_VALUE", COB_PRESENT_VALUE);
-    addFunctionAParam("COB_MAX",        COB_MAX);
-    addFunctionAParam("COB_MIN",        COB_MIN);
-    addFunctionAParam("COB_MEAN",       COB_MEAN);
-    addFunctionAParam("COB_MEDIAN",     COB_MEDIAN);
-    addFunctionAParam("COB_MIDRANGE",   COB_MIDRANGE);
-    addFunctionAParam("COB_RANGE",      COB_RANGE);
-    addFunctionAParam("COB_SUM",        COB_SUM);
-    addFunctionAParam("COB_VARIANCE",   COB_VARIANCE);
+    addFunctionAParam("COB_MAX", COB_MAX);
+    addFunctionAParam("COB_MIN", COB_MIN);
+    addFunctionAParam("COB_MEAN", COB_MEAN);
+    addFunctionAParam("COB_MEDIAN", COB_MEDIAN);
+    addFunctionAParam("COB_MIDRANGE", COB_MIDRANGE);
+    addFunctionAParam("COB_RANGE", COB_RANGE);
+    addFunctionAParam("COB_SUM", COB_SUM);
+    addFunctionAParam("COB_VARIANCE", COB_VARIANCE);
     addFunctionAParam("COB_STANDARD_DEVIATION", COB_STANDARD_DEVIATION);
-    addFunctionAParam("COB_ORD_MAX",    COB_ORD_MAX);
-    addFunctionAParam("COB_ORD_MIN",    COB_ORD_MIN);
+    addFunctionAParam("COB_ORD_MAX", COB_ORD_MAX);
+    addFunctionAParam("COB_ORD_MIN", COB_ORD_MIN);
     addFunction1Param("COB_HIGHEST_ALGEBRAIC", COB_HIGHEST_ALGEBRAIC);
-    addFunction1Param("COB_LOWEST_ALGEBRAIC",  COB_LOWEST_ALGEBRAIC);
+    addFunction1Param("COB_LOWEST_ALGEBRAIC", COB_LOWEST_ALGEBRAIC);
     addFunctionAParam("COB_CONCATENATE", COB_CONCATENATE);
-    addFunction1Param("COB_LENGTH",     COB_LENGTH);
+    addFunction1Param("COB_LENGTH", COB_LENGTH);
     addFunction1Param("COB_BYTE_LENGTH", COB_BYTE_LENGTH);
     addFunction1Param("COB_STORED_CHAR_LENGTH", COB_STORED_CHAR_LENGTH);
     addFunction1Param("COB_LOWER_CASE", COB_LOWER_CASE);
     addFunction1Param("COB_UPPER_CASE", COB_UPPER_CASE);
-    addFunction1Param("COB_REVERSE",    COB_REVERSE);
-    addFunction2Param("COB_TRIM",       COB_TRIM);
+    addFunction1Param("COB_REVERSE", COB_REVERSE);
+    addFunction2Param("COB_TRIM", COB_TRIM);
     addFunctionAParam("COB_SUBSTITUTE", COB_SUBSTITUTE);
     addFunctionAParam("COB_SUBSTITUTE_CASE", COB_SUBSTITUTE_CASE);
-    addFunction1Param("COB_CHAR",       COB_CHAR);
-    addFunction1Param("COB_ORD",        COB_ORD);
-    addFunction1Param("COB_NUMVAL",     COB_NUMVAL);
-    addFunction2Param("COB_NUMVAL_C",   COB_NUMVAL_C);
-    addFunction1Param("COB_NUMVAL_F",   COB_NUMVAL_F);
+    addFunction1Param("COB_CHAR", COB_CHAR);
+    addFunction1Param("COB_ORD", COB_ORD);
+    addFunction1Param("COB_NUMVAL", COB_NUMVAL);
+    addFunction2Param("COB_NUMVAL_C", COB_NUMVAL_C);
+    addFunction1Param("COB_NUMVAL_F", COB_NUMVAL_F);
     addFunction1Param("COB_TEST_NUMVAL", COB_TEST_NUMVAL);
     addFunction2Param("COB_TEST_NUMVAL_C", COB_TEST_NUMVAL_C);
     addFunction1Param("COB_TEST_NUMVAL_F", COB_TEST_NUMVAL_F);
@@ -4165,22 +4750,24 @@ class MyParser {
     addFunction0Param("COB_WHEN_COMPILED", COB_WHEN_COMPILED);
     addFunction1Param("COB_DATE_OF_INTEGER", COB_DATE_OF_INTEGER);
     addFunction1Param("COB_INTEGER_OF_DATE", COB_INTEGER_OF_DATE);
-    addFunction1Param("COB_DAY_OF_INTEGER",  COB_DAY_OF_INTEGER);
-    addFunction1Param("COB_INTEGER_OF_DAY",  COB_INTEGER_OF_DAY);
+    addFunction1Param("COB_DAY_OF_INTEGER", COB_DAY_OF_INTEGER);
+    addFunction1Param("COB_INTEGER_OF_DAY", COB_INTEGER_OF_DAY);
     addFunction0Param("COB_SECONDS_PAST_MIDNIGHT", COB_SECONDS_PAST_MIDNIGHT);
     addFunction2Param("COB_COMBINED_DATETIME", COB_COMBINED_DATETIME);
     addFunction2Param("COB_DATE_TO_YYYYMMDD", COB_DATE_TO_YYYYMMDD);
-    addFunction2Param("COB_YEAR_TO_YYYY",     COB_YEAR_TO_YYYY);
+    addFunction2Param("COB_YEAR_TO_YYYY", COB_YEAR_TO_YYYY);
     addFunction1Param("COB_TEST_DATE_YYYYMMDD", COB_TEST_DATE_YYYYMMDD);
-    addFunction1Param("COB_TEST_DAY_YYYYDDD",   COB_TEST_DAY_YYYYDDD);
-    addFunction1Param("COB_LOCALE_DATE",    COB_LOCALE_DATE);
-    addFunction1Param("COB_LOCALE_TIME",    COB_LOCALE_TIME);
+    addFunction1Param("COB_TEST_DAY_YYYYDDD", COB_TEST_DAY_YYYYDDD);
+    addFunction1Param("COB_LOCALE_DATE", COB_LOCALE_DATE);
+    addFunction1Param("COB_LOCALE_TIME", COB_LOCALE_TIME);
     addFunction2Param("COB_LOCALE_COMPARE", COB_LOCALE_COMPARE);
     addFunction0Param("COB_CURRENCY_SYMBOL", COB_CURRENCY_SYMBOL);
     addFunction0Param("COB_MONETARY_DECIMAL_POINT", COB_MONETARY_DECIMAL_POINT);
-    addFunction0Param("COB_MONETARY_THOUSANDS_SEPARATOR", COB_MONETARY_THOUSANDS_SEPARATOR);
+    addFunction0Param(
+        "COB_MONETARY_THOUSANDS_SEPARATOR", COB_MONETARY_THOUSANDS_SEPARATOR);
     addFunction0Param("COB_NUMERIC_DECIMAL_POINT", COB_NUMERIC_DECIMAL_POINT);
-    addFunction0Param("COB_NUMERIC_THOUSANDS_SEPARATOR", COB_NUMERIC_THOUSANDS_SEPARATOR);
+    addFunction0Param(
+        "COB_NUMERIC_THOUSANDS_SEPARATOR", COB_NUMERIC_THOUSANDS_SEPARATOR);
     addFunction1Param("COB_RANDOM", COB_RANDOM);
     addFunction2Param("COB_BOOLEAN_OF_INTEGER", COB_BOOLEAN_OF_INTEGER);
     addFunction1Param("COB_INTEGER_OF_BOOLEAN", COB_INTEGER_OF_BOOLEAN);
@@ -4188,32 +4775,256 @@ class MyParser {
 
     // ── WML function aliases ────────────────────────────────
     // The function names WML uses differ from the registered names; aliases are filled in here
-    addFunction1Param("ACOS",         fnArcCos);
-    addFunction1Param("ASIN",         fnArcSin);
-    addFunction1Param("ATAN",         fnArcTan);
-    addFunction0Param("PI",           fnPi);
-    addFunction2Param("RAND",         fnRandomRange);
+    addFunction1Param("ACOS", fnArcCos);
+    addFunction1Param("ASIN", fnArcSin);
+    addFunction1Param("ATAN", fnArcTan);
+    addFunction0Param("PI", fnPi);
+    addFunction2Param("RAND", fnRandomRange);
     // ROUND and Round are case-insensitive; Round is registered as a FuncA, ROUND inherits it automatically
-    addFunction1Param("VAL",          fnStrToFloat);
-    addFunction1Param("COLOR2HEX",    fnColorToHex);
-    addFunction1Param("HEX2COLOR",    fnHexToColor);
-    addFunction1Param("DATE2STR",     fnDateToStr);
+    addFunction1Param("VAL", fnStrToFloat);
+    addFunction1Param("COLOR2HEX", fnColorToHex);
+    addFunction1Param("HEX2COLOR", fnHexToColor);
+    addFunction1Param("DATE2STR", fnDateToStr);
     addFunction1Param("DATETIME2STR", fnDateTimeToStr);
-    addFunction1Param("TIME2STR",     fnTimeToStr);
-    addFunction1Param("STR2DATE",     fnStrToDate);
+    addFunction1Param("TIME2STR", fnTimeToStr);
+    addFunction1Param("STR2DATE", fnStrToDate);
     addFunction1Param("STR2DATETIME", fnStrToDateTime);
-    addFunction1Param("STR2TIME",     fnStrToTime);
-    addFunction2Param("INT2HEX",      fnIntToHex);
-    addFunction1Param("HEX2INT",      fnHexToInt);
-    addFunction1Param("HEX2STR",      fnHexToStr);
-    addFunction1Param("STR2HEX",      fnStrToHex);
-    addFunction1Param("DAYNAME",      tt_DAYNAME);
-    addFunction1Param("LOWERA",       fnLOWER);
-    addFunction1Param("UPPERA",       fnUPPER);
-    addFunction1Param("LENA",         fnAnsiLength);
-    addFunction3Param("MIDA",         fnAnsiMid);
+    addFunction1Param("STR2TIME", fnStrToTime);
+    addFunction2Param("INT2HEX", fnIntToHex);
+    addFunction1Param("HEX2INT", fnHexToInt);
+    addFunction1Param("HEX2STR", fnHexToStr);
+    addFunction1Param("STR2HEX", fnStrToHex);
+    addFunction1Param("DAYNAME", tt_DAYNAME);
+    addFunction1Param("LOWERA", fnLOWER);
+    addFunction1Param("UPPERA", fnUPPER);
+    addFunction1Param("LENA", fnAnsiLength);
+    addFunction3Param("MIDA", fnAnsiMid);
     // VAR is handled specially in _callFunction; it needs a placeholder so findIdent can find it
-    addFunction2Param("VAR",          (v1, v2) => v2);
+    addFunction2Param("VAR", (v1, v2) => v2);
+
+    // ══════════════════════════════════════════════════════════════
+    // Adds functions that were never registered before (gaps found by
+    // cross-referencing the self-test report). Most of the underlying
+    // logic already exists with a tt_ prefix -- this just adds the
+    // official names the test cases expect; a few tt_ versions return a
+    // DateTime instead of a Delphi numeric serial, so those use the new
+    // wrapper functions above instead; logic that was genuinely entirely
+    // missing was written fresh.
+    // ══════════════════════════════════════════════════════════════
+
+    // -- String functions --
+    addFunction2Param("LeftPad2", tt_PADL);
+    addFunction2Param("RightPad2", tt_PADR);
+    addFunction2Param("CenterPad", tt_PADC);
+    addFunction3Param("LeftPad", tt_LPAD);
+    addFunction3Param("RightPad", tt_RPAD);
+    addFunction2Param("RepeatStr", tt_REPEAT);
+    addFunction2Param("CountStrOccur", tt_COUNTSTR);
+    addFunction2Param("StartsWithStr", tt_STARTSWITH);
+    addFunction2Param("EndsWithStr", tt_ENDSWITH);
+    addFunction2Param("ContainsStr2", tt_CONTAINS);
+    addFunction3Param("SplitStr", tt_SPLIT);
+    addFunction2Param("SplitCount", tt_SPLITCOUNT);
+    addFunction2Param("JoinStr", tt_JOIN);
+    addFunction3Param("TokenAt", tt_TOKENAT);
+    addFunction1Param("CapWords", tt_CAPWORDS);
+    addFunction2Param("CharAt", tt_CHARAT);
+    addFunction3Param("IndexOfStr", (v1, v2, v3) => tt_INDEXOF(v2, v1, v3));
+    addFunction2Param("LastIndexOfStr", (v1, v2) => tt_LASTINDEXOF(v2, v1));
+    addFunction2Param("RemoveChars", tt_REMOVECHARS);
+    addFunction2Param("KeepChars", tt_KEEPCHARS);
+    addFunction1Param("OnlyDigits", tt_ONLYDIGITS);
+    addFunction1Param("OnlyAlpha", tt_ONLYALPHA);
+    addFunction3Param("MaskStr", tt_MASK);
+    addFunction3Param("UnmaskStr", tt_UNMASK);
+    addFunction1Param("SlugifyStr", tt_SLUGIFY);
+    addFunction1Param("HtmlEncodeStr", tt_HTMLENCODE);
+    addFunction1Param("HtmlDecodeStr", tt_HTMLDECODE);
+    addFunction1Param("UrlEncodeStr", tt_URLENCODE);
+    addFunctionAParam("ConcatenateStr", fnConcatenateStr);
+    addFunction1Param("StoredCharLength", fnStoredCharLength);
+    addFunction1Param("LowerCaseValue", tt_AsLower);
+    addFunction1Param("UpperCaseValue", tt_AsUpper);
+    addFunction1Param("ReverseStr", fnReverseStr);
+    addFunctionAParam("SubstituteStr", fnSubstituteStr);
+    addFunctionAParam("SubstituteCaseStr", fnSubstituteCaseStr);
+    addFunction1Param("AsQuoted", tt_AsQuoted);
+    addFunction1Param("AsSqlStr", fnAsSqlStr);
+    addFunction2Param("FillChar", fnFillChar);
+    addFunction2Param("EllipsisStr", tt_ELLIPSIS);
+    addFunction2Param("TruncWords", tt_TRUNCWORDS);
+    addFunction1Param("INT2STR", fnIntToStr);
+    addFunction1Param("STR2FLOAT", fnStrToFloat);
+    addFunction1Param("STR2INT", fnStrToInt);
+    addFunction1Param("FLOAT2STR", fnFloatToStr);
+    addFunction1Param("ByteLength", fnByteLength);
+
+    // -- Math functions --
+    addFunction1Param("FIX", fnFloor);
+    addFunction2Param("GreatestCommonDivisor", tt_GCD);
+    addFunction3Param("ClampValue", tt_CLAMP);
+    addFunction3Param("LerpValue", tt_LERP);
+    addFunction3Param("IsBetween", tt_BETWEEN);
+    addFunction2Param("PercentOf", tt_PERCENT);
+    addFunction2Param("RoundBankers", tt_ROUNDBANK);
+    addFunction1Param("IsPrimeNumber", tt_ISPRIME);
+    addFunction1Param("Fibonacci", tt_FIB);
+    addFunction1Param("Log2Value", tt_LOG2);
+    addFunction2Param("LogNValue", tt_LOGN);
+    addFunction2Param("HypotOf", tt_HYPOT);
+    addFunction1Param("DegreeToRad", tt_DEG2RAD);
+    addFunction1Param("RadToDegree", tt_RAD2DEG);
+    addFunction1Param("CubeRoot", tt_CBRT);
+    addFunction1Param("EvenCeil", tt_EVEN);
+    addFunctionAParam("SumOfSquares", tt_SUMSQ);
+    addFunctionAParam("ProductOf", tt_PRODUCT);
+    addFunctionAParam("HarmMeanValue", tt_HARMEAN);
+    addFunctionAParam("GeoMeanValue", tt_GEOMEAN);
+    addFunctionAParam("QuartileOf", tt_QUARTILE);
+    addFunction1Param("Exp10Value", fnExp10Value);
+    addFunction1Param("Log10Value", fnLog10Value);
+    addFunction1Param("LOG", fnLog10Value);
+    addFunction2Param("RemainderValue", fnRemainderValue);
+    addFunction1Param("ToIntegerValue", fnToIntegerValue);
+    addFunction1Param("IntegerPart", fnTrunc);
+    addFunction1Param("FractionPart", fnFrac);
+    addFunction1Param("Factorial", fnFactorial);
+    addFunction0Param("EulerNumber", fnEulerNumber);
+    addFunction1Param("SignOf", fnSignOf);
+    addFunction2Param("Annuity", fnAnnuity);
+    addFunctionAParam("PresentValue", tt_NPV);
+    addFunctionAParam("MeanValue", fnMeanValue);
+    addFunctionAParam("MedianValue", fnMedianValue);
+    addFunctionAParam("MidRangeValue", fnMidRangeValue);
+    addFunctionAParam("RangeValue", fnRangeValue);
+    addFunctionAParam("SumOfValues", tt_ARRSUM);
+    addFunctionAParam("VarianceValue", fnVarianceValue);
+    addFunctionAParam("StandardDeviation", fnStandardDeviation);
+    addFunctionAParam("OrdMax", fnOrdMax);
+    addFunctionAParam("OrdMin", fnOrdMin);
+    addFunction1Param("HighestAlgebraic", fnHighestAlgebraic);
+    addFunction1Param("LowestAlgebraic", fnLowestAlgebraic);
+    addFunction1Param("Ord", fnOrd);
+
+    // -- Date and time functions --
+    addFunction3Param("DateDiffValue", tt_DATEDIFF);
+    addFunction2Param("WorkDaysBetween", tt_WORKDAYS);
+    addFunction1Param("QuarterOf", tt_QUARTER);
+    addFunction1Param("RocDateOf", tt_RDATE);
+    addFunction1Param("RocDateTimeOf", tt_RDATETIME);
+    addFunction2Param("YearFraction", tt_YEARFRAC);
+    addFunction2Param("CalcAge", tt_AGE);
+    addFunction2Param("FiscalQuarter", tt_FISCALQUARTER);
+    addFunction2Param("FiscalYear", tt_FISCALYEAR);
+    addFunction2Param("DateToYyyymmdd", fnDateToYyyymmdd);
+    addFunction2Param("YearToYyyy", fnYearToYyyy);
+    addFunction1Param("TestDateYyyymmdd", fnTestDateYyyymmdd);
+    addFunction1Param("TestDayYyyyddd", fnTestDayYyyyddd);
+    addFunction2Param("AddWorkDays", fnAddWorkDaysSerial);
+    addFunction2Param("BomDate", fnBomDateSerial);
+    addFunction2Param("CombinedDateTime", fnCombinedDateTime);
+    addFunction3Param("DateAddValue", fnDateAddValueSerial);
+    addFunction1Param("DateOfInteger", fnDateOfInteger);
+    addFunction2Param("DatePeriodEnd", fnDatePeriodEndSerial);
+    addFunction2Param("DatePeriodStart", fnDatePeriodStartSerial);
+    addFunction1Param("DayNameOf", tt_DAYNAME);
+    addFunction1Param("DayOfInteger", fnDayOfInteger);
+    addFunction2Param("EomDate", fnEomDateSerial);
+    addFunction1Param("IntegerOfDate", fnIntegerOfDate);
+    addFunction1Param("IntegerOfDay", fnIntegerOfDay);
+    addFunction1Param("MonthNameOf", tt_MONTHNAME);
+    addFunction2Param("NextWeekDay", fnNextWeekDaySerial);
+    addFunction2Param("PrevWeekDay", fnPrevWeekDaySerial);
+
+    // -- Conditional functions --
+    addFunction2Param("NvlValue", tt_NVL);
+    addFunctionAParam("CoalesceValue", tt_COALESCE);
+    addFunction1Param("ToIntSafe", fnToIntSafe);
+    addFunction1Param("ToFloatSafe", fnToFloatSafe);
+    addFunction1Param("TypeNameOf", tt_TYPENAME);
+    addFunctionAParam("SwitchValue", tt_SWITCH);
+    addFunctionAParam("DecodeValue", tt_DECODE);
+    addFunction1Param("TYPE", fnVarType);
+    addFunction3Param("Nvl2Value", tt_NVL2);
+
+    // -- Encoding and conversion functions --
+    addFunction2Param("ZeroFill", tt_ZFILL);
+    addFunction2Param("NumberFormat", tt_NUMFMT);
+    addFunction1Param("CommaFormat", tt_COMMAFMT);
+    addFunction1Param("AsStringValue", tt_AsString);
+    addFunction1Param("AsInt", tt_AsInt);
+    addFunction1Param("AsFloat", tt_AsFloat);
+    addFunction1Param("AsBool", tt_AsBool);
+    addFunction2Param("AsFixed", tt_AsFixed);
+    addFunction2Param("AsCurr", tt_AsCurr);
+    addFunction2Param("AsPercent", tt_AsPct);
+    addFunction2Param("AsScientific", tt_AsSci);
+    addFunction1Param("AsYesNo", tt_AsYN);
+    addFunction1Param("AsTrueFalse", tt_AsTF);
+    addFunction1Param("AsZeroOne", tt_As10);
+    addFunction1Param("AsBit", tt_AsBit);
+    addFunction2Param("AsHex", tt_AsHex);
+    addFunction1Param("AsOctal", tt_AsOct);
+    addFunction1Param("AsISO8601", tt_AsISO);
+    addFunction1Param("AsRocDate", tt_AsRDate);
+    addFunction1Param("AsRocDateTime", tt_AsRDateTime);
+    addFunction1Param("AsSlug", tt_AsSlug);
+    addFunction1Param("AsUpper", tt_AsUpper);
+    addFunction1Param("AsLower", tt_AsLower);
+    addFunction1Param("AsTrimmed", tt_AsTrimmed);
+    addFunction1Param("AsDQuoted", tt_AsDQuoted);
+    addFunction1Param("AsNullable", tt_AsNullable);
+    addFunction2Param("AsDefault", tt_AsDefault);
+    addFunction1Param("AsJson", tt_AsJson);
+    addFunctionAParam("AsCsv", tt_AsCsv);
+    addFunction1Param("NumVal", fnStrToFloat);
+    addFunction2Param("NumValC", fnNumValC);
+    addFunction1Param("NumValF", fnNumValF);
+    addFunction1Param("TestNumVal", fnTestNumVal);
+    addFunction2Param("TestNumValC", fnTestNumValC);
+    addFunction1Param("TestNumValF", fnTestNumVal);
+
+    // -- Other functions --
+    addFunctionAParam("ArrayJoin", tt_ARRJOIN);
+    addFunctionAParam("ArrayMax", tt_ARRMAX);
+    addFunctionAParam("ArrayMin", tt_ARRMIN);
+    addFunctionAParam("ArraySum", tt_ARRSUM);
+    addFunctionAParam("ArrayAverage", tt_ARRAVG);
+    addFunctionAParam("ArrayContains", tt_ARRCONTAINS);
+    addFunctionAParam("ArrayUnique", tt_ARRUNIQ);
+    addFunctionAParam("ChooseValue", tt_CHOOSE);
+    addFunction1Param("ToHexStr", tt_TOHEX);
+    addFunction1Param("FromHex", tt_FROMHEX);
+    addFunction2Param("ToBinary", tt_TOBIN);
+    addFunction1Param("FromBinary", tt_FROMBIN);
+    addFunction2Param("BitOrValue", tt_BITOR);
+    addFunction2Param("BitAndValue", tt_BITAND);
+    addFunction2Param("BitXorValue", tt_BITXOR);
+    addFunction1Param("BitNotValue", tt_BITNOT);
+    addFunction2Param("BitShiftLeft", tt_BITSHL);
+    addFunction2Param("BitShiftRight", tt_BITSHR);
+    addFunction1Param("ByteSizeOf", tt_BYTESIZE);
+    addFunction1Param("CheckSumOf", tt_CHECKSUM);
+    addFunction3Param("PaymentValue", tt_PMT);
+    addFunction3Param("PresentValueOf", tt_PV);
+    addFunction4Param("FutureValue", tt_FV);
+    addFunction3Param("NumOfPeriods", tt_NPER);
+    addFunction3Param("RateOf", tt_RATE);
+    addFunction4Param("InterestPmt", tt_IPMT);
+    addFunction4Param("PrincipalPmt", tt_PPMT);
+    addFunction2Param("LocaleCompare", fnStandardCompare);
+    addFunction0Param("CurrencySymbol", () => 'NT\$');
+    addFunction0Param("MonetaryDecimalPoint", () => '.');
+    addFunction0Param("MonetaryThousandsSeparator", () => ',');
+    addFunction0Param("NumericDecimalPoint", () => '.');
+    addFunction0Param("NumericThousandsSeparator", () => ',');
+    addFunction2Param("BooleanOfInteger", tt_TOBIN);
+    addFunction1Param("IntegerOfBoolean", tt_FROMBIN);
+    addFunction2Param("StandardCompare", fnStandardCompare);
+    addFunction1Param("HashOf", tt_HASH);
+    addFunctionAParam("COUNT", fnCOUNT);
+    addFunctionAParam("HIGH", fnHIGH);
+    addFunctionAParam("LOW", fnLOW);
   }
 }
 
@@ -4245,7 +5056,8 @@ class WapEvaluator {
   /// Evaluates the expression, returns the result. Returns null on failure and sets lastError.
   dynamic eval(String expr, {bool nul = false}) {
     if (expr.isEmpty) return null;
-    lastError = '';   // clears the previous error before every evaluation (avoids a stale value causing a false hasError)
+    lastError =
+        ''; // clears the previous error before every evaluation (avoids a stale value causing a false hasError)
     _p.expression = expr;
     _p.nul = nul;
     if (_p.analyzeExpression()) return _p.value;
@@ -4260,7 +5072,7 @@ class WapEvaluator {
   /// Evaluates a condition expression, returns bool. Returns false on failure.
   bool cond(String expr) {
     if (expr.isEmpty) return false;
-    lastError = '';   // clears the previous error before every evaluation
+    lastError = ''; // clears the previous error before every evaluation
     _p.expression = expr;
     if (_p.analyzeExpression()) {
       final v = _p.value;
@@ -4284,8 +5096,8 @@ class WapEvaluator {
   /// Sets a whole row of data at once (the Map's keys are variable names; supports the 'table.field' format)
   void setRow(String table, Map<String, dynamic> row) {
     row.forEach((k, v) {
-      _p.setVar("$table.$k", v);  // em.eno, em.ename, ...
-      _p.setVar(k, v);            // also sets the short name eno, ename, ...
+      _p.setVar("$table.$k", v); // em.eno, em.ename, ...
+      _p.setVar(k, v); // also sets the short name eno, ename, ...
     });
   }
 

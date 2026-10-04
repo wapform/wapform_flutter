@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<wml>
+  <card id="P" title="User Account Management" width="960">
+    <dbtable tablename="users" indexfieldnames="USERID">
+      <field fieldname="USERID" displaylabel="Employee ID"/>
+      <field fieldname="USERNAME" displaylabel="Employee Name"/>
+      <field fieldname="PWD" displaylabel="Password"/>
+      <field fieldname="DESCRIPTION" displaylabel="Description"/>
+      <field fieldname="EMAIL" displaylabel="Email"/>
+      <field fieldname="LASTTIME" displaylabel="Last Login Time"/>
+      <field fieldname="AUTOLOGIN" displaylabel="Auto Login"/>
+      <field fieldname="LASTDATE" displaylabel="Last Login Date"/>
+      <field fieldname="GRP" displaylabel="Department"/>
+      <onevent type="beforepost">
+        <dbquery id="log"><![CDATA[select * from login where uid='$users.userid']]></dbquery>
+        <if cnd="log.count=0">
+        <setvar name="LOGINITM" value="0"/>
+        <dbquery id="mnu"><![CDATA[select * from mnu]]></dbquery>
+        <dbquery id="maxitm"><![CDATA[select max(itm) as itm from login]]></dbquery>
+        <setvar name="LOGINITM" value="maxitm.itm+1"/>
+        <output dataset="mnu">
+          <group>
+            <dbquery><![CDATA[insert into login values($mnu.id,$LOGINITM,'$users.userid',1,0)]]></dbquery>
+          </group>
+        </output>
+        </if>
+      </onevent>
+      <onevent type="beforedelete">
+        <dbquery><![CDATA[delete from login where uid='$users.userid']]></dbquery>
+      </onevent>
+    </dbtable>
+    <datasource dataset="users">
+      <p align="center">
+        <navigator/>
+      </p>
+      <dbgrid height="400">
+        <item field="USERID" size="20"/>
+        <item field="USERNAME" size="20"/>
+        <item field="PWD" size="20"/>
+        <item field="GRP" size="20"/>
+        <item field="LASTDATE" size="20"/>
+        <item field="LASTTIME" size="20"/>
+        <item field="AUTOLOGIN" size="20" type="checkbox" value="Y;N" range="Y;N"/>
+        <item field="EMAIL" size="20"/>
+      </dbgrid>
+    </datasource>
+    <do type="prev" label="Close">
+      <prev/>
+    </do>
+  </card>
+</wml>
+
+

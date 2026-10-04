@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<wml>
+  <card id="P" title="Customer List">
+<p><br/>Please enter the print range and load 80-line report paper<br/><br/>Customer Code:<input name="CUSTNO_FROM" value="000000" lookup="cu;cno;cname" size="10"/>~<input name="CUSTNO_TO" value="ZZZZZZ" lookup="cu;cno;cname" size="10"/><br/><br/>
+      <select name="PL" width="150" height="50" title="Orientation" columns="2">
+      <option value="portrait">Portrait</option>
+      <option value="landscape">Landscape</option>
+      </select>
+      <br/>
+      <br/>
+      <select name="SP" width="150" height="50" title="Output" columns="2">
+      <option value="S">Preview</option>
+      <option value="P">Print</option>
+      </select>
+      <br/>
+</p>
+    <do type="reset" label="Reset">
+      <refresh>
+        <setvar name="CUSTNO_FROM" value="00000"/>
+        <setvar name="CUSTNO_TO" value="99999"/>
+      </refresh>                                                                
+    </do>
+    <do type="accept" label="Print">
+      <go href="#P1"/>
+    </do>
+    <do type="prev" label="Close">
+      <prev/>
+    </do>
+  </card>
+  <card id="P1" title="Print Report" device="$(IF(SP='S','PRV','PRN'))" paper="A4" orientation="$(PL)">
+    <setvar name="ROWIDX" value="0"/>
+    <dbquery id="sys"><![CDATA[select * from sys]]></dbquery>
+    <dbquery id="cu"><![CDATA[select * from cu where (cno>='$CUSTNO_FROM') and (cno<='$CUSTNO_TO')]]></dbquery>
+    <report dataset="cu" dialog="CNo" rows="50">
+      <page>
+        <setvar name="ROWIDX" value="1"/>
+        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr><td colspan="3"><p align="center"><big>$(sys.company)</big></p></td></tr>
+          <tr><td colspan="3"><p align="center"><big>Customer List</big></p></td></tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td width="150">Page:$(PAGE)</td>
+          </tr>
+          <tr>
+            <td>Customer Code:$(CUSTNO_FROM)~$(CUSTNO_TO)</td>
+            <td></td>
+            <td>Date:$(DATE)</td>
+          </tr>
+        </table>
+<p align="center">12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456</p>
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" align="center">
+          <tr class="row">
+            <th width="100">Customer Code</th>
+            <th width="100">Customer Name</th>
+            <th width="150">Fax</th>
+            <th width="80">Contact</th>
+            <th>Invoice Address</th>
+          </tr>
+          <tr class="row">
+            <th></th>
+            <th>Phone</th>
+            <th></th>
+            <th>Tax ID</th>
+            <th>Company Address</th>
+          </tr>
+          <group>
+            <tr class="$(IF(ROWIDX mod 2 = 1, 'row1', 'row2'))">
+              <td align="center">$(cu.CNo)</td>
+              <td>$(cu.CName)</td>
+              <td>$(cu.Fax)</td>
+              <td>$(cu.Contact)</td>
+              <td rowspan="2">$(cu.Addr1)</td>
+            </tr>
+            <tr class="$(IF(ROWIDX mod 2 = 1, 'row1', 'row2'))">
+              <td></td>
+              <td>$(cu.Phone)</td>
+              <td>&#160;</td>
+              <td>$(cu.Ac)</td>
+            </tr>
+            <setvar name="ROWIDX" value="ROWIDX+1"/>
+          </group>
+        </table>
+      </page>
+			<p align="center">12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456</p>
+    </report>
+  </card>
+</wml>

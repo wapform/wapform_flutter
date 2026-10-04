@@ -1,0 +1,167 @@
+<?xml version="1.0"?>
+<wml>
+  <card id="P" title="Payment Receipt Master" width="1200">
+
+    <setvar name="QUERYGUARD" value="0"/>
+
+    <setvar name="_SHIPDATE_FROM" value="''"/>
+    <setvar name="_SHIPDATE_TO" value="''"/>
+    <setvar name="_CUSTNO_FROM" value="''"/>
+    <setvar name="_CUSTNO_TO" value="''"/>
+    <setvar name="_REMARK_KW" value="''"/>
+    <setvar name="_CUSTSHORT_KW" value="''"/>
+    <setvar name="_TAXID_KW" value="''"/>
+    <setvar name="_BOARDNO_KW" value="''"/>
+    <setvar name="_CHKNO_KW" value="''"/>
+    <setvar name="_PAYTYPE_KW" value="''"/>
+    <setvar name="_AMOUNTTAX_EQ" value="''"/>
+    <setvar name="_SHIPPER_KW" value="''"/>
+
+    <dbtable tablename="sys">
+      <field fieldname="TaxRate" displaylabel="Sales Tax Rate"/>
+      <field fieldname="Company" displaylabel="Company Name"/>
+      <field fieldname="AcBeg" displaylabel="Closing Date From"/>
+      <field fieldname="AcEnd" displaylabel="Closing Date To"/>
+    </dbtable>
+
+    <dbquery id="sh"><![CDATA[select
+    sh.sno,sh.sdate,sh.cno,cu.cshort,cu.AC,sh.Pay,sh.TaxRate,sh.Amount,sh.Tax,sh.AmountTax,sh.Paid,sh.GetDate,sh.PayDate,
+    sh.gno,sh.fty,sh.ChkNo,sh.fno,sh.rempay,fm.fname
+    from sh, cu, fm where sh.cno=cu.cno and sh.fno=fm.fno and sh.sno='XYZ' order by sh.sno]]>
+      <field fieldname="sno" displaylabel="Shipment No"/>
+      <field fieldname="sdate" displaylabel="Ship Date"/>
+      <field fieldname="cno" displaylabel="Customer Code"/>
+      <field fieldname="cshort" displaylabel="Customer Short"/>
+      <field fieldname="AC" displaylabel="Tax ID"/>
+      <field fieldname="Pay" displaylabel="Payment"/>
+      <field fieldname="TaxRate" displaylabel="Sales Tax Rate"/>
+      <field fieldname="Amount" displaylabel="Shipment Amount"/>
+      <field fieldname="Tax" displaylabel="Tax Rate"/>
+      <field fieldname="AmountTax" displaylabel="Amount incl. Tax"/>
+      <field fieldname="Paid" displaylabel="Paid Amount"/>
+      <field fieldname="Taxx" displaylabel="Sales Tax" type="integer" value="sh.Amount*sh.TaxRate/100"/>
+      <field fieldname="UnPaid" displaylabel="Balance Due" type="integer" value="sh.Amount+sh.Taxx-sh.Paid"/>
+      <field fieldname="GetDate" displaylabel="Receipt Date"/>
+      <field fieldname="PayDate" displaylabel="Due Date"/>
+      <field fieldname="gno" displaylabel="Pallet No"/>
+      <field fieldname="fty" displaylabel="Qty of Pieces"/>
+      <field fieldname="ChkNo" displaylabel="Check No"/>
+      <field fieldname="fno" displaylabel="Shipper Code"/>
+      <field fieldname="fname" displaylabel="Shipper Name"/>
+      <field fieldname="RemPay" displaylabel="Remarks"/>
+    </dbquery>
+
+    <function id="xyz">
+      <setvar name="QUERYGUARD" value="QUERYGUARD+1"/>
+      <if cnd="QUERYGUARD=1">
+      <setvar name="SQL_WHERE" value="''"/>
+      <setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.sdate &gt;= '''+SHIPDATE_FROM+''''" cnd="SHIPDATE_FROM&lt;&gt;''"/>
+      <setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.sdate &lt;= '''+SHIPDATE_TO+''''" cnd="SHIPDATE_TO&lt;&gt;''"/>
+      <if cnd="CUSTNO_TO=''">
+      <setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.cno like '''+CUSTNO_FROM+'%'''" cnd="CUSTNO_FROM&lt;&gt;''"/>
+      <else/>
+      <setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.cno &gt;= '''+CUSTNO_FROM+''''" cnd="CUSTNO_FROM&lt;&gt;''"/>
+      <setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.cno &lt;= '''+CUSTNO_TO+''''" cnd="CUSTNO_TO&lt;&gt;''"/>
+      </if>
+      <setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.rempay like ''%'+REMARK_KW+'%'''" cnd="REMARK_KW&lt;&gt;''"/>
+      <setvar name="SQL_WHERE" value="SQL_WHERE+' AND cu.cshort like '''+CUSTSHORT_KW+'%'''" cnd="CUSTSHORT_KW&lt;&gt;''"/>
+      <setvar name="SQL_WHERE" value="SQL_WHERE+' AND fm.fname like '''+SHIPPER_KW+'%'''" cnd="SHIPPER_KW&lt;&gt;''"/>
+      <setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.ac like '''+TAXID_KW+'%'''" cnd="TAXID_KW&lt;&gt;''"/>
+      <setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.gno like '''+BOARDNO_KW+'%'''" cnd="BOARDNO_KW&lt;&gt;''"/>
+      <setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.chkno like '''+CHKNO_KW+'%'''" cnd="CHKNO_KW&lt;&gt;''"/>
+      <setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.amounttax = '+AMOUNTTAX_EQ" cnd="AMOUNTTAX_EQ&lt;&gt;''"/>
+      <setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.pay like '''+PAYTYPE_KW+''''" cnd="PAYTYPE_KW&lt;&gt;''"/>
+      <setvar name="SQL_WHERE" value="SQL_WHERE+' AND sh.AmountTax-ifnull(sh.Paid,0)>0'" cnd="UNPAID_ONLY='Y'"/>
+      <log meaasge="$SQL_WHERE"/>
+			<setvar name="SQL_WHERE" value="' AND sh.sno=''XYZ'''" cnd="SQL_WHERE=''"/>
+
+    <dbquery id="sh"><![CDATA[
+    select sh.sno,sh.sdate,sh.cno,cu.cshort,cu.AC,sh.Pay,sh.TaxRate,sh.Amount,sh.Tax,sh.AmountTax,sh.Paid,sh.GetDate,sh.PayDate,
+    sh.gno,sh.fty,sh.ChkNo,sh.fno,sh.rempay,fm.fname
+    from sh, cu, fm where sh.cno=cu.cno and sh.fno=fm.fno $SQL_WHERE order by sh.sno
+    ]]>
+    </dbquery>
+
+    <log id="sh"><![CDATA[
+    select sh.sno,sh.sdate,sh.cno,cu.cshort,cu.AC,sh.Pay,sh.TaxRate,sh.Amount,sh.Tax,sh.AmountTax,sh.Paid,sh.GetDate,sh.PayDate,
+    sh.gno,sh.fty,sh.ChkNo,sh.fno,sh.rempay,fm.fname
+    from sh, cu, fm where sh.cno=cu.cno and sh.fno=fm.fno $SQL_WHERE order by sh.sno
+    ]]>
+    </log>
+
+      </if>
+      <setvar name="QUERYGUARD" value="0"/>
+    </function>
+
+<function id="clr">
+  <setvar name="SHIPDATE_FROM"  value="''"/>
+  <setvar name="SHIPDATE_TO"  value="''"/>
+  <setvar name="CUSTNO_FROM" value="''"/>
+  <setvar name="CUSTNO_TO" value="''"/>
+  <setvar name="REMARK_KW" value="''"/>
+  <setvar name="CUSTSHORT_KW" value="''"/>
+  <setvar name="TAXID_KW" value="''"/>
+  <setvar name="BOARDNO_KW" value="''"/>
+  <setvar name="CHKNO_KW" value="''"/>
+  <setvar name="PAYTYPE_KW" value="''"/>
+  <setvar name="AMOUNTTAX_EQ" value="''"/>
+  <setvar name="SHIPPER_KW" value="''"/>
+  <setvar name="UNPAID_ONLY"     value="''"/>
+  <go href="@xyz"/>
+</function>    
+
+<function id="set">
+  <setvar name="_SHIPDATE_FROM"  value="SHIPDATE_FROM"/>
+  <setvar name="_SHIPDATE_TO"  value="SHIPDATE_TO"/>
+  <setvar name="_CUSTNO_FROM" value="CUSTNO_FROM"/>
+  <setvar name="_CUSTNO_TO" value="CUSTNO_TO"/>
+  <setvar name="_REMARK_KW" value="REMARK_KW"/>
+  <setvar name="_CUSTSHORT_KW" value="CUSTSHORT_KW"/>
+  <setvar name="_TAXID_KW" value="TAXID_KW"/>
+  <setvar name="_BOARDNO_KW" value="BOARDNO_KW"/>
+  <setvar name="_CHKNO_KW" value="CHKNO_KW"/>
+  <setvar name="_PAYTYPE_KW" value="PAYTYPE_KW"/>
+  <setvar name="_AMOUNTTAX_EQ" value="AMOUNTTAX_EQ"/>
+  <setvar name="_SHIPPER_KW" value="SHIPPER_KW"/>
+  <setvar name="_UNPAID_ONLY"     value="UNPAID_ONLY"/>
+</function>
+    
+      <table columns="6" align="LLLLLL">
+      <tr>
+      <td width="180">Ship Date Fr:<input name="SHIPDATE_FROM" value="$_SHIPDATE_FROM" size="12"/><br/>Ship Date To:<input name="SHIPDATE_TO" value="$_SHIPDATE_TO" size="12"/></td>
+      <td width="180">Cust Code Fr:<input name="CUSTNO_FROM" value="$_CUSTNO_FROM" size="12" lookup="cu;cno;cshort"/><br/>Cust Code To:<input name="CUSTNO_TO" value="$_CUSTNO_TO" size="12" lookup="cu;cno;cshort"/></td>
+      <td width="180">Short Name:<input name="CUSTSHORT_KW" value="$_CUSTSHORT_KW" size="12"/><br/>Tax ID:<input name="TAXID_KW" value="$_TAXID_KW" size="12"/></td>
+      <td width="140">Incl. Tax:<input name="AMOUNTTAX_EQ" value="$_AMOUNTTAX_EQ" size="10"/><br/>Payment:<input name="PAYTYPE_KW" value="$_PAYTYPE_KW" size="10"/></td>
+      <td width="140">Pallet No:<input name="BOARDNO_KW" value="$_BOARDNO_KW" size="10"/><br/>Check No:<input name="CHKNO_KW" value="$_CHKNO_KW" size="10"/></td>
+      <td width="140">Shipper:<input name="SHIPPER_KW" value="$_SHIPPER_KW" size="10" lookup="sql;fm;select fname from fm order by fno"/><br/>Remarks:<input name="REMARK_KW" value="$_REMARK_KW" size="10"/><br/>Unpaid:<input type="checkbox" name="UNPAID_ONLY" value="Y"/></td>
+      <td><input name="BTN_SEARCH" value="Search" type="button" onclick="@xyz"/><br/><input name="BTN_CLEAR" value="Clear" type="button" onclick="@clr"/></td>
+      </tr>
+      </table>
+    
+    <datasource dataset="sh">
+      <p align="center"><navigator/></p>
+      <dbgrid height="350">
+        <item field="sno" size="16"/>
+        <item field="sdate" size="14"/>
+        <item field="cno" size="16" lookup="cu;cno;cshort"/>
+        <item field="cshort" size="16"/>
+        <item field="ac" size="16"/>
+        <item field="AmountTax" size="16"/>
+        <item field="pay" size="16"/>
+        <item field="Paid" size="16"/>
+        <item field="UnPaid" size="16"/>
+        <item field="GetDate" size="12"/>
+        <item field="PayDate" size="12"/>
+        <item field="fname" size="16"/>
+        <item field="gno" size="10"/>
+        <item field="ChkNo" size="10"/>
+        <item field="fty" size="16"/>
+        <item field="RemPay" size="40"/>
+      </dbgrid>
+    </datasource>
+
+    <do type="prev" label="Close">
+      <prev/>
+    </do>
+  </card>
+</wml>

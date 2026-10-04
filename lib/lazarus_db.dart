@@ -585,8 +585,7 @@ const STransNotActive =
     'Operation cannot be performed on an inactive transaction';
 const STransActive = 'Operation cannot be performed on an active transaction';
 const SFieldNotFound = 'Field not found : "%s"';
-const SInactiveDataset =
-    'Operation cannot be performed on an inactive dataset';
+const SInactiveDataset = 'Operation cannot be performed on an inactive dataset';
 const SInvalidDisplayValues = '"%s" are not valid boolean displayvalues';
 const SInvalidFieldKind = '%s : invalid field kind : ';
 const SInvalidBookmark = 'Invalid bookmark';
@@ -658,8 +657,7 @@ const SIndexFieldMissing = "Cannot access index field '%s'";
 const SNoFieldIndexes = 'No index currently active';
 const SNotIndexField = "Field '%s' is not indexed and cannot be modified";
 const SErrUnknownConnectorType = 'Unknown connector type: "%s"';
-const SNoIndexFieldNameGiven =
-    'Cannot create index "%s": No fields available.';
+const SNoIndexFieldNameGiven = 'Cannot create index "%s": No fields available.';
 const SStreamNotRecognised = 'The data-stream format is not recognized';
 const SNoReaderClassRegistered =
     'There is no TDatapacketReaderClass registered for this kind of data-stream';
@@ -672,8 +670,7 @@ const SRollBackRetaining = 'Rollback and retaining transaction';
 const SErrNoFieldsDefined =
     'Can not create a dataset when there are no fielddefinitions or fields defined';
 const SErrApplyUpdBeforeRefresh = 'Must apply updates before refreshing data';
-const SErrNoDataset =
-    'Missing (compatible) underlying dataset, can not open';
+const SErrNoDataset = 'Missing (compatible) underlying dataset, can not open';
 const SErrDisconnectedPacketRecords =
     'For disconnected TSQLQuery instances, packetrecords must be -1';
 const SErrImplicitNoRollBack =
@@ -686,13 +683,11 @@ const SErrImplicitConnect =
     'Error: attempt to implicitly activate connection "%s".';
 const SErrFailedToUpdateRecord =
     'Failed to apply record updates: %d rows updated.';
-const SErrRefreshNotSingleton =
-    'Refresh SQL resulted in multiple records: %d.';
+const SErrRefreshNotSingleton = 'Refresh SQL resulted in multiple records: %d.';
 const SErrRefreshEmptyResult = 'Refresh SQL resulted in empty result set.';
 const SErrNoKeyFieldForRefreshClause =
     'No key field found to construct refresh SQL WHERE clause';
-const SErrFailedToFetchReturningResult =
-    'Failed to fetch returning result';
+const SErrFailedToFetchReturningResult = 'Failed to fetch returning result';
 const SLogParamValue = 'Parameter "%s" value : "%s"';
 const SFieldError = 'Field "%s" error: ';
 const SInvalidVariant = 'Invalid variant value';
@@ -741,7 +736,14 @@ const List<String> yesNoChars = ['N', "Y"];
 
 // SQLDelimiterCharacters（set of char）
 const Set<String> sqlDelimiterCharacters = {
-  ';', ",", " ", "(", ")", "\r", "\n", "\t"
+  ';',
+  ",",
+  " ",
+  "(",
+  ")",
+  "\r",
+  "\n",
+  "\t"
 };
 
 // LargeInt = Int64 (Dart's int itself is 64-bit)
@@ -976,7 +978,7 @@ const int cpUTF8 = 65001; // CP_UTF8
 class TNamedItem extends TCollectionItem {
   String _name = '';
 
-  TNamedItem(TCollection? aCollection) : super(aCollection);
+  TNamedItem(super.aCollection);
 
   String get name => _name;
   set name(String value) => displayName = value;
@@ -1003,14 +1005,12 @@ class TNamedItem extends TCollectionItem {
 
 // ---- TDefCollection (db.pas L148-161, implementation L2362-2410) ----------------------
 class TDefCollection extends TOwnedCollection {
-  TDataSet? _dataset;
+  final TDataSet? _dataset;
   bool updated = false;
 
   // constructor create(ADataset, AOwner, AClass)（db.pas L2375-2380）
-  TDefCollection(
-      TDataSet? aDataset, TPersistent? aOwner, TCollectionItemFactory aClass)
-      : _dataset = aDataset,
-        super(aOwner, aClass);
+  TDefCollection(TDataSet? aDataset, super.aOwner, super.aClass)
+      : _dataset = aDataset;
 
   TDataSet? get dataset => _dataset;
 
@@ -1022,11 +1022,10 @@ class TDefCollection extends TOwnedCollection {
     if (named.name == '') {
       // Copy(ClassName, 2, 5): drops the leading 'T' and takes 5 characters
       final cn = named.runtimeType.toString();
-      final part = cn.length > 1
-          ? cn.substring(1, cn.length > 6 ? 6 : cn.length)
-          : cn;
+      final part =
+          cn.length > 1 ? cn.substring(1, cn.length > 6 ? 6 : cn.length) : cn;
       if (_dataset != null) {
-        named._name = '${_dataset!.name}$part${named.id + 1}';
+        named._name = '${_dataset.name}$part${named.id + 1}';
       } else {
         named._name = '$part${named.id + 1}';
       }
@@ -1079,16 +1078,15 @@ class TFieldDef extends TNamedItem {
   int _size = 0;
 
   // constructor Create(ACollection: TCollection)（fields.inc L31-36）
-  TFieldDef(TCollection? aCollection) : super(aCollection) {
+  TFieldDef(super.aCollection) {
     _fieldNo = index + 1;
   }
 
   // constructor Create(AOwner, AName, ADataType, ASize, ARequired,
   //   AFieldNo, ACodePage = CP_ACP)（fields.inc L38-61）
-  TFieldDef.named(TFieldDefs aOwner, String aName, TFieldType aDataType,
+  TFieldDef.named(TFieldDefs super.aOwner, String aName, TFieldType aDataType,
       int aSize, bool aRequired, int aFieldNo,
-      [TSystemCodePage aCodePage = cpACP])
-      : super(aOwner) {
+      [TSystemCodePage aCodePage = cpACP]) {
     name = aName;
     _dataType = aDataType;
     _size = aSize;
@@ -1249,8 +1247,8 @@ class TFieldDefs extends TDefCollection {
 
   // class function FieldDefClass: TFieldDefClass（fields.inc L247-250）
   // → a virtual factory method (convention 2), which subclasses can override to swap the item class
-  TFieldDef fieldDefClass(TFieldDefs aOwner, String aName,
-      TFieldType aDataType, int aSize, bool aRequired, int aFieldNo,
+  TFieldDef fieldDefClass(TFieldDefs aOwner, String aName, TFieldType aDataType,
+      int aSize, bool aRequired, int aFieldNo,
       [TSystemCodePage aCodePage = cpACP]) {
     return TFieldDef.named(
         aOwner, aName, aDataType, aSize, aRequired, aFieldNo, aCodePage);
@@ -1295,11 +1293,17 @@ class TFieldDefs extends TDefCollection {
 
   // function Add(AName, ADataType, ASize, APrecision, ARequired,
   //   AReadOnly, AFieldNo, ACodePage): TFieldDef（fields.inc L257-267）
-  TFieldDef addFull(String aName, TFieldType aDataType, int aSize,
-      int aPrecision, bool aRequired, bool aReadOnly, int aFieldNo,
+  TFieldDef addFull(
+      String aName,
+      TFieldType aDataType,
+      int aSize,
+      int aPrecision,
+      bool aRequired,
+      bool aReadOnly,
+      int aFieldNo,
       TSystemCodePage aCodePage) {
-    final result = fieldDefClass(this, makeNameUnique(aName), aDataType,
-        aSize, aRequired, aFieldNo, aCodePage);
+    final result = fieldDefClass(this, makeNameUnique(aName), aDataType, aSize,
+        aRequired, aFieldNo, aCodePage);
     switch (aDataType) {
       case TFieldType.ftBCD:
       case TFieldType.ftFMTBcd:
@@ -1503,9 +1507,9 @@ class TField extends TComponent {
   String _fieldName = '';
   int _fieldNo = 0;
   TFields? _fields; // filled in by TFields.Add
-  bool _hasConstraints = false;
+  final bool _hasConstraints = false;
   String importedConstraint = '';
-  bool _isIndexField = false;
+  final bool _isIndexField = false;
   String keyFields = '';
   bool lookupCache = false;
   TDataSet? _lookupDataSet;
@@ -1532,7 +1536,7 @@ class TField extends TComponent {
   TProviderFlags providerFlags = {};
 
   // constructor Create（fields.inc L347-355）
-  TField([TComponent? aOwner]) : super(aOwner) {
+  TField([super.aOwner]) {
     _visible = true;
     // FValidChars:=[#0..#255] —— Dart's Set<String> doesn't actually enumerate all 256
     // characters; instead an empty set means "unrestricted", handled accordingly in IsValidChar.
@@ -1753,8 +1757,7 @@ class TField extends TComponent {
   String getClassDesc() {
     final className = runtimeType.toString();
     final fieldPos = className.indexOf("Field");
-    final classN =
-        fieldPos > 1 ? className.substring(1, fieldPos) : className;
+    final classN = fieldPos > 1 ? className.substring(1, fieldPos) : className;
     return isNull ? '(${classN.toLowerCase()})' : "(${classN.toUpperCase()})";
   }
 
@@ -1798,14 +1801,13 @@ class TField extends TComponent {
     if (lookupCache) {
       value = lookupList.valueOfKey(_dataSet!.fieldValues(keyFields));
     } else if (_lookupDataSet != null && _dataSet!.active) {
-      value = _lookupDataSet!
-          .lookup(lookupKeyFields, _dataSet!.fieldValues(keyFields), lookupResultField);
+      value = _lookupDataSet!.lookup(
+          lookupKeyFields, _dataSet!.fieldValues(keyFields), lookupResultField);
     }
   }
 
   // GetIndex（fields.inc L725-732）
-  int get index =>
-      _dataSet != null ? _dataSet!._fieldList.indexOf(this) : -1;
+  int get index => _dataSet != null ? _dataSet!._fieldList.indexOf(this) : -1;
 
   // SetIndex（fields.inc L748-751）
   set index(int value) {
@@ -2070,7 +2072,8 @@ class TField extends TComponent {
   }
 
   // DisplayWidth（fields.inc L1068-1083）
-  int get displayWidth => _displayWidth == 0 ? getDefaultWidth() : _displayWidth;
+  int get displayWidth =>
+      _displayWidth == 0 ? getDefaultWidth() : _displayWidth;
   set displayWidth(int aValue) {
     if (_displayWidth != aValue) {
       _displayWidth = aValue;
@@ -2102,8 +2105,7 @@ class TField extends TComponent {
   bool get asBoolean => getAsBoolean();
   set asBoolean(bool v) => setAsBoolean(v);
   Uint8List? get asBytes => getAsBytes();
-  set asBytes(Uint8List? v) =>
-      v == null ? clear() : setAsBytes(v);
+  set asBytes(Uint8List? v) => v == null ? clear() : setAsBytes(v);
   double get asCurrency => getAsCurrency();
   set asCurrency(double v) => setAsCurrency(v);
   DateTime get asDateTime => getAsDateTime();
@@ -2205,7 +2207,8 @@ String formatFloat(String fmt, num value) {
 }
 
 // A FloatToStrF subset
-String floatToStrF(double value, TFloatFormat format, int precision, int digits) {
+String floatToStrF(
+    double value, TFloatFormat format, int precision, int digits) {
   switch (format) {
     case TFloatFormat.ffFixed:
     case TFloatFormat.ffNumber:
@@ -2275,7 +2278,7 @@ class TStringField extends TField {
   bool transliterate = false;
 
   // constructor（fields.inc L1116-1125）
-  TStringField([TComponent? aOwner]) : super(aOwner) {
+  TStringField([super.aOwner]) {
     setDataType(TFieldType.ftString);
     _codePage = cpACP;
     fixedChar = false;
@@ -2422,7 +2425,8 @@ class TStringField extends TField {
   void setValue(String aValue) {
     var s = aValue;
     if (size > 0 && s.length > size) {
-      s = s.substring(0, size); // the truncation semantics of StrPLCopy(..., DataSize-1)
+      s = s.substring(
+          0, size); // the truncation semantics of StrPLCopy(..., DataSize-1)
     }
     setData(TValueBuffer(s));
   }
@@ -2448,7 +2452,7 @@ class TStringField extends TField {
 // ---------------------------------------------------------------------
 class TWideStringField extends TStringField {
   // constructor（L1389-1394）
-  TWideStringField([TComponent? aOwner]) : super(aOwner) {
+  TWideStringField([super.aOwner]) {
     setDataType(TFieldType.ftWideString);
     _codePage = cpUTF16;
   }
@@ -2482,7 +2486,7 @@ class TNumericField extends TField {
   String _editFormat = '';
 
   // constructor（L1505-1510）
-  TNumericField([TComponent? aOwner]) : super(aOwner) {
+  TNumericField([super.aOwner]) {
     alignment = TAlignment.taRightJustify;
   }
 
@@ -2538,7 +2542,7 @@ class TLongintField extends TNumericField {
   int _maxRange = 0;
 
   // constructor（L1562-1570）
-  TLongintField([TComponent? aOwner]) : super(aOwner) {
+  TLongintField([super.aOwner]) {
     setDataType(TFieldType.ftInteger);
     _minRange = -2147483648; // Low(LongInt)
     _maxRange = 2147483647; // High(LongInt)
@@ -2657,7 +2661,7 @@ class TLongintField extends TNumericField {
       if (i == null) {
         databaseErrorFmt(SFieldError + SNotAninteger, [displayName, aValue]);
       }
-      setAsInteger(i!);
+      setAsInteger(i);
     }
   }
 
@@ -2706,7 +2710,7 @@ class TLongintField extends TNumericField {
 
 // TIntegerField = Class(TLongintField)（db.pas L597）
 class TIntegerField extends TLongintField {
-  TIntegerField([TComponent? aOwner]) : super(aOwner);
+  TIntegerField([super.aOwner]);
 }
 
 // ---------------------------------------------------------------------
@@ -2720,7 +2724,7 @@ class TLargeintField extends TNumericField {
   int _maxRange = 0;
 
   // constructor（L1732-1740）
-  TLargeintField([TComponent? aOwner]) : super(aOwner) {
+  TLargeintField([super.aOwner]) {
     setDataType(TFieldType.ftLargeint);
 // aa !!! not fully translated
     // Platform limitation: on Web (JS), integers are doubles and can't precisely represent ±2^63. The bit
@@ -2801,8 +2805,7 @@ class TLargeintField extends TNumericField {
     if (checkRange(aValue)) {
       setData(TValueBuffer(aValue));
     } else {
-      rangeError(
-          aValue.toDouble(), _minValue.toDouble(), _maxValue.toDouble());
+      rangeError(aValue.toDouble(), _minValue.toDouble(), _maxValue.toDouble());
     }
   }
 
@@ -2836,7 +2839,7 @@ class TLargeintField extends TNumericField {
       if (i == null) {
         databaseErrorFmt(SFieldError + SNotAninteger, [displayName, aValue]);
       }
-      setAsLargeInt(i!);
+      setAsLargeInt(i);
     }
   }
 
@@ -2868,7 +2871,7 @@ class TLargeintField extends TNumericField {
 
 // ---- TSmallintField (db.pas L634-641, implementation fields.inc L1889-1902) ----------
 class TSmallintField extends TLongintField {
-  TSmallintField([TComponent? aOwner]) : super(aOwner) {
+  TSmallintField([super.aOwner]) {
     setDataType(TFieldType.ftSmallint);
     _minRange = -32768;
     _maxRange = 32767;
@@ -2881,7 +2884,7 @@ class TSmallintField extends TLongintField {
 
 // ---- TWordField (db.pas L643-650, implementation fields.inc L1907-1921) --------------
 class TWordField extends TLongintField {
-  TWordField([TComponent? aOwner]) : super(aOwner) {
+  TWordField([super.aOwner]) {
     setDataType(TFieldType.ftWord);
     _minRange = 0;
     _maxRange = 65535;
@@ -2895,7 +2898,7 @@ class TWordField extends TLongintField {
 
 // ---- TAutoIncField (db.pas L652-659, implementation fields.inc L1925-1941) -----------
 class TAutoIncField extends TLongintField {
-  TAutoIncField([TComponent? aOwner]) : super(aOwner) {
+  TAutoIncField([super.aOwner]) {
     setDataType(TFieldType.ftAutoInc);
   }
 
@@ -2920,12 +2923,25 @@ class TFloatField extends TNumericField {
   int _precision = 15;
 
   // constructor（L2094-2101）
-  TFloatField([TComponent? aOwner]) : super(aOwner) {
+  TFloatField([super.aOwner]) {
     setDataType(TFieldType.ftFloat);
     _precision = 15;
     validChars = {
-      decimalSeparator, "+", "-",
-      "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "E", "e"
+      decimalSeparator,
+      "+",
+      "-",
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "E",
+      "e"
     };
   }
 
@@ -3058,7 +3074,7 @@ class TFloatField extends TNumericField {
       if (f == null) {
         databaseErrorFmt(SNotAFloat, [aValue]);
       }
-      setAsFloat(f!);
+      setAsFloat(f);
     }
   }
 
@@ -3072,7 +3088,7 @@ class TFloatField extends TNumericField {
       if (f == null) {
         databaseErrorFmt(SNotAFloat, [aValue]);
       }
-      setAsFloat(f!);
+      setAsFloat(f);
     }
   }
 
@@ -3087,7 +3103,7 @@ class TFloatField extends TNumericField {
 
 // ---- TCurrencyField (db.pas L698-705, implementation fields.inc L2114-2120) ----------
 class TCurrencyField extends TFloatField {
-  TCurrencyField([TComponent? aOwner]) : super(aOwner) {
+  TCurrencyField([super.aOwner]) {
     setDataType(TFieldType.ftCurrency);
     currency = true;
   }
@@ -3106,7 +3122,7 @@ class TBooleanField extends TField {
   ];
 
   // constructor（L2211-2217）
-  TBooleanField([TComponent? aOwner]) : super(aOwner) {
+  TBooleanField([super.aOwner]) {
     setDataType(TFieldType.ftBoolean);
     displayValues = 'True;False';
   }
@@ -3203,7 +3219,8 @@ class TBooleanField extends TField {
       }
       _displayValues = aValue;
       // Store display values and their uppercase equivalents; (original comment)
-      _displays[0][1] = aValue.substring(0, i - 1); // the display value for True
+      _displays[0][1] =
+          aValue.substring(0, i - 1); // the display value for True
       _displays[1][1] = _displays[0][1].toUpperCase();
       _displays[0][0] = aValue.substring(i); // the display value for False
       _displays[1][0] = _displays[0][0].toUpperCase();
@@ -3219,7 +3236,7 @@ class TDateTimeField extends TField {
   String _displayFormat = '';
 
   // constructor（L2346-2351）
-  TDateTimeField([TComponent? aOwner]) : super(aOwner) {
+  TDateTimeField([super.aOwner]) {
     setDataType(TFieldType.ftDateTime);
   }
 
@@ -3331,14 +3348,14 @@ class TDateTimeField extends TField {
 
 // ---- TDateField (db.pas L758-763, implementation fields.inc L2356-2361) --------------
 class TDateField extends TDateTimeField {
-  TDateField([TComponent? aOwner]) : super(aOwner) {
+  TDateField([super.aOwner]) {
     setDataType(TFieldType.ftDate);
   }
 }
 
 // ---- TTimeField (db.pas L765-772, implementation fields.inc L2366-2383) --------------
 class TTimeField extends TDateTimeField {
-  TTimeField([TComponent? aOwner]) : super(aOwner) {
+  TTimeField([super.aOwner]) {
     setDataType(TFieldType.ftTime);
   }
 
@@ -3361,7 +3378,7 @@ class TTimeField extends TDateTimeField {
 //  zero-pad/truncate, ftVarBytes preserves the actual length" are kept.
 // ---------------------------------------------------------------------
 class TBinaryField extends TField {
-  TBinaryField([TComponent? aOwner]) : super(aOwner);
+  TBinaryField([super.aOwner]);
 
   // CheckTypeSize（L2389-2396）
   @override
@@ -3451,7 +3468,7 @@ class TBinaryField extends TField {
 
 // ---- TBytesField (db.pas L792-799, implementation fields.inc L2526-2539) -------------
 class TBytesField extends TBinaryField {
-  TBytesField([TComponent? aOwner]) : super(aOwner) {
+  TBytesField([super.aOwner]) {
     setDataType(TFieldType.ftBytes);
     size = 16;
   }
@@ -3463,7 +3480,7 @@ class TBytesField extends TBinaryField {
 
 // ---- TVarBytesField (db.pas L801-808, implementation fields.inc L2545-2558) ----------
 class TVarBytesField extends TBytesField {
-  TVarBytesField([TComponent? aOwner]) : super(aOwner) {
+  TVarBytesField([super.aOwner]) {
     setDataType(TFieldType.ftVarBytes);
     size = 16;
   }
@@ -3484,12 +3501,23 @@ class TBCDField extends TNumericField {
   int _precision = 18;
 
   // constructor（L2719-2729）
-  TBCDField([TComponent? aOwner]) : super(aOwner) {
+  TBCDField([super.aOwner]) {
     _maxValue = 0;
     _minValue = 0;
     validChars = {
-      decimalSeparator, "+", "-",
-      "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
+      decimalSeparator,
+      "+",
+      "-",
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9"
     };
     setDataType(TFieldType.ftBCD);
     precision = 18;
@@ -3639,7 +3667,7 @@ class TBCDField extends TNumericField {
       if (c == null) {
         databaseErrorFmt(SNotAFloat, [aValue]);
       }
-      setAsCurrency(c!);
+      setAsCurrency(c);
     }
   }
 }
@@ -3658,12 +3686,23 @@ class TFMTBCDField extends TNumericField {
   int _precision = 18;
 
   // constructor（L2740-2751）
-  TFMTBCDField([TComponent? aOwner]) : super(aOwner) {
+  TFMTBCDField([super.aOwner]) {
     _maxValue = 0;
     _minValue = 0;
     validChars = {
-      decimalSeparator, "+", "-",
-      "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
+      decimalSeparator,
+      "+",
+      "-",
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9"
     };
     setDataType(TFieldType.ftFMTBcd);
     // Max.precision for NUMERIC,DECIMAL datatypes supported by some
@@ -3824,7 +3863,7 @@ class TFMTBCDField extends TNumericField {
       if (b == null) {
         databaseErrorFmt(SNotAFloat, [aValue]);
       }
-      setAsBCD(b!);
+      setAsBCD(b);
     }
   }
 }
@@ -3856,7 +3895,7 @@ class TBlobField extends TField {
   bool transliterate = false;
 
   // constructor（L2917-2922）
-  TBlobField([TComponent? aOwner]) : super(aOwner) {
+  TBlobField([super.aOwner]) {
     setDataType(TFieldType.ftBlob);
   }
 
@@ -4020,7 +4059,7 @@ class TBlobField extends TField {
 class TMemoField extends TBlobField {
   TSystemCodePage _codePage = 0;
 
-  TMemoField([TComponent? aOwner]) : super(aOwner) {
+  TMemoField([super.aOwner]) {
     setDataType(TFieldType.ftMemo);
   }
 
@@ -4029,7 +4068,7 @@ class TMemoField extends TBlobField {
 
 // ---- TWideMemoField (db.pas L960-977, implementation fields.inc L3257-3304) ----------
 class TWideMemoField extends TBlobField {
-  TWideMemoField([TComponent? aOwner]) : super(aOwner) {
+  TWideMemoField([super.aOwner]) {
     setDataType(TFieldType.ftWideMemo);
   }
 
@@ -4045,14 +4084,14 @@ class TWideMemoField extends TBlobField {
 
 // ---- TGraphicField (db.pas L979-984, implementation fields.inc L3308-3313) -----------
 class TGraphicField extends TBlobField {
-  TGraphicField([TComponent? aOwner]) : super(aOwner) {
+  TGraphicField([super.aOwner]) {
     setDataType(TFieldType.ftGraphic);
   }
 }
 
 // ---- TVariantField (db.pas L986-1016, implementation fields.inc L3355-3440) ----------
 class TVariantField extends TField {
-  TVariantField([TComponent? aOwner]) : super(aOwner) {
+  TVariantField([super.aOwner]) {
     setDataType(TFieldType.ftVariant);
   }
 
@@ -4132,7 +4171,7 @@ class TVariantField extends TField {
 class TGuidField extends TStringField {
   static const String nullGuid = '{00000000-0000-0000-0000-000000000000}';
 
-  TGuidField([TComponent? aOwner]) : super(aOwner) {
+  TGuidField([super.aOwner]) {
     _size = 38;
     setDataType(TFieldType.ftGuid);
   }
@@ -4217,8 +4256,7 @@ class TFields {
     // Removed FDataSet.Active check, needed for Persistent fields (see
     // bug ID 30954) (original comment kept as-is)
     if (_dataSet != null &&
-        !_dataSet!.componentState
-            .contains(TComponentStateItem.csDestroying)) {
+        !_dataSet!.componentState.contains(TComponentStateItem.csDestroying)) {
       _dataSet!.dataEvent(TDataEvent.deFieldListChange, 0);
     }
     onChange?.call(this);
@@ -4312,7 +4350,7 @@ class TFields {
     if (result == null) {
       databaseErrorFmt(SFieldNotFound, [value], _dataSet);
     }
-    return result!;
+    return result;
   }
 
   // FieldByNumber（L3618-3628）
@@ -4354,13 +4392,46 @@ class TFields {
 // Fieldtypenames : Array[TFieldType] of String（db.pas L2148-2190）
 // indexed by TFieldType.index (convention 7)
 const List<String> fieldTypeNames = [
-  'Unknown', "String", "Smallint", "Integer", "Word",
-  "Boolean", "Float", "Currency", "BCD", "Date", "Time", "DateTime",
-  "Bytes", "VarBytes", "AutoInc", "Blob", "Memo", "Graphic", "FmtMemo",
-  "ParadoxOle", "DBaseOle", "TypedBinary", "Cursor", "FixedChar",
-  "WideString", "Largeint", "ADT", "Array", "Reference",
-  "DataSet", "OraBlob", "OraClob", "Variant", "Interface",
-  "IDispatch", "Guid", "TimeStamp", "FMTBcd", "FixedWideChar", "WideMemo",
+  'Unknown',
+  "String",
+  "Smallint",
+  "Integer",
+  "Word",
+  "Boolean",
+  "Float",
+  "Currency",
+  "BCD",
+  "Date",
+  "Time",
+  "DateTime",
+  "Bytes",
+  "VarBytes",
+  "AutoInc",
+  "Blob",
+  "Memo",
+  "Graphic",
+  "FmtMemo",
+  "ParadoxOle",
+  "DBaseOle",
+  "TypedBinary",
+  "Cursor",
+  "FixedChar",
+  "WideString",
+  "Largeint",
+  "ADT",
+  "Array",
+  "Reference",
+  "DataSet",
+  "OraBlob",
+  "OraClob",
+  "Variant",
+  "Interface",
+  "IDispatch",
+  "Guid",
+  "TimeStamp",
+  "FMTBcd",
+  "FixedWideChar",
+  "WideMemo",
 ];
 
 // DefaultFieldClasses : Array[TFieldType] of TFieldClass（db.pas L2194-2236）
@@ -4449,16 +4520,15 @@ class TIndexDef extends TNamedItem {
   // constructor Create(Owner, AName, TheFields, TheOptions)（L2457-2465）
   // The original source sets FName before calling inherited create (a workaround to dodge the name-
   // collision check); under Dart's constructor-ordering constraints, this is handled equivalently: attach to the collection first, then write _name directly.
-  TIndexDef(TIndexDefs? owner, String aName, String theFields,
-      TIndexOptions theOptions)
-      : super(owner) {
+  TIndexDef(TIndexDefs? super.owner, String aName, String theFields,
+      TIndexOptions theOptions) {
     _name = aName;
     fields = theFields;
     options = theOptions;
   }
 
   // A parameterless path used by the collection factory
-  TIndexDef.fromCollection(TCollection? aCollection) : super(aCollection);
+  TIndexDef.fromCollection(super.aCollection);
 
   // Assign（L2421-2438）
   @override
@@ -4523,7 +4593,7 @@ class TIndexDefs extends TDefCollection {
     if (result == null) {
       databaseErrorFmt(SIndexNotFound, [indexName], _dataset);
     }
-    return result!;
+    return result;
   }
 
   // FindIndexForFields (L2513-2517): the original source is `//!! To be implemented`,
@@ -4562,7 +4632,7 @@ class TIndexDefs extends TDefCollection {
   // Update（L2550-2558）
   void updateDefs() {
     if (!updated && _dataset != null) {
-      _dataset!.updateIndexDefs();
+      _dataset.updateIndexDefs();
       updated = true;
     }
   }
@@ -4576,7 +4646,7 @@ class TCheckConstraint extends TCollectionItem {
   bool fromDictionary = false;
   String importedConstraint = '';
 
-  TCheckConstraint(TCollection? aCollection) : super(aCollection);
+  TCheckConstraint(super.aCollection);
 
   // Assign（L2562-2566）
   @override
@@ -4664,8 +4734,10 @@ const List<_VarKind> _fieldTypeToVariantMap = [
   /* ftOraBlob */ _VarKind.vStr,
   /* ftOraClob */ _VarKind.vStr,
   /* ftVariant */ _VarKind.vVariant,
-  /* ftInterface */ _VarKind.vError, // varUnknown (a COM interface, no equivalent)
-  /* ftIDispatch */ _VarKind.vError, // varDispatch (a COM interface, no equivalent)
+  /* ftInterface */ _VarKind
+      .vError, // varUnknown (a COM interface, no equivalent)
+  /* ftIDispatch */ _VarKind
+      .vError, // varDispatch (a COM interface, no equivalent)
   /* ftGuid */ _VarKind.vStr,
   /* ftTimeStamp */ _VarKind.vStr,
   /* ftFMTBcd */ _VarKind.vFloat,
@@ -4739,15 +4811,16 @@ class TTimeStamp {
   TTimeStamp(this.time, this.date);
 }
 
-const int dateDelta = 693594; // the number of days between 0001-01-01 and 1899-12-30
+const int dateDelta =
+    693594; // the number of days between 0001-01-01 and 1899-12-30
 
 TTimeStamp dateTimeToTimeStamp(DateTime dt) {
   final days = DateTime(dt.year, dt.month, dt.day)
           .difference(DateTime(1899, 12, 30))
           .inDays +
       dateDelta;
-  final msecs = dt.hour * 3600000 + dt.minute * 60000 + dt.second * 1000 +
-      dt.millisecond;
+  final msecs =
+      dt.hour * 3600000 + dt.minute * 60000 + dt.second * 1000 + dt.millisecond;
   return TTimeStamp(msecs, days);
 }
 
@@ -4763,17 +4836,16 @@ TTimeStamp mSecsToTimeStamp(int msecs) =>
 
 // ---- SkipQuotesString（dsparams.inc L2-23）----------------------------------
 // A Pascal var p: PChar → a TIntRef index (convention 1)
-void skipQuotesString(
-    String s, TIntRef p, String quoteChar, bool escapeSlash, bool escapeRepeat) {
+void skipQuotesString(String s, TIntRef p, String quoteChar, bool escapeSlash,
+    bool escapeRepeat) {
   p.value++;
   bool notRepeatEscaped;
   do {
     notRepeatEscaped = true;
     while (p.value < s.length && s[p.value] != quoteChar) {
-      if (escapeSlash &&
-          s[p.value] == '\\' &&
-          p.value + 1 < s.length) {
-        p.value += 2; // make sure we handle escaped quotes and double backslashes (original comment's meaning)
+      if (escapeSlash && s[p.value] == '\\' && p.value + 1 < s.length) {
+        p.value +=
+            2; // make sure we handle escaped quotes and double backslashes (original comment's meaning)
       } else {
         p.value++;
       }
@@ -4809,11 +4881,10 @@ bool skipComments(String s, TIntRef p, bool escapeSlash, bool escapeRepeat) {
         result = true;
         do {
           p.value++; // skip until at end of line
-        } while (p.value < s.length &&
-            s[p.value] != '\n' &&
-            s[p.value] != '\r');
-        while (p.value < s.length &&
-            (s[p.value] == '\n' || s[p.value] == '\r')) {
+        } while (
+            p.value < s.length && s[p.value] != '\n' && s[p.value] != '\r');
+        while (
+            p.value < s.length && (s[p.value] == '\n' || s[p.value] == '\r')) {
           p.value++; // newline is part of comment (original comment kept as-is)
         }
       }
@@ -4855,14 +4926,14 @@ class TParam extends TCollectionItem {
   int size = 0;
 
   // constructor Create(ACollection)（dsparams.inc L911-917）
-  TParam(TCollection? aCollection) : super(aCollection) {
+  TParam(super.aCollection) {
     paramType = TParamType.ptUnknown;
     _dataType = TFieldType.ftUnknown;
     _value = null; // Unassigned
   }
 
   // constructor Create(AParams, AParamType)（L919-923）
-  TParam.withType(TParams aParams, TParamType aParamType) : super(aParams) {
+  TParam.withType(TParams super.aParams, TParamType aParamType) {
     paramType = aParamType;
     _dataType = TFieldType.ftUnknown;
     _value = null;
@@ -5179,7 +5250,8 @@ class TParam extends TCollectionItem {
       case TFieldType.ftUnknown:
         databaseErrorFmt(SUnknownParamFieldType, [name], dataSet);
       case TFieldType.ftSmallint:
-        field.asInteger = asSmallInt; // Need TField.AsSmallInt (original comment)
+        field.asInteger =
+            asSmallInt; // Need TField.AsSmallInt (original comment)
         break;
       case TFieldType.ftWord:
         field.asInteger = asWord; // Need TField.AsWord (original comment)
@@ -5584,8 +5656,7 @@ class TParams extends TCollection {
   TPersistent? get owner => _paramsOwner;
 
   // GetDataSet（L90-96）
-  TDataSet? get dataSet =>
-      _paramsOwner is TDataSet ? _paramsOwner as TDataSet : null;
+  TDataSet? get dataSet => _paramsOwner is TDataSet ? _paramsOwner : null;
 
   // GetItem / SetItem（L47-60）→ [] operator
   TParam operator [](int index) => getItem(index) as TParam;
@@ -5683,7 +5754,7 @@ class TParams extends TCollection {
     if (result == null) {
       databaseErrorFmt(SParameterNotFound, [value], dataSet);
     }
-    return result!;
+    return result;
   }
 
   // The five-overload ParseSQL group (L217-317): merged in Dart into one main entry point + a convenience entry
@@ -5735,7 +5806,17 @@ class TParams extends TCollection {
 
     // characters that may not appear in a parameter name (SQLDelimiterCharacters + extra symbols)
     const extraDelims = {
-      '=', "+", "-", "*", "\\", "/", "[", "]", "|", "<", ">"
+      '=',
+      "+",
+      "-",
+      "*",
+      "\\",
+      "/",
+      "[",
+      "]",
+      "|",
+      "<",
+      ">"
     };
 
     while (true) {
@@ -5789,10 +5870,9 @@ class TParams extends TCollection {
             // If so, create the parameter and assign the Parameterindex
             final tmpParam = findParam(paramName);
             if (tmpParam == null) {
-              parameterIndex =
-                  createParam(TFieldType.ftUnknown, paramName,
-                          TParamType.ptInput)
-                      .index;
+              parameterIndex = createParam(
+                      TFieldType.ftUnknown, paramName, TParamType.ptInput)
+                  .index;
             } else {
               // else only assign the ParameterIndex
               parameterIndex = tmpParam.index;
@@ -6016,9 +6096,9 @@ TDateTimeRec dateTimeToDateTimeRec(TFieldType dt, DateTime data) {
       result.time = ts.time;
       break;
     default:
-      result.dateTime = timeStampToDateTime(mSecsToTimeStamp(
-          timeStampToMSecs(ts))); // the object representation of DateTime:=TimeStampToMSecs(TS) —
-      // TDateTimeRec.dateTime stores the DateTime directly (convention 1)
+      result.dateTime = timeStampToDateTime(mSecsToTimeStamp(timeStampToMSecs(
+          ts))); // the object representation of DateTime:=TimeStampToMSecs(TS) —
+    // TDateTimeRec.dateTime stores the DateTime directly (convention 1)
   }
   return result;
 }
@@ -6087,7 +6167,7 @@ class TDataSet extends TComponent {
   bool _internalOpenComplete = false;
 
   // constructor Create（dataset.inc L23-42）
-  TDataSet([TComponent? aOwner]) : super(aOwner) {
+  TDataSet([super.aOwner]) {
     _fieldDefs = fieldDefsClass();
     _fieldList = fieldsClass();
     _constraints = TCheckConstraints(this);
@@ -6119,7 +6199,7 @@ class TDataSet extends TComponent {
   }
 
   // ---- class function FieldDefsClass / FieldsClass（dataset.inc
-    //      L1066-1074) → a virtual factory method (convention 2)
+  //      L1066-1074) → a virtual factory method (convention 2)
   TFieldDefs fieldDefsClass() => TFieldDefs(this);
   TFields fieldsClass() => TFields(this);
 
@@ -6304,9 +6384,14 @@ class TDataSet extends TComponent {
     }
 
     if (!controlsDisabled() && _state != TDataSetState.dsBlockRead) {
+      if (myDataSourceCount > 0) {
+        print('[DEBUG7 dataEvent] name=$name event=$event actually notified $myDataSourceCount DataSource(s)');
+      }
       for (var i = 0; i < myDataSourceCount; i++) {
         myDataSources(i).processEvent(event, info);
       }
+    } else if (controlsDisabled() && myDataSourceCount > 0) {
+      print('[DEBUG7 dataEvent] name=$name event=$event blocked by controlsDisabled (would have been $myDataSourceCount DataSource(s))');
     }
   }
 
@@ -6329,7 +6414,32 @@ class TDataSet extends TComponent {
   void doAfterInsert() => afterInsert?.call(this);
   void doAfterOpen() => afterOpen?.call(this);
   void doAfterPost() => afterPost?.call(this);
-  void doAfterScroll() => afterScroll?.call(this);
+  // @@@ 2026-08-10 fix: doAfterScroll() used to fire afterScroll
+  // unconditionally, bypassing controlsDisabled() entirely — unlike
+  // dataEvent()/processEvent(), which correctly check it before
+  // notifying bound TDataSource/TDataLink controls (see line ~6386).
+  // WML's <onevent type="afterscroll"> handlers get wired up as exactly
+  // this afterScroll callback (e.g. app006's sh.afterScroll reloading
+  // the sn detail grid via a Future.microtask + setState() on a
+  // sibling card's State). disableControls()/enableControls() around a
+  // report's run() is specifically meant to suspend ALL such
+  // notifications while it drives a shared (Foreign) dataset's cursor —
+  // but this callback ignored that guard, so navigating "sh"/"sn" mid-
+  // print still fired the sibling card's afterScroll handler, which
+  // deferred a setState() via Future.microtask that could land while
+  // the print dialog itself was still building →
+  // "setState() or markNeedsBuild() called during build". Now respects
+  // controlsDisabled() the same way dataEvent() does.
+  void doAfterScroll() {
+    if (controlsDisabled()) {
+      print('[DEBUG7 doAfterScroll] name=$name blocked by controlsDisabled');
+      return;
+    }
+    if (afterScroll != null) {
+      print('[DEBUG7 doAfterScroll] name=$name actually fired the afterScroll callback');
+    }
+    afterScroll?.call(this);
+  }
   void doAfterRefresh() => afterRefresh?.call(this);
   void doBeforeCancel() => beforeCancel?.call(this);
   void doBeforeClose() {
@@ -6354,7 +6464,21 @@ class TDataSet extends TComponent {
     _recordCount = 0;
     recalcBufListSize();
     _bof = true;
-    _eof = _recordCount == 0;
+    // @@@ 2026-08-10 fix: was `_eof = _recordCount == 0;` — _recordCount
+    // is the base class's windowed-buffer fill count, only ever
+    // populated by recalcBufListSize() when some bound TDataLink has set
+    // a bufferCount>0 (e.g. a TDBGrid). A dataset used directly with no
+    // UI binding at all — most notably WapReport's _ds, which drives a
+    // report purely via .first()/.next(), never through a grid/edit
+    // control — never gets its buffer filled, so _recordCount stays 0
+    // forever and _eof was permanently (and wrongly) true right after
+    // opening, even when the query actually returned rows. isEmpty
+    // (_bof && _eof) then always reported true, so WapReport's
+    // fetchFirst() bailed out immediately and printed nothing at all.
+    // recordCount (the public property, correctly overridden per
+    // subclass — TCustomBufDataset returns _records.length) reflects the
+    // real row count regardless of any buffer/UI binding, so use that.
+    _eof = recordCount == 0;
   }
 
   // DoOnCalcFields / DoOnNewRecord（L424-436）
@@ -6449,15 +6573,15 @@ class TDataSet extends TComponent {
         case TFieldType.ftDate:
         case TFieldType.ftTime:
         case TFieldType.ftDateTime:
-          aDest.value =
-              dateTimeToDateTimeRec(dt, aSource.value as DateTime);
+          aDest.value = dateTimeToDateTimeRec(dt, aSource.value as DateTime);
           break;
         case TFieldType.ftTimeStamp:
           aDest.value = aSource.value;
           break;
         case TFieldType.ftBCD:
         case TFieldType.ftFMTBcd:
-          aDest.value = aSource.value; // TBCD→double (convention 5), no conversion needed
+          aDest.value =
+              aSource.value; // TBCD→double (convention 5), no conversion needed
           break;
         // ftBytes/ftVarBytes: see the mantis 8204 comment, left blank in the original source
         case TFieldType.ftWideString:
@@ -6572,9 +6696,8 @@ class TDataSet extends TComponent {
   // GetNextRecord (L745-781): advances the buffer window by one record
   bool getNextRecord() {
     if (_recordCount > 0) setCurrentRecord(_recordCount - 1);
-    final result =
-        getRecord(_buffers[_bufferCount]!, TGetMode.gmNext, true) ==
-            TGetResult.grOK;
+    final result = getRecord(_buffers[_bufferCount]!, TGetMode.gmNext, true) ==
+        TGetResult.grOK;
 
     if (result) {
       if (_recordCount == 0) activateBuffers();
@@ -6607,9 +6730,8 @@ class TDataSet extends TComponent {
   bool getPriorRecord() {
     checkBiDirectional();
     if (_recordCount > 0) setCurrentRecord(0);
-    final result =
-        getRecord(_buffers[_bufferCount]!, TGetMode.gmPrior, true) ==
-            TGetResult.grOK;
+    final result = getRecord(_buffers[_bufferCount]!, TGetMode.gmPrior, true) ==
+        TGetResult.grOK;
     if (result) {
       if (_recordCount == 0) activateBuffers();
       shiftBuffersForward();
@@ -7407,7 +7529,7 @@ class TDataSet extends TComponent {
     if (result == null) {
       databaseErrorFmt(SFieldNotFound, [fieldName], this);
     }
-    return result!;
+    return result;
   }
 
   // FindField（L1768-1773）
@@ -7495,8 +7617,7 @@ class TDataSet extends TComponent {
   }
 
   // IsEmpty（L1910-1915）
-  bool get isEmpty =>
-      (_bof && _eof) && state != TDataSetState.dsInsert;
+  bool get isEmpty => (_bof && _eof) && state != TDataSetState.dsInsert;
   // After an insert on an empty dataset, both fBof and fEof are true
   // (original comment kept as-is)
 
@@ -7671,8 +7792,7 @@ class TDataSet extends TComponent {
 
     // Now look if the data on the current cursor of the underlying
     // dataset is still available (original comment kept as-is)
-    if (getRecord(_buffers[0]!, TGetMode.gmCurrent, false) !=
-        TGetResult.grOK) {
+    if (getRecord(_buffers[0]!, TGetMode.gmCurrent, false) != TGetResult.grOK) {
       // If that fails and rmExact is set, then raise an exception
       if (mode.contains(TResyncModeItem.rmExact)) {
         databaseError(SNoSuchRecord, this);
@@ -7681,8 +7801,7 @@ class TDataSet extends TComponent {
       // dataset
       else if (getRecord(_buffers[0]!, TGetMode.gmNext, true) !=
               TGetResult.grOK &&
-          getRecord(_buffers[0]!, TGetMode.gmPrior, true) !=
-              TGetResult.grOK) {
+          getRecord(_buffers[0]!, TGetMode.gmPrior, true) != TGetResult.grOK) {
         // nothing found, invalidate buffer and bail out. (original comment kept as-is)
         clearBuffers();
         dataEvent(TDataEvent.deDataSetChange, 0);
@@ -8218,11 +8337,23 @@ class TDataLink extends TPersistent {
   bool get eof => dataSet!.eof;
 
   // GetRecordCount（L189-195）
-  int get recordCount {
-    var result = dataSet!._recordCount;
-    if (result > bufferCount) result = bufferCount;
-    return result;
-  }
+  // @@@ fix: this used to read dataSet!._recordCount (a private field on
+  // the dataset base class -- a count of "how many records are currently
+  // buffered in the windowed buffer"; resync() resets it to a small value
+  // on every call, capped at the dataset's own _bufferCount, see resync()'s
+  // implementation), then capped it again against bufferCount (the
+  // DataLink's own buffer setting) -- both are "small windowed buffer"
+  // concepts. But the datasets actually in use (TCustomBufDataset/
+  // TSQLQuery) aren't windowed-buffered at all -- the entire query result
+  // lives in the _records array, and dataSet.recordCount (a public
+  // property each subclass correctly overrides to _records.length) is the
+  // real record count. The grid's _buildRow() already accesses any record
+  // directly by index -- it isn't really limited to a small buffered
+  // window -- so capping against _recordCount/bufferCount only makes the
+  // grid think there are far fewer records than there actually are (even
+  // 0). This is exactly why a 22-row detail grid rendered completely
+  // blank.
+  int get recordCount => dataSet?.recordCount ?? 0;
 
   // LayoutChanged（L198-202）
   void layoutChanged() {
@@ -8366,7 +8497,7 @@ class TMasterDataLink extends TDetailDataLink {
     if (dataSource!.state != TDataSetState.dsSetKey &&
         _detailDataSet.active &&
         _fields.isNotEmpty &&
-        (field == null || _fields.indexOf(field) >= 0)) {
+        (field == null || _fields.contains(field))) {
       doMasterChange();
     }
   }
@@ -8453,14 +8584,6 @@ class TMasterParamsDataLink extends TMasterDataLink {
   }
 
   // DoMasterDisable（L507-513）
-  @override
-  void doMasterDisable() {
-    super.doMasterDisable();
-    // If master dataset is closing, leave detail dataset intact
-    // (Delphi compatible behavior)
-    // If master dataset is reopened, relationship will be reestablished
-    // (original comment kept as-is)
-  }
 
   // DoMasterChange（L515-525）
   @override
@@ -8490,7 +8613,7 @@ class TDataSource extends TComponent {
   TNotifyEvent? onUpdateData;
 
   // constructor Create（datasource.inc L531-538）
-  TDataSource([TComponent? aOwner]) : super(aOwner) {
+  TDataSource([super.aOwner]) {
     _enabled = true;
     autoEdit = true;
   }
@@ -8679,7 +8802,7 @@ class TCustomConnection extends TComponent {
   TLoginEvent? onLogin;
   bool streamedConnected = false;
 
-  TCustomConnection([TComponent? aOwner]) : super(aOwner);
+  TCustomConnection([super.aOwner]);
 
   // GetDataSet / GetDataSetCount（database.inc L615-623）
   TDataSet? getDataSet(int index) => null;
@@ -8705,7 +8828,8 @@ class TCustomConnection extends TComponent {
       final password = TStringRef("");
       getLoginParams(dbName, userName, password);
       if (onLogin != null) {
-        onLogin!(this, userName.value, password.value); // by value (original comment)
+        onLogin!(this, userName.value,
+            password.value); // by value (original comment)
       } else if (loginDialogExProc != null) {
         loginDialogExProc!(
             dbName.value, userName, password, false); // by reference
@@ -8823,7 +8947,8 @@ class TCustomConnection extends TComponent {
 class TDatabase extends TCustomConnection {
   bool _connected = false;
   String databaseName = '';
-  final List<TDBDataset> _dbDatasets = []; // TThreadList → List (see the note at the start of this section)
+  final List<TDBDataset> _dbDatasets =
+      []; // TThreadList → List (see the note at the start of this section)
   final List<TDBTransaction> _transactions = [];
   String directory = '';
   bool keepConnection = false;
@@ -8832,7 +8957,7 @@ class TDatabase extends TCustomConnection {
   bool _openAfterRead = false;
 
   // constructor Create（database.inc L56-64）
-  TDatabase([TComponent? aOwner]) : super(aOwner) {
+  TDatabase([super.aOwner]) {
     _params = TStringList();
     _connected = false;
   }
@@ -8995,7 +9120,7 @@ class TDBTransaction extends TComponent {
   bool _openAfterRead = false;
 
   // constructor Create（database.inc L468-473）
-  TDBTransaction([TComponent? aOwner]) : super(aOwner);
+  TDBTransaction([super.aOwner]);
 
   // destructor Destroy（L512-520）
   @override
@@ -9159,7 +9284,7 @@ class TDBDataset extends TDataSet {
   TDatabase? _database;
   TDBTransaction? _transaction;
 
-  TDBDataset([TComponent? aOwner]) : super(aOwner);
+  TDBDataset([super.aOwner]);
 
   // SetDatabase（database.inc L323-335）
   TDatabase? get database => _database;

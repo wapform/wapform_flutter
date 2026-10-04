@@ -1,6 +1,10 @@
 // ═════════════════════════════════════════════════════════════════════════════
 //  lazarus_dbgrids.dart
 //
+//  @@@ 2026-08-10 fix: TDBGrid's detail-grid-stays-blank-after-requery bug.
+//      See the notes at _TDBGridState.initState() and _onDataSetOpen()
+//      below for the full root-cause writeup.
+//
 //  This file is a Dart translation (derivative work) of the following
 //  Object Pascal upstream source:
 //    Upstream project: Lazarus Component Library (LCL)
@@ -244,10 +248,6 @@ class TComponentDataLink extends TDataLink {
   }
 
   // CheckBrowseMode (L4095-4101)
-  @override
-  void checkBrowseMode() {
-    super.checkBrowseMode();
-  }
 
   // EditingChanged (L4103-4110)
   @override
@@ -262,17 +262,14 @@ class TComponentDataLink extends TDataLink {
   }
 
   // MoveBy (L4121-4134)
-  @override
-  int moveBy(int distance) => super.moveBy(distance);
 }
-
 
 // ═════════════════════════════════════════════════════════════════════════════
 //  TColumnTitle (dbgrids.pas L245-248, implementation L4564-4575)
 //  Overrides GetDefaultCaption → uses the field's DisplayName / FieldName
 // ═════════════════════════════════════════════════════════════════════════════
 class TColumnTitle extends TGridColumnTitle {
-  TColumnTitle(TGridColumn column) : super(column);
+  TColumnTitle(super.column);
 
   // GetDefaultCaption (L4564-4575)
   @override
@@ -290,7 +287,6 @@ class TColumnTitle extends TGridColumnTitle {
     return super.getDefaultCaption();
   }
 }
-
 
 // ═════════════════════════════════════════════════════════════════════════════
 //  TColumn (dbgrids.pas L252-293, implementation L4309-4560)
@@ -518,8 +514,7 @@ class TColumn extends TGridColumn {
           try {
             lds.first();
             while (!lds.eof) {
-              result.add(
-                  lds.fieldByName(f.lookupResultField).asString);
+              result.add(lds.fieldByName(f.lookupResultField).asString);
               lds.next();
             }
           } finally {
@@ -560,17 +555,16 @@ class TColumn extends TGridColumn {
   }
 }
 
-
 // ═════════════════════════════════════════════════════════════════════════════
 //  TDBGridColumns (dbgrids.pas L298-315, implementation L4138-4305)
 // ═════════════════════════════════════════════════════════════════════════════
 enum TColumnOrder { coDesignOrder, coFieldIndexOrder }
 
 class TDBGridColumns extends TGridColumns {
-  IDBGridHost? host; // the Flutter implementation of TCustomDBGrid (injected by the widget layer)
+  IDBGridHost?
+      host; // the Flutter implementation of TCustomDBGrid (injected by the widget layer)
 
-  TDBGridColumns([this.host])
-      : super.plain((c) => TColumn(c));
+  TDBGridColumns([this.host]) : super.plain((c) => TColumn(c));
 
   // GetColumn (L4138-4141)
   @override
@@ -695,12 +689,12 @@ class TDBGridColumns extends TGridColumns {
   }
 }
 
-
 // aa !!! not fully translated
 // boolToStr: a SysUtils shim (upstream source unavailable); only
 // implements the form TColumn actually uses.
 // zz !!! not fully translated
-String boolToStr(bool value) => value ? '-1' : "0"; // Pascal BoolToStr's default
+String boolToStr(bool value) =>
+    value ? '-1' : "0"; // Pascal BoolToStr's default
 
 // aa !!! not fully translated
 // The TDBGrid widget below is 【not】 a line-by-line translation of
@@ -720,8 +714,9 @@ String boolToStr(bool value) => value ? '-1' : "0"; // Pascal BoolToStr's defaul
 //     the column uses plain-text editing.
 class TDBGridLookupSpec {
   final Map<String, List<String>> rows; // {key: [display columns...]}
-  final List<double> colWidths;         // width of each dropdown column
-  final void Function(String key)? onPicked; // extra linked action after picking (optional)
+  final List<double> colWidths; // width of each dropdown column
+  final void Function(String key)?
+      onPicked; // extra linked action after picking (optional)
   const TDBGridLookupSpec({
     required this.rows,
     this.colWidths = const [100],
@@ -733,7 +728,8 @@ typedef TDBGridLookupResolver = TDBGridLookupSpec? Function(String fieldName);
 
 class TDBGrid extends StatefulWidget {
   final TDataSource? dataSource; // DataSource
-  final TDBGridColumns? columns; // Columns (an LCL collection; null = auto-generate all columns)
+  final TDBGridColumns?
+      columns; // Columns (an LCL collection; null = auto-generate all columns)
   final bool readOnly; // ReadOnly
   final TDBGridOptions options; // Options
   final double? width;
@@ -804,7 +800,8 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
   int _layoutLock = 0;
 
   // inline edit state
-  int? _editingRow; // the visual row currently being edited (relative to the buffer)
+  int?
+      _editingRow; // the visual row currently being edited (relative to the buffer)
   TColumn? _editingCol;
   final TextEditingController _editController = TextEditingController();
 // aa ### flutter extension: Excel-style cell selection
@@ -820,16 +817,71 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
   //     the cell's TextField, so this node doesn't receive them.
   final FocusNode _gridFocus = FocusNode(debugLabel: 'TDBGrid');
 // zz ### flutter extension
-  // @@@ horizontal/vertical scroll controllers (the header and data must
-  //     share _hScroll to stay aligned)
+  // @@@ horizontal/vertical scroll controllers for the body.
   final ScrollController _hScroll = ScrollController();
   final ScrollController _vScroll = ScrollController();
+  // @@@ 2026-08-10 fix: the vertical scrollbar used to live INSIDE the
+  // horizontally-scrolled region, so it visually tracked the horizontal
+  // scroll position — if the grid's columns were wider than the visible
+  // area, the vertical scrollbar was only reachable after scrolling all
+  // the way to the right, instead of staying pinned to the grid's visible
+  // right edge like a normal desktop window. Fixed by moving the vertical
+  // Scrollbar/SingleChildScrollView outside the horizontal one. That
+  // means the header row (which must still scroll horizontally in lockstep
+  // with the body, but must NOT scroll vertically) can no longer share
+  // _hScroll directly — a single ScrollController's positions don't
+  // auto-mirror each other across two separate Scrollables. This second,
+  // display-only controller for the header is kept in sync via a listener
+  // on _hScroll (see initState below) instead.
+  final ScrollController _hScrollHeader = ScrollController();
+  // @@@ 2026-08-10 fix: a Scrollbar given only a `controller` with no real
+  // scrollable as its own child turned out unreliable (didn't paint).
+  // For the horizontal scrollbar strip pinned at the bottom (needs to
+  // stay put regardless of vertical scroll position, so it can't be
+  // nested inside the vertical scroll region), give it its own tiny real
+  // SingleChildScrollView sized to the exact same totalWidth as the real
+  // content, mirrored from _hScroll via a listener (same proven trick
+  // already used for _hScrollHeader above). The vertical scrollbar
+  // doesn't need this — it stays the outermost wrapper around the real
+  // vertical SingleChildScrollView, which already keeps it correctly
+  // pinned to the right regardless of horizontal scroll position.
+  final ScrollController _hScrollBar = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    // @@@ 2026-08-10 fix: keep the header's display-only scroll position
+    // mirroring the body's real horizontal scroll (see the field comment
+    // on _hScrollHeader above for why they can't just share one controller
+    // now that the vertical scrollbar sits outside the horizontal one).
+    _hScroll.addListener(() {
+      if (_hScrollHeader.hasClients && _hScrollHeader.offset != _hScroll.offset) {
+        _hScrollHeader.jumpTo(_hScroll.offset);
+      }
+      if (_hScrollBar.hasClients && _hScrollBar.offset != _hScroll.offset) {
+        _hScrollBar.jumpTo(_hScroll.offset);
+      }
+    });
+    _hScrollBar.addListener(() {
+      if (_hScroll.hasClients && _hScroll.offset != _hScrollBar.offset) {
+        _hScroll.jumpTo(_hScrollBar.offset); // dragging the pinned scrollbar itself must also scroll the content
+      }
+    });
     _dataLink = TComponentDataLink();
+    // @@@ 2026-08-10 fix: _columns must be ready BEFORE _dataLink.dataSource
+    // is assigned. Setting dataSource can synchronously trigger
+    // activeChanged() (if the dataset is already open at that point),
+    // which calls _onDataSetOpen() — and _onDataSetOpen() now calls
+    // _columns.linkFields(). The original code created _columns last;
+    // when activeChanged() fires early like this, _columns is still an
+    // uninitialized `late final` field, throwing LateInitializationError.
+    _columns = widget.columns ?? TDBGridColumns(this);
+    _columns.host = this;
     _dataLink.onDataSetOpen = _onDataSetOpen;
+    // @@@ 2026-08-10 fix: onNewDataSet was never wired up before. See the
+    // full root-cause note above _onDataSetOpen() below for why this
+    // caused the grid to silently stop re-rendering after a requery.
+    _dataLink.onNewDataSet = _onDataSetOpen;
 // aa ??? issue
     // Doesn't repaint on close: reloading a dataset is close→open; if
     // setState fired immediately on close, it would flash "no data"
@@ -851,8 +903,6 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
     _dataLink.bufferCount = 25;
 // zz ??? issue
 
-    _columns = widget.columns ?? TDBGridColumns(this);
-    _columns.host = this;
     _columns.linkFields();
   }
 
@@ -894,6 +944,8 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
     _gridFocus.dispose();
     _hScroll.dispose();
     _vScroll.dispose();
+    _hScrollHeader.dispose();
+    _hScrollBar.dispose();
     super.dispose();
   }
 
@@ -911,10 +963,33 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
   // the buffer → the grid paints 0 rows (symptom: the data clearly
   // loaded successfully with rows=N, but the screen is blank). Restore
   // bufferCount once open completes.
+  //
+  // @@@ 2026-08-10 fix — root cause of "double-click locates the master
+  // record correctly, the detail grid's data clearly loads (recordCount
+  // is correct), but the grid stays visually blank until you switch tabs
+  // away and back":
+  //
+  // TDBGrid links each column to its TField object (col.field) exactly
+  // once, in initState() → _columns.linkFields(). But when a WML
+  // <onevent type="afterscroll">/<go> handler triggers a dataset requery
+  // (dbquery()'s close→open cycle), the dataset — running in default-
+  // fields mode — creates a BRAND NEW set of TField objects to replace
+  // the old ones. The grid's cached col.field references still point at
+  // the old, now-detached TField objects, which are no longer connected
+  // to the live dataset — so every cell reads back empty.
+  //
+  // Switching tabs away and back "fixes" it only because that tears down
+  // and recreates the whole grid State, re-running initState() →
+  // linkFields() against whatever TField objects are current at that
+  // moment. The real fix is to re-run linkFields() every time the
+  // dataset (re)opens, not just once at widget creation — that's the
+  // _columns.linkFields() call added below.
   void _onDataSetOpen(TDataSet ds) {
     if (_dataLink.bufferCount < 25) {
-      _dataLink.bufferCount = 25; // the setter triggers recalcBufListSize + calcRange while active
+      _dataLink.bufferCount =
+          25; // the setter triggers recalcBufListSize + calcRange while active
     }
+    _columns.linkFields();
     if (mounted) setState(() {});
   }
 // zz ??? issue
@@ -1155,7 +1230,8 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
       if (_beginEditFrom(_selRow!, _selCol!, forward: fwd)) {
         return KeyEventResult.handled;
       }
-      return KeyEventResult.ignored; // the whole row is non-editable → let focus jump out of the grid normally
+      return KeyEventResult
+          .ignored; // the whole row is non-editable → let focus jump out of the grid normally
     }
     // Arrow keys → move the selected cell
     if (k == LogicalKeyboardKey.arrowUp) {
@@ -1249,7 +1325,6 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
     }
     setState(() {});
   }
-
 
   // @@@ Sets the edit box's content and selects it all (used when
   //     entering edit mode / hopping fields via Tab). Selecting
@@ -1356,7 +1431,10 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
         // Now: the cursor position is remembered before saving, and moveBy
         // restores it after the await completes.
         final ds = _dataLink.dataSet;
-        if (ds == null) { await _commitEdit(); return; }
+        if (ds == null) {
+          await _commitEdit();
+          return;
+        }
         // This cell's value has already been written to the field by _saveCurrentCell; post the whole row here.
         if (ds.state == TDataSetState.dsEdit ||
             ds.state == TDataSetState.dsInsert) {
@@ -1367,7 +1445,8 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
         //     (a non-main dataset that doesn't have an _XXXPost), this
         //     whole block is skipped, matching the pre-change behavior.
         if (widget.onRowPost != null) {
-          final want = _dataLink.activeRecord; // the cursor position before saving
+          final want =
+              _dataLink.activeRecord; // the cursor position before saving
           await widget.onRowPost!();
           if (!mounted) return;
           // A reload usually resets the cursor to the first record → restore it to the original row.
@@ -1442,9 +1521,11 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             if (widget.onExitLastRow != null) {
-              widget.onExitLastRow!();          // the caller explicitly specified the next widget
+              widget
+                  .onExitLastRow!(); // the caller explicitly specified the next widget
             } else {
-              FocusScope.of(context).nextFocus(); // no callback given, so hand off to the default traversal
+              FocusScope.of(context)
+                  .nextFocus(); // no callback given, so hand off to the default traversal
             }
           });
           return;
@@ -1454,7 +1535,10 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
         ds.next();
         // Starts from the first editable column
         final firstEditable = _firstEditableCol(cols);
-        if (firstEditable == null) { _cancelEdit(); return; }
+        if (firstEditable == null) {
+          _cancelEdit();
+          return;
+        }
         _editingRow = _dataLink.activeRecord;
         _editingCol = firstEditable;
         _selRow = _editingRow;
@@ -1506,53 +1590,78 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
       table = const Center(child: Text("(no data)"));
     } else {
 // aa ### flutter extension
-      // Layout: an outer horizontal scroll → containing [a fixed header +
-      // vertically-scrolling data].
-      // The header stays fixed regardless of vertical scrolling; the
-      // header and data share the same horizontal scroll, so they stay
-      // aligned when scrolling left/right.
-      // Height is computed directly from widget.height (no LayoutBuilder,
-      // to save a layout pass and avoid flicker/jank from frequent
-      // setState calls during saving/editing).
+      // @@@ 2026-08-10 fix: keep both scrollbars pinned to the grid's
+      // visible edges (right / bottom) like a normal desktop window,
+      // instead of scrolling out of view along with content on the other
+      // axis. The vertical scrollbar directly wraps the real vertical
+      // SingleChildScrollView (as the OUTERMOST layer) — since horizontal
+      // scrolling happens entirely INSIDE it, the vertical scrollbar
+      // never moves regardless of horizontal scroll position, and this is
+      // the plain, well-tested Scrollbar+SingleChildScrollView pattern.
+      // The horizontal scrollbar can't use that same trick (nesting it
+      // inside the vertical scroll would drag it off-screen once you
+      // scroll down), so it's pulled out as a separate, fixed strip below
+      // the vertical-scroll area, wrapping its own tiny SingleChildScrollView
+      // sized to the exact same totalWidth as the real content and kept in
+      // sync with the real _hScroll via a listener (same proven trick
+      // already used for the header row above).
       final totalWidth = _totalColsWidth(cols);
       final gridH = widget.height ?? 300;
-      final bodyHeight =
-          (gridH - (showTitles ? 28 : 0) - 2).clamp(0.0, double.infinity);
-      table = Scrollbar(
-        controller: _hScroll,
-        thumbVisibility: true,
-        child: SingleChildScrollView(
-          controller: _hScroll,
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: totalWidth,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (showTitles) _buildHeader(cols), // fixed header
-                SizedBox(
-                  height: bodyHeight,
-                  child: Scrollbar(
-                    controller: _vScroll,
-                    thumbVisibility: true,
-                    child: SingleChildScrollView(
-                      controller: _vScroll,
-                      scrollDirection: Axis.vertical,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          for (var r = 0; r < _rowCount; r++)
-                            _buildRow(r, cols),
-                        ],
-                      ),
+      const kScrollbarThickness = 14.0;
+      final bodyHeight = (gridH -
+              (showTitles ? 28 : 0) -
+              kScrollbarThickness -
+              2)
+          .clamp(0.0, double.infinity);
+      table = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showTitles)
+            SingleChildScrollView(
+              controller: _hScrollHeader,
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(), // only follows the body's movement in sync, not directly draggable by the user
+              child: SizedBox(width: totalWidth, child: _buildHeader(cols)),
+            ),
+          SizedBox(
+            height: bodyHeight,
+            child: Scrollbar(
+              controller: _vScroll,
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: _vScroll,
+                scrollDirection: Axis.vertical,
+                child: SingleChildScrollView(
+                  controller: _hScroll,
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: totalWidth,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (var r = 0; r < _rowCount; r++)
+                          _buildRow(r, cols),
+                      ],
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+          SizedBox(
+            height: kScrollbarThickness,
+            child: Scrollbar(
+              controller: _hScrollBar,
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: _hScrollBar,
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(width: totalWidth, height: kScrollbarThickness),
+              ),
+            ),
+          ),
+        ],
       );
 // zz ### flutter extension
     }
@@ -1600,7 +1709,15 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
                 _gridFocus.requestFocus();
               }
             },
-            child: table,
+            // @@@ 2026-08-14 fix: the header row/content used to sit flush
+            // against the outer frame (no gap at all between DecoratedBox's
+            // border and the table), so the header row's gray background
+            // looked like it was "crushing" the frame's border line. Added
+            // 1px of padding to leave a visible gap.
+            child: Padding(
+              padding: const EdgeInsets.all(1),
+              child: table,
+            ),
           ),
 // zz ??? issue
         ),
@@ -1770,7 +1887,8 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
             value: col.field?.text ?? '',
             width: w,
             forGrid: true,
-            autofocus: true, // @@@ auto-focuses on entering edit mode (including after a row change via Tab)
+            autofocus:
+                true, // @@@ auto-focuses on entering edit mode (including after a row change via Tab)
             lookupColumns: spec.rows,
             colWidths: spec.colWidths,
             onChanged: (k) async {
@@ -1792,37 +1910,36 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
         width: w,
         height: 28,
         child: Focus(
-        // @@@ key changes with "row+column": forces a rebuild on row change, so autofocus fires again.
-        key: ValueKey("edit_${_dataLink.activeRecord}_${col.fieldName}"),
-        onKeyEvent: (node, ev) {
-          if (ev is KeyDownEvent &&
-              ev.logicalKey == LogicalKeyboardKey.tab) {
-            final prev = HardwareKeyboard.instance.isShiftPressed;
-            _editNextCol(prev: prev);
-            return KeyEventResult.handled;
-          }
-          // @@@ Esc → cancels editing, focus returns to the grid (keeps the Excel-style keyboard flow)
-          if (ev is KeyDownEvent &&
-              ev.logicalKey == LogicalKeyboardKey.escape) {
-            _cancelEdit();
-            _focusGrid();
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
-        child: _CellTextField(
-          controller: _editController,
-          // @@@ After Enter submits, focus returns to the grid, with the
-          //     cursor staying on the same cell, so arrow keys/Enter can
-          //     be pressed again.
-          onSubmitted: (_) async {
-            await _commitEdit();
-            _focusGrid();
+          // @@@ key changes with "row+column": forces a rebuild on row change, so autofocus fires again.
+          key: ValueKey("edit_${_dataLink.activeRecord}_${col.fieldName}"),
+          onKeyEvent: (node, ev) {
+            if (ev is KeyDownEvent && ev.logicalKey == LogicalKeyboardKey.tab) {
+              final prev = HardwareKeyboard.instance.isShiftPressed;
+              _editNextCol(prev: prev);
+              return KeyEventResult.handled;
+            }
+            // @@@ Esc → cancels editing, focus returns to the grid (keeps the Excel-style keyboard flow)
+            if (ev is KeyDownEvent &&
+                ev.logicalKey == LogicalKeyboardKey.escape) {
+              _cancelEdit();
+              _focusGrid();
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
           },
-          // @@@ Submits when tapping elsewhere, but does "not" grab focus
-          //     back (the user might be about to tap a widget outside the grid).
-          onTapOutside: (_) => _commitEdit(),
-        ),
+          child: _CellTextField(
+            controller: _editController,
+            // @@@ After Enter submits, focus returns to the grid, with the
+            //     cursor staying on the same cell, so arrow keys/Enter can
+            //     be pressed again.
+            onSubmitted: (_) async {
+              await _commitEdit();
+              _focusGrid();
+            },
+            // @@@ Submits when tapping elsewhere, but does "not" grab focus
+            //     back (the user might be about to tap a widget outside the grid).
+            onTapOutside: (_) => _commitEdit(),
+          ),
         ),
       ),
     );
@@ -1849,8 +1966,7 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: rightBorder
           ? BoxDecoration(
-              border: Border(
-                  right: BorderSide(color: Colors.grey.shade300)))
+              border: Border(right: BorderSide(color: Colors.grey.shade300)))
           : null,
       child: Text(
         text,

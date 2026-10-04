@@ -64,7 +64,6 @@ import 'lazarus_db.dart';
 import 'lazarus_sqldb.dart';
 import 'wapform_expression.dart';
 
-
 // ── Global engine state (private, same as upstream — external code always
 //    goes through the public functions below) ──────────────────────────
 WapEvaluator? _currentEvaluator;
@@ -138,7 +137,8 @@ String _valToStr(dynamic v, String mode) {
     if (v == v.truncateToDouble() && !v.isInfinite && !v.isNaN) {
       return v.toInt().toString();
     }
-    return v.toString(); // @@@ Dart's shortest round-trip representation: 26.9→"26.9", no more exploding floating-point tails
+    return v
+        .toString(); // @@@ Dart's shortest round-trip representation: 26.9→"26.9", no more exploding floating-point tails
   }
   if (v is DateTime) {
     final d = '${v.year}-${_p2(v.month)}-${_p2(v.day)}';
@@ -158,7 +158,9 @@ String _valToStr(dynamic v, String mode) {
       }
     }
   }
-  return (mode == 'text' || mode == 'sqlraw') ? v.toString() : _wrapStr(v.toString());
+  return (mode == 'text' || mode == 'sqlraw')
+      ? v.toString()
+      : _wrapStr(v.toString());
 }
 
 /// Shared scanner: $var / $(expr) / $$ → evaluate and convert to string per
@@ -183,8 +185,9 @@ String _expand(String s, String mode) {
         int depth = 1;
         final eb = StringBuffer();
         while (i < len && depth > 0) {
-          if (s[i] == '(') depth++;
-          else if (s[i] == ')') {
+          if (s[i] == '(') {
+            depth++;
+          } else if (s[i] == ')') {
             depth--;
             if (depth == 0) {
               i++;
@@ -197,7 +200,9 @@ String _expand(String s, String mode) {
         expr = eb.toString();
       } else {
         final start = i;
-        while (i < len && _isAlphaCh(s[i])) i++;
+        while (i < len && _isAlphaCh(s[i])) {
+          i++;
+        }
         expr = s.substring(start, i);
       }
       if (expr.isNotEmpty) buf.write(_valToStr(expression(expr), mode));
@@ -275,7 +280,8 @@ void setvar(String name, dynamic value) {
 }
 
 /// invoke — corresponds to WML's <invoke instance="ds" method="..." params=... result=...>.
-dynamic invoke(String instance, String method, {dynamic params, String? result}) {
+dynamic invoke(String instance, String method,
+    {dynamic params, String? result}) {
   final ds = _currentRegistry?.find(instance);
   if (ds == null) return null;
   dynamic ret;
@@ -463,17 +469,22 @@ class DataSetRegistry {
   List<String> get registeredIds => _dataSets.keys.toList();
   int get count => _dataSets.length;
   bool contains(String id) => _dataSets.containsKey(id);
-  TDataSet? find(String id) => _dataSets[id.toLowerCase()]; // @@@ case-insensitive
+  TDataSet? find(String id) =>
+      _dataSets[id.toLowerCase()]; // @@@ case-insensitive
 
   // findQuery covers the usage that the original code's findTable was
   // used for (Lazarus/SQLdb has no TTable; whole-table queries are also
   // TSQLQuery)
-  TSQLQuery? findQuery(String id) => _dataSets[id.toLowerCase()] is TSQLQuery ? _dataSets[id.toLowerCase()] as TSQLQuery : null; // @@@ case-insensitive
+  TSQLQuery? findQuery(String id) => _dataSets[id.toLowerCase()] is TSQLQuery
+      ? _dataSets[id.toLowerCase()] as TSQLQuery
+      : null; // @@@ case-insensitive
 
-  void put(String id, TDataSet ds) => _dataSets[id.toLowerCase()] = ds; // @@@ case-insensitive
+  void put(String id, TDataSet ds) =>
+      _dataSets[id.toLowerCase()] = ds; // @@@ case-insensitive
 
   ExprDataSet? resolveDataSet(String name) {
-    final ds = _dataSets[name.toLowerCase()]; // @@@ case-insensitive → both $tt and $TT resolve
+    final ds = _dataSets[
+        name.toLowerCase()]; // @@@ case-insensitive → both $tt and $TT resolve
     return ds == null ? null : _DataSetExprAdapter(ds);
   }
 
@@ -563,7 +574,8 @@ class DbQuery {
     return await q.execSQLAsync();
   }
 
-  void _applySqlAndParams(TSQLQuery q, String sql, Map<String, dynamic>? params) {
+  void _applySqlAndParams(
+      TSQLQuery q, String sql, Map<String, dynamic>? params) {
     // q.sql = sql already auto-runs parseSql(doCreate:true) to build the
     // params (the behavior of lazarus_sqldb_query.dart's Step8), so there's
     // no need for the extra q.params.clear() call the original code made.

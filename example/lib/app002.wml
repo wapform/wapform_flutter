@@ -1,0 +1,168 @@
+<?xml version="1.0"?>
+<wml>
+	<card id="P" title="Product Master" width="1200">
+
+<function id="A0">
+  <setvar name="I" value="0"/>
+  <setvar name="S" value="''"/>
+  <open filename="S" result="I"/>
+  <if cnd="I=1">
+    <log message="$s"/>
+    <webcopy protocol="httpupload"
+       host="http://localhost:90/xyz/upload.php"
+       url="$s"
+       result="S"/>
+    <log message="$s"/>
+    <if cnd="Pos('failed', S)=0">
+      <setvar name="ddzlTPMC" value="ExtractFileName(S)"/>
+      <log message="$ddzlTPMC"/>
+      <setprop name="g0" prop="img" value="'http://localhost:90/xyz/uploads/a02.jpg'"/>
+    <else>
+      <log message="上傳失敗: $s"/>
+      <setvar name="ddzlTPMC" value="''"/>
+      <setprop name="g0" prop="img" value="$('http://localhost:90/xyz/uploads/'+'nopic.jpg')"/>
+    </else>
+    </if>
+  </if>
+</function>
+
+    <function id="B0">
+      <setvar name="ddzlTPMC" value="''"/>
+      <setprop name="g0" prop="img" value="$('http://127.0.0.1:8080/wap/'+'nopic.jpg')"/>
+    </function>
+		<dbquery id="pa">
+			<![CDATA[select * from pa order by pno]]>
+			<field fieldname="Pno" displaylabel="Item No" />
+			<field fieldname="Qno" displaylabel="SKU">
+				<onevent type="onchange">
+					<dbquery id="xy">
+						<![CDATA[select * from pa where qno='$pa.qno']]>
+					</dbquery>
+					<alert message="Duplicate SKU !!!" cnd="xy.count&gt;0" />
+				</onevent>
+			</field>
+			<field fieldname="Barcode" displaylabel="Barcode" />
+			<field fieldname="vno" displaylabel="Brand Code" />
+			<dbtable tablename="ve" keyfields="vno" lookupkeyfields="vno">
+				<field fieldname="vshort" displaylabel="Brand Short Name" />
+			</dbtable>
+			<field fieldname="Des" displaylabel="Item Name / Spec" />
+			<field fieldname="Unit" displaylabel="Unit" />
+			<field fieldname="pricea" displaylabel="Price A" />
+			<field fieldname="priceb" displaylabel="Price B" />
+			<field fieldname="pricec" displaylabel="Price C" />
+			<field fieldname="price1" displaylabel="Price 1" />
+			<field fieldname="price2" displaylabel="Price 2" />
+			<field fieldname="price3" displaylabel="Price 3" />
+			<field fieldname="activate" displaylabel="Listed" />
+			<field fieldname="UDate" displaylabel="Updated Date" />
+			<field fieldname="newa" displaylabel="Price 4" />
+			<field fieldname="new1" displaylabel="Price 5" />
+			<field fieldname="topic" displaylabel="Image" />
+			<field fieldname="mnu" displaylabel="Menu" />
+			<field fieldname="typ" displaylabel="Type" />
+			<field fieldname="ord" displaylabel="Sort Order" />
+			<field fieldname="qty" displaylabel="Minimum" />
+			<field fieldname="icon" displaylabel="Icon" />
+			<onevent type="onnewrecord">
+				<setvar name="paactivate" value="1" />
+			</onevent>
+		</dbquery>
+		<pagecontrol name="pagecontrol" activatepageindex="0">
+			<tabsheet caption="Product Search">
+				<datasource dataset="pa">
+					<dbfilter result="R">
+						<item field="pno" size="16" />
+						<item field="des" size="16" />
+						<onevent type="onfilter">
+							<dbquery id="pa"><![CDATA[select * from pa where $R order by pno]]></dbquery>
+						</onevent>
+					</dbfilter>
+					<p align="center">
+						<navigator />
+					</p>
+					<dbgrid height="350">
+						<item field="Pno" size="14" />
+						<item field="Qno" size="14" />
+						<item field="vno" size="14" lookup="ve;vno;vname" />
+						<item field="vshort" size="20" />
+						<item field="UDate" size="16" type="date" />
+						<item field="Des" size="40" />
+						<item field="Unit" size="6" />
+						<item field="activate" size="10" type="checkbox" display="m;n" value="1;0" />
+						<item field="pricea" size="10" />
+						<item field="priceb" size="10" />
+						<item field="pricec" size="10" />
+						<item field="price1" size="10" />
+						<item field="price2" size="10" />
+						<item field="price3" size="10" />
+						<item field="Barcode" size="30" />
+						<item field="newa" size="10" />
+						<item field="new1" size="10" />
+						<item field="icon" size="30" />
+						<item field="mnu" size="10" type="checkbox" display="m;n" value="m;n" />
+						<item field="typ" size="10" />
+						<item field="ord" size="10" />
+						<item field="qty" size="10" />
+						<onevent type="ondblclick">
+							<setprop name="pagecontrol" prop="activatePageIndex" value="1"/>
+						</onevent>
+					</dbgrid>
+				</datasource>
+			</tabsheet>
+			<tabsheet caption="Product Details">
+				<datasource dataset="pa">
+					<p align="center">
+						<navigator />
+					</p>
+					<br />
+					<br />
+					<br />
+					<table columns="5" align="LLLLC">
+						<tr>
+							<td>
+								<fieldset>
+									Item No:<input field="Pno" _size="30" /><br />
+									SKU:<input field="Qno" _size="30" /><br />
+									Updated Date:<input field="UDate" _size="10" /><br />
+									Item Name / Spec:<input field="Des" _size="30" /><br />
+									Icon:<input field="icon" size="40" /><br />
+									Barcode:<input field="Barcode" size="40" /><br />
+									Unit:<input field="Unit" size="2" /><br />
+									Listed:<input field="activate" size="2" _type="checkbox" value="1;0" /><br />
+									Menu:<input field="mnu" size="2" />&#160;m.Menu n.Product<br />
+									Type:<input field="typ" size="2" />&#160;s.Item p.Page n.Note<br />
+									Sort Order:<input field="ord" size="6" /><br />
+									Minimum:<input field="qty" size="6" /><br />
+								</fieldset>
+							</td>
+							<td width="15"></td>
+							<td>
+								<fieldset>
+									Brand Code:<input field="vno" size="10" lookup="sql;vv;select distinct vno, vshort from ve" /><br />
+									Brand Short Name:<input field="vshort" size="10" /><br />
+									Standard Cost:<input field="pricea" size="10" /><br />
+									Latest Cost:<input field="priceb" size="10" /><br />
+									Latest Market Price:<input field="pricec" size="10" /><br />
+									Price 1<input field="price1" size="10" /><br />
+									Price 2<input field="price2" size="10" /><br />
+									Price 3<input field="price3" size="10" /><br />
+									Price 4<input field="newa" size="10" /><br />
+									Price 5<input field="new1" size="10" /><br />
+								</fieldset>
+							</td>
+							<td width="15"></td>
+      <td>圖形|<a href="@A0">開啟</a>|<a href="@B0">清除</a><br/><img id="g0" width="300" height="300"/></td>
+						</tr>
+					</table>
+<!--
+-->
+					<setprop name="g0" prop="img" value="'$('http://localhost:90/'+'aaa.jpg')'"/>
+				</datasource>
+			</tabsheet>
+		</pagecontrol>
+		<do type="prev" label="Close">
+			<prev />
+		</do>
+	</card>
+</wml>

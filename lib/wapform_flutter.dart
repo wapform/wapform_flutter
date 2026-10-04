@@ -21,3 +21,4 @@ export 'wapform_lookup_box.dart';
 export 'wapform_report.dart';
 export 'wapform_report_style.dart';
 export 'wapform_colors.dart';
+export 'wapform_filter.dart';

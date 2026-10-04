@@ -71,7 +71,8 @@ import 'lazarus_db.dart';
 // Color(value)). The special clDefault sentinel value is kept.
 typedef TColor = int;
 const int clDefault = 0x20000000; // LCL's clDefault sentinel value
-const int clWindow = 0xFFFFFFFF; // corresponds to a white background (simplified)
+const int clWindow =
+    0xFFFFFFFF; // corresponds to a white background (simplified)
 const int clWindowText = 0xFF000000;
 const int clBtnFace = 0xFFF0F0F0;
 const int clGrayText = 0xFF808080;
@@ -132,7 +133,14 @@ enum TColumnButtonStyle {
 }
 
 // TGridDrawState (grids L139) — the state flags for the widget layer while painting a cell
-enum TGridDrawStateItem { gdSelected, gdFocused, gdFixed, gdHot, gdPushed, gdRowHighlight }
+enum TGridDrawStateItem {
+  gdSelected,
+  gdFocused,
+  gdFixed,
+  gdHot,
+  gdPushed,
+  gdRowHighlight
+}
 
 typedef TGridDrawState = Set<TGridDrawStateItem>;
 
@@ -288,7 +296,7 @@ class TGridColumn extends TCollectionItem {
   int tag = 0;
 
   // constructor Create (L598)
-  TGridColumn(TCollection? aCollection) : super(aCollection) {
+  TGridColumn(super.aCollection) {
     _font = TFont();
     _font.onChange = _fontChanged;
     _title = createTitle();
@@ -530,9 +538,7 @@ class TGridColumns extends TCollection {
   TGridColumns(this._grid, TCollectionItemFactory itemClass) : super(itemClass);
 
   // A grid-less convenience constructor for dbgrids' TDBGridColumns
-  TGridColumns.plain(TCollectionItemFactory itemClass)
-      : _grid = null,
-        super(itemClass);
+  TGridColumns.plain(super.itemClass) : _grid = null;
 
   dynamic get grid => _grid;
   set grid(dynamic value) => _grid = value;
@@ -543,11 +549,13 @@ class TGridColumns extends TCollection {
   }
 
   // Add (L...)
+  @override
   TGridColumn add() => super.add() as TGridColumn;
 
   // Update (virtual): notifies the grid to repaint when a column changes —
   // overridden/listened to at the widget layer; calls the grid's
   // columnsChanged (if present) here
+  @override
   void update(TCollectionItem? item) {
     if (_grid != null) {
       try {

@@ -45,10 +45,9 @@
 //  pointer→object, class of→factory, Variant→dynamic, method names lowerCamelCase……), not repeated here.
 // ═════════════════════════════════════════════════════════════════════════════
 
-import 'dart:typed_data';
-import 'dart:convert';                        // @@@ used by WapDb's HTTP driver (JSON)
-import 'package:http/http.dart' as http;      // @@@ used by WapDb's HTTP driver
-import 'package:flutter/foundation.dart';     // @@@ debugPrint (SQL diagnostic output)
+import 'dart:convert'; // @@@ used by WapDb's HTTP driver (JSON)
+import 'package:http/http.dart' as http; // @@@ used by WapDb's HTTP driver
+import 'package:flutter/foundation.dart'; // @@@ debugPrint (SQL diagnostic output)
 
 import 'lazarus_db.dart';
 
@@ -133,7 +132,7 @@ class TSqlObjectIdentifier extends TCollectionItem {
   String schemaName = '';
   String objectName = '';
 
-  TSqlObjectIdentifier(TCollection? aCollection) : super(aCollection);
+  TSqlObjectIdentifier(super.aCollection);
 
   String get fullName =>
       schemaName.isEmpty ? objectName : "$schemaName.$objectName";
@@ -167,9 +166,8 @@ class TSqlObjectIdentifierList extends TCollection {
 typedef TSQLScriptDirectiveEvent = void Function(
     Object sender, String directive, String argument, TBoolRef stopExecution);
 
-typedef TSQLScriptExceptionEvent = void Function(
-    Object sender, TStrings theStatement, Object theException,
-    TBoolRef continueExecution);
+typedef TSQLScriptExceptionEvent = void Function(Object sender,
+    TStrings theStatement, Object theException, TBoolRef continueExecution);
 
 class TCustomSQLScript extends TComponent {
   bool autoCommit = false;
@@ -188,7 +186,7 @@ class TCustomSQLScript extends TComponent {
   bool _aborted = false;
   int _line = 0;
 
-  TCustomSQLScript([TComponent? aOwner]) : super(aOwner) {
+  TCustomSQLScript([super.aOwner]) {
     _script = TStringList();
     dollarStrings = TStringList();
     directives = TStringList();
@@ -300,7 +298,7 @@ class TCustomBufDataset extends TDBDataset {
   final List<_PendingUpdate> _pendingUpdates = [];
   int _changeCount = 0;
 
-  TCustomBufDataset([TComponent? aOwner]) : super(aOwner) {
+  TCustomBufDataset([super.aOwner]) {
     _indexDefs = TIndexDefs(this);
   }
 
@@ -315,8 +313,7 @@ class TCustomBufDataset extends TDBDataset {
 
   // LoadBlobIntoBuffer（TCustomSQLQuery override）
   void loadBlobIntoBuffer(TFieldDef fieldDef, PBufBlobField aBlobBuf) {
-    throw EDatabaseError(
-        "AbstractError: TCustomBufDataset.LoadBlobIntoBuffer");
+    throw EDatabaseError("AbstractError: TCustomBufDataset.LoadBlobIntoBuffer");
   }
 
   // ApplyRecUpdate（TCustomSQLQuery override）
@@ -593,7 +590,28 @@ class TCustomBufDataset extends TDBDataset {
         rec = calcBuffer;
         break;
       case TDataSetState.dsOldValue:
-        rec = _oldValueBuffer ?? activeBuffer();
+        // @@@ fix: while applyRecUpdate() is running (_applyingUpdate is
+        // non-null), _applyingUpdate.oldValues must be read first -- that's
+        // the "real" old-value snapshot for this pending update
+        // (internalDelete()/internalPost() both correctly save it, and
+        // applyUpdates()'s loop has already assigned it to
+        // _applyingUpdate). The old code only recognized _oldValueBuffer
+        // (only internalEdit() sets it, and internalPost() clears it to
+        // null once used) or fell back to activeBuffer() (whatever record
+        // the cursor currently points at) -- after a DELETE removes a
+        // record from _records, the resulting array shift means the next
+        // record ends up at that cursor position; and even for a MODIFY,
+        // _oldValueBuffer has usually already been cleared by
+        // internalPost() by this point. Either way, this read the old
+        // values of "whatever record the cursor currently points at"
+        // instead of "the record actually being updated", so the WHERE
+        // clause built from it targeted the wrong record (e.g. deleting
+        // the next record instead).
+        if (_applyingUpdate != null) {
+          rec = TRecordBuffer()..fieldData.addAll(_applyingUpdate!.oldValues);
+        } else {
+          rec = _oldValueBuffer ?? activeBuffer();
+        }
         break;
       default:
         rec = activeBuffer();
@@ -621,7 +639,8 @@ class TCustomBufDataset extends TDBDataset {
     if (!dsWriteModes.contains(state)) {
       databaseErrorFmt(SNotEditing, [name], this);
     }
-    final rec = state == TDataSetState.dsCalcFields ? calcBuffer : activeBuffer();
+    final rec =
+        state == TDataSetState.dsCalcFields ? calcBuffer : activeBuffer();
     if (rec == null) return;
     final key = field.fieldName.toUpperCase();
     if (field.fieldKind == TFieldKind.fkCalculated ||
@@ -645,8 +664,7 @@ class TCustomBufDataset extends TDBDataset {
   void internalEdit() {
     final rec = activeBuffer();
     if (rec != null) {
-      _oldValueBuffer = TRecordBuffer()
-        ..fieldData.addAll(rec.fieldData);
+      _oldValueBuffer = TRecordBuffer()..fieldData.addAll(rec.fieldData);
     }
   }
 
@@ -688,18 +706,16 @@ class TCustomBufDataset extends TDBDataset {
       final stored = TRecordBuffer()..fieldData.addAll(rec.fieldData);
       _records.insert(at, stored);
       _cursorIndex = at;
-      _pendingUpdates.add(
-          _PendingUpdate(TUpdateKind.ukInsert, {}, Map.of(rec.fieldData)));
+      _pendingUpdates
+          .add(_PendingUpdate(TUpdateKind.ukInsert, {}, Map.of(rec.fieldData)));
     } else {
       if (_cursorIndex >= 0 && _cursorIndex < _records.length) {
         _records[_cursorIndex].fieldData
           ..clear()
           ..addAll(rec.fieldData);
       }
-      _pendingUpdates.add(_PendingUpdate(
-          TUpdateKind.ukModify,
-          Map.of(_oldValueBuffer?.fieldData ?? {}),
-          Map.of(rec.fieldData)));
+      _pendingUpdates.add(_PendingUpdate(TUpdateKind.ukModify,
+          Map.of(_oldValueBuffer?.fieldData ?? {}), Map.of(rec.fieldData)));
     }
     _changeCount = _pendingUpdates.length;
     _oldValueBuffer = null;
@@ -709,8 +725,8 @@ class TCustomBufDataset extends TDBDataset {
   void internalDelete() {
     if (_cursorIndex >= 0 && _cursorIndex < _records.length) {
       final removed = _records.removeAt(_cursorIndex);
-      _pendingUpdates.add(_PendingUpdate(
-          TUpdateKind.ukDelete, Map.of(removed.fieldData), {}));
+      _pendingUpdates.add(
+          _PendingUpdate(TUpdateKind.ukDelete, Map.of(removed.fieldData), {}));
       _changeCount = _pendingUpdates.length;
       if (_cursorIndex >= _records.length) {
         _cursorIndex = _records.length - 1;
@@ -768,7 +784,23 @@ class TCustomBufDataset extends TDBDataset {
       if (match) {
         doBeforeScroll();
         internalGotoBookmark(i);
-        resync({TResyncModeItem.rmExact, TResyncModeItem.rmCenter});
+        // @@@ fix: don't use rmCenter. The base resync()'s rmCenter is
+        // centering logic designed for a "windowed buffer" (keeping only
+        // a small in-memory window of records) -- count =
+        // _recordCount~/2, then it calls getPriorRecord() count times,
+        // and getPriorRecord() decrements _cursorIndex by one each time
+        // via getRecord(gmPrior). This subclass (TCustomBufDataset) keeps
+        // every record in the _records array; internalGotoBookmark(i) has
+        // already set _cursorIndex correctly to i, so no "centering" is
+        // needed at all -- yet this logic was shifting it back by nearly
+        // half the buffered record count, landing on a completely
+        // unrelated record (this is exactly why, after <invoke
+        // method="locate"> found the target row, the next afterScroll
+        // would read a different record's sno). rmCenter is removed,
+        // keeping only rmExact (verifies the current position is valid,
+        // matching the pattern other call sites like
+        // post()/internalRefresh() already use).
+        resync({TResyncModeItem.rmExact});
         doAfterScroll();
         return true;
       }
@@ -839,7 +871,7 @@ class _WriteBackMemoryStream extends TMemoryStream {
   int write(List<int> buffer, int count) {
     final result = super.write(buffer, count);
     _ds.setFieldData(_field, TValueBuffer(bytes));
-    if (_field is TBlobField) (_field as TBlobField).modified = true;
+    if (_field is TBlobField) (_field).modified = true;
     return result;
   }
 }
@@ -857,15 +889,33 @@ typedef TFieldDefsClass = TFieldDefs Function(TDataSet? aDataSet);
 
 // StatementTokens : Array[TStatementType] of string（L33-37）
 const List<String> statementTokens = [
-  '(unknown)', "select", "insert", "update", "delete",
-  "create", "get", "put", "execute",
-  "start", "commit", "rollback", "?",
+  '(unknown)',
+  "select",
+  "insert",
+  "update",
+  "delete",
+  "create",
+  "get",
+  "put",
+  "execute",
+  "start",
+  "commit",
+  "rollback",
+  "?",
 ];
 
 // TSchemaObjectNames : array[TSchemaType] of String（L38-40）
 const List<String> tSchemaObjectNames = [
-  '???', "table_name", "???", "procedure_name", "column_name",
-  "param_name", "index_name", "package_name", "schema_name", "sequence",
+  '???',
+  "table_name",
+  "???",
+  "procedure_name",
+  "column_name",
+  "param_name",
+  "index_name",
+  "package_name",
+  "schema_name",
+  "sequence",
 ];
 
 // SingleQuotes / DoubleQuotes（L41-42）
@@ -958,10 +1008,9 @@ int _codePageNameToCodePage(String name) {
 
 // RefreshFlags : Array[ukModify..ukInsert] of TProviderFlag（L861）
 // Indexed by TUpdateKind, with only two entries: ukModify/ukInsert
-TProviderFlag _refreshFlags(TUpdateKind kind) =>
-    kind == TUpdateKind.ukModify
-        ? TProviderFlag.pfRefreshOnUpdate
-        : TProviderFlag.pfRefreshOnInsert;
+TProviderFlag _refreshFlags(TUpdateKind kind) => kind == TUpdateKind.ukModify
+    ? TProviderFlag.pfRefreshOnUpdate
+    : TProviderFlag.pfRefreshOnInsert;
 
 // TimeIntervalToString (L864-874): a time interval (hours can be >24)
 String timeIntervalToString(DateTime time) {
@@ -998,8 +1047,8 @@ class ESQLDatabaseError extends EDatabaseError {
   final String sqlState;
 
   // constructor CreateFmt(Fmt, Args, Comp, AErrorCode, ASQLState)
-  ESQLDatabaseError.createFmt(String fmt, List<dynamic> args,
-      TComponent? comp, int aErrorCode, String aSQLState)
+  ESQLDatabaseError.createFmt(String fmt, List<dynamic> args, TComponent? comp,
+      int aErrorCode, String aSQLState)
       : errorCode = aErrorCode,
         sqlState = aSQLState,
         super(_buildMsg(fmt, args, comp));
@@ -1020,22 +1069,21 @@ class ESQLDatabaseError extends EDatabaseError {
 // TSQLDBFieldDef (L127-132): SQLDBData is a pointer freely attached by the driver side → dynamic
 class TSQLDBFieldDef extends TFieldDef {
   dynamic sqldbData;
-  TSQLDBFieldDef(TCollection? aCollection) : super(aCollection);
-  TSQLDBFieldDef.named(TFieldDefs aOwner, String aName, TFieldType aDataType,
-      int aSize, bool aRequired, int aFieldNo,
-      [TSystemCodePage aCodePage = cpACP])
-      : super.named(aOwner, aName, aDataType, aSize, aRequired, aFieldNo,
-            aCodePage);
+  TSQLDBFieldDef(super.aCollection);
+  TSQLDBFieldDef.named(super.aOwner, super.aName, super.aDataType, super.aSize,
+      super.aRequired, super.aFieldNo,
+      [super.aCodePage])
+      : super.named();
 }
 
 // TSQLDBFieldDefs (L136-139, implementation L879-882):
 // class function FieldDefClass → overriding the virtual factory method (convention 2)
 class TSQLDBFieldDefs extends TFieldDefs {
-  TSQLDBFieldDefs(TDataSet? aDataSet) : super(aDataSet);
+  TSQLDBFieldDefs(super.aDataSet);
 
   @override
-  TFieldDef fieldDefClass(TFieldDefs aOwner, String aName,
-      TFieldType aDataType, int aSize, bool aRequired, int aFieldNo,
+  TFieldDef fieldDefClass(TFieldDefs aOwner, String aName, TFieldType aDataType,
+      int aSize, bool aRequired, int aFieldNo,
       [TSystemCodePage aCodePage = cpACP]) {
     return TSQLDBFieldDef.named(
         aOwner, aName, aDataType, aSize, aRequired, aFieldNo, aCodePage);
@@ -1046,7 +1094,7 @@ class TSQLDBFieldDefs extends TFieldDefs {
 class TSQLDBParam extends TParam {
   TFieldDef? fieldDef;
   dynamic sqldbData;
-  TSQLDBParam(TCollection? aCollection) : super(aCollection);
+  TSQLDBParam(super.aCollection);
 }
 
 // TSQLDBParams (L154-157, implementation L887-890)
@@ -1078,7 +1126,7 @@ class TCustomSQLStatement extends TComponent {
   TRowsCount _rowsAffected = -1;
 
   // constructor Create（L1135-1147）
-  TCustomSQLStatement([TComponent? aOwner]) : super(aOwner) {
+  TCustomSQLStatement([super.aOwner]) {
     _sql = TStringList();
     _sql.onChange = onChangeSQL;
     _params = createParams();
@@ -1335,7 +1383,8 @@ class TCustomSQLStatement extends TComponent {
   void deAllocateCursor() {
     if (_cursor != null && _database != null) {
       _database!.deAllocateCursorHandle(_cursor!);
-      _cursor = null; // a var parameter would be set to nil by DeAllocateCursorHandle
+      _cursor =
+          null; // a var parameter would be set to nil by DeAllocateCursorHandle
     }
   }
 
@@ -1346,7 +1395,15 @@ class TCustomSQLStatement extends TComponent {
     // Terminators = SQLDelimiterCharacters + [#0,'=','+','-','*','\','/','[',']','|']
     final termArr = <String>{
       ...sqlDelimiterCharacters,
-      "=", "+", "-", "*", "\\", "/", "[", "]", "|",
+      "=",
+      "+",
+      "-",
+      "*",
+      "\\",
+      "/",
+      "[",
+      "]",
+      "|",
       macroChar,
     };
     result = '';
@@ -1492,7 +1549,7 @@ class TCustomSQLStatement extends TComponent {
 // TSQLStatement (L431-442): just re-exposes published properties; Dart has no
 // published concept, so it inherits directly
 class TSQLStatement extends TCustomSQLStatement {
-  TSQLStatement([TComponent? aOwner]) : super(aOwner);
+  TSQLStatement([super.aOwner]);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -1517,7 +1574,10 @@ enum TConnOption {
 
 typedef TConnOptions = Set<TConnOption>;
 
-enum TSQLConnectionOption { scoExplicitConnect, scoApplyUpdatesChecksRowsAffected }
+enum TSQLConnectionOption {
+  scoExplicitConnect,
+  scoApplyUpdatesChecksRowsAffected
+}
 
 typedef TSQLConnectionOptions = Set<TSQLConnectionOption>;
 
@@ -1539,7 +1599,8 @@ class TSQLConnection extends TDatabase {
   TQuoteChars fieldNameQuoteChars = doubleQuotes;
   TSQLConnectionOptions _options = <TSQLConnectionOption>{};
   String password = '';
-  TSQLTransaction? _sqlTransaction; // FTransaction (shadowing the concept of TDatabase's
+  TSQLTransaction?
+      _sqlTransaction; // FTransaction (shadowing the concept of TDatabase's
   // transactions collection; the original source is also a standalone field here)
   String userName = '';
   String hostName = '';
@@ -1555,7 +1616,7 @@ class TSQLConnection extends TDatabase {
   TFormatSettings sqlFormatSettings = defaultSQLFormatSettings();
 
   // constructor Create（L1364-1372）
-  TSQLConnection([TComponent? aOwner]) : super(aOwner) {
+  TSQLConnection([super.aOwner]) {
     sqlFormatSettings = defaultSQLFormatSettings();
     fieldNameQuoteChars = doubleQuotes;
     logEvents = logAllEvents; // match Property LogEvents...Default
@@ -1683,7 +1744,7 @@ class TSQLConnection extends TDatabase {
       databaseError(SErrTransactionnSet);
     }
     if (!connected) openConnection();
-    if (!trans!.active) trans.maybeStartTransaction();
+    if (!trans.active) trans.maybeStartTransaction();
 
     var s = sql.trimRight();
     if (s == '') {
@@ -1802,9 +1863,16 @@ class TSQLConnection extends TDatabase {
   TRowsCount rowsAffected(TSQLCursor? cursor) => -1;
 
   // AddFieldDef (L1602-1620): a helper the driver side uses to build a FieldDef
-  TFieldDef addFieldDef(TFieldDefs aFieldDefs, int aFieldNo, String aName,
-      TFieldType aDataType, int aSize, int aPrecision, bool aByteSize,
-      bool aRequired, bool aReadOnly) {
+  TFieldDef addFieldDef(
+      TFieldDefs aFieldDefs,
+      int aFieldNo,
+      String aName,
+      TFieldType aDataType,
+      int aSize,
+      int aPrecision,
+      bool aByteSize,
+      bool aRequired,
+      bool aReadOnly) {
     TSystemCodePage aCodePage;
     var size = aSize;
     if (aDataType == TFieldType.ftString ||
@@ -1839,12 +1907,11 @@ class TSQLConnection extends TDatabase {
 
   // No @override here: TSQLConnection extends TDatabase, not TDataSet —
   // this is the Pascal name collision noted below, not an actual override.
-  void getFieldNames(covariant dynamic tableNameOrList,
-      [TStrings? list]) {
+  void getFieldNames(covariant dynamic tableNameOrList, [TStrings? list]) {
     // The Pascal overload with a different signature than TDataSet.GetFieldNames (name collision) — this
     // is TSQLConnection's own (TableName, List) version
-    getDBInfo(TSchemaType.stColumns, tableNameOrList as String,
-        "column_name", list!);
+    getDBInfo(
+        TSchemaType.stColumns, tableNameOrList as String, "column_name", list!);
   }
 
   void getSchemaNames(TStrings list) {
@@ -1866,11 +1933,9 @@ class TSQLConnection extends TDatabase {
       qry.transaction = _sqlTransaction;
       qry.database = this;
       qry.parseSQL = false;
-      qry.setSchemaInfo(
-          aSchemaType, tSchemaObjectNames[aSchemaType.index], "");
+      qry.setSchemaInfo(aSchemaType, tSchemaObjectNames[aSchemaType.index], "");
       qry.open();
-      final f =
-          qry.findField(tSchemaObjectNames[TSchemaType.stSchemata.index]);
+      final f = qry.findField(tSchemaObjectNames[TSchemaType.stSchemata.index]);
       while (!qry.eof) {
         var vSchemaName = '';
         if (f != null) {
@@ -1895,8 +1960,7 @@ class TSQLConnection extends TDatabase {
           i <= TConnInfoType.citClientVersion.index;
           i++) {
         if (result != '') result = '$result,';
-        result =
-            '$result"${getConnectionInfo(TConnInfoType.values[i])}"';
+        result = '$result"${getConnectionInfo(TConnInfoType.values[i])}"';
       }
     }
     return result;
@@ -1906,17 +1970,49 @@ class TSQLConnection extends TDatabase {
   // WHERE range), PChar scanning → indices, branch-by-branch mapping
   TSQLStatementInfo getStatementInfo(String aSQL) {
     // TParsePart / TPhraseSeparator / TKeyword (local types)
-    const ppStart = 0, ppWith = 1, ppSelect = 2, ppTableName = 3,
-        ppFrom = 4, ppWhere = 5, ppBogus = 8;
-    const sepNone = 0, sepWhiteSpace = 1, sepComma = 2, sepComment = 3,
-        sepParentheses = 4, sepDoubleQuote = 5, sepEnd = 6;
+    const ppStart = 0,
+        ppWith = 1,
+        ppSelect = 2,
+        ppTableName = 3,
+        ppFrom = 4,
+        ppWhere = 5,
+        ppBogus = 8;
+    const sepNone = 0,
+        sepWhiteSpace = 1,
+        sepComma = 2,
+        sepComment = 3,
+        sepParentheses = 4,
+        sepDoubleQuote = 5,
+        sepEnd = 6;
     const keywordNames = [
-      'WITH', "SELECT", "INSERT", "UPDATE", "DELETE", "FROM", "JOIN",
-      "WHERE", "GROUP", "ORDER", "UNION", "ROWS", "LIMIT", ""
+      'WITH',
+      "SELECT",
+      "INSERT",
+      "UPDATE",
+      "DELETE",
+      "FROM",
+      "JOIN",
+      "WHERE",
+      "GROUP",
+      "ORDER",
+      "UNION",
+      "ROWS",
+      "LIMIT",
+      ""
     ];
-    const kwWITH = 0, kwSELECT = 1, kwINSERT = 2, kwUPDATE = 3,
-        kwDELETE = 4, kwFROM = 5, kwJOIN = 6, kwWHERE = 7, kwGROUP = 8,
-        kwORDER = 9, kwUNION = 10, kwROWS = 11, kwLIMIT = 12,
+    const kwWITH = 0,
+        kwSELECT = 1,
+        kwINSERT = 2,
+        kwUPDATE = 3,
+        kwDELETE = 4,
+        kwFROM = 5,
+        kwJOIN = 6,
+        kwWHERE = 7,
+        kwGROUP = 8,
+        kwORDER = 9,
+        kwUNION = 10,
+        kwROWS = 11,
+        kwLIMIT = 12,
         kwUnknown = 13;
 
     final result = TSQLStatementInfo();
@@ -1959,7 +2055,9 @@ class TSQLConnection extends TDatabase {
         if (charAt(currentP) != '\x00') currentP++;
       } else if (c == '"' || c == '`') {
         final p = TIntRef(currentP);
-        if (skipComments(aSQL, p,
+        if (skipComments(
+            aSQL,
+            p,
             connOptions.contains(TConnOption.sqEscapeSlash),
             connOptions.contains(TConnOption.sqEscapeRepeat))) {
           separator = sepDoubleQuote;
@@ -1969,7 +2067,9 @@ class TSQLConnection extends TDatabase {
         }
       } else {
         final p = TIntRef(currentP);
-        if (skipComments(aSQL, p,
+        if (skipComments(
+            aSQL,
+            p,
             connOptions.contains(TConnOption.sqEscapeSlash),
             connOptions.contains(TConnOption.sqEscapeRepeat))) {
           separator = sepComment;
@@ -1992,8 +2092,7 @@ class TSQLConnection extends TDatabase {
         }
 
         if (currentP - phraseP > 0 || separator == sepEnd) {
-          final s = aSQL.substring(
-              phraseP, currentP > len ? len : currentP);
+          final s = aSQL.substring(phraseP, currentP > len ? len : currentP);
 
           var keyword = kwUnknown;
           for (var k = 0; k < keywordNames.length; k++) {
@@ -2160,8 +2259,8 @@ class TSQLConnection extends TDatabase {
       case TFieldType.ftFMTBcd:
         // StringReplace(AsString, '.', FS.DecimalSeparator) — the separator character
         // is '.' on both sides, so this is an equivalent rewrite
-        return param.asString.replaceFirst(
-            ".", sqlFormatSettings.decimalSeparator);
+        return param.asString
+            .replaceFirst(".", sqlFormatSettings.decimalSeparator);
       default:
         return param.asString;
     }
@@ -2265,8 +2364,9 @@ class TSQLConnection extends TDatabase {
       f.dataType == TFieldType.ftMemo;
 
   /// Produces the condition for "this field is an empty key". The return value is always non-empty.
-  String _emptyKeyCond(TField f, String quotedName) =>
-      _isTextField(f) ? '$quotedName is null or $quotedName = \'\'' : '$quotedName is null';
+  String _emptyKeyCond(TField f, String quotedName) => _isTextField(f)
+      ? '$quotedName is null or $quotedName = \'\''
+      : '$quotedName is null';
 // zz ??? issue
 
   void addFieldToUpdateWherePart(
@@ -2363,7 +2463,8 @@ class TSQLConnection extends TDatabase {
   String constructUpdateSQL(TCustomSQLQuery query, TBoolRef returningClause) {
     var sqlSet = '';
     final sqlWhere = TStringRef("");
-    final usedEmptyKey = TBoolRef(false); // @@@ whether the empty-key tolerance condition was used
+    final usedEmptyKey = TBoolRef(
+        false); // @@@ whether the empty-key tolerance condition was used
     var returningFields = '';
     for (var x = 0; x < query.fields.count; x++) {
       final f = query.fields[x];
@@ -2387,14 +2488,16 @@ class TSQLConnection extends TDatabase {
     if (sqlSet.isEmpty) databaseErrorFmt(SNoUpdateFields, ['update'], this);
     sqlSet = sqlSet.substring(0, sqlSet.length - 1);
     if (sqlWhere.value.isEmpty) {
-      sqlWhere.value = _fallbackKeyWhere(query, usedEmptyKey); // @@@ no key → use the first field's old value as the condition
+      sqlWhere.value = _fallbackKeyWhere(query,
+          usedEmptyKey); // @@@ no key → use the first field's old value as the condition
     }
     if (sqlWhere.value.isEmpty) {
       databaseErrorFmt(SNoWhereFields, ['update'], this);
     }
-    final _updTbl = query.updateTableName.isNotEmpty ? query.updateTableName : query._tableName;
-    var result =
-        'update $_updTbl set $sqlSet where ${sqlWhere.value}';
+    final updTbl = query.updateTableName.isNotEmpty
+        ? query.updateTableName
+        : query._tableName;
+    var result = 'update $updTbl set $sqlSet where ${sqlWhere.value}';
 // aa ??? issue
     // The empty-key tolerance condition (cno is null or cno = '') can match more than one row — in legacy data,
     // an empty code often has several matching rows. Adds limit 1 to ensure only one row is changed at a time, not the whole batch.
@@ -2421,13 +2524,16 @@ class TSQLConnection extends TDatabase {
           sqlWhere, query.updateMode, query.fields[x], usedEmptyKey);
     }
     if (sqlWhere.value.isEmpty) {
-      sqlWhere.value = _fallbackKeyWhere(query, usedEmptyKey); // @@@ no key → use the first field's old value as the condition
+      sqlWhere.value = _fallbackKeyWhere(query,
+          usedEmptyKey); // @@@ no key → use the first field's old value as the condition
     }
     if (sqlWhere.value.isEmpty) {
       databaseErrorFmt(SNoWhereFields, ['delete'], this);
     }
-    final _delTbl = query.updateTableName.isNotEmpty ? query.updateTableName : query._tableName;
-    var result = 'delete from $_delTbl where ${sqlWhere.value}';
+    final delTbl = query.updateTableName.isNotEmpty
+        ? query.updateTableName
+        : query._tableName;
+    var result = 'delete from $delTbl where ${sqlWhere.value}';
     // @@@ Same as UPDATE: the empty-key tolerance condition can match multiple rows, and deletion is even less safe to let hit them all
     if (usedEmptyKey.value) result = '$result limit 1';
     return result;
@@ -2528,8 +2634,8 @@ class TSQLConnection extends TDatabase {
     for (var x = 0; x < qry.params.count; x++) {
       final p = qry.params[x];
       var s2 = p.name;
-      final useOldValue = s2.length >= 4 &&
-          s2.substring(0, 4).toUpperCase() == 'OLD_';
+      final useOldValue =
+          s2.length >= 4 && s2.substring(0, 4).toUpperCase() == 'OLD_';
       TField? fld;
       if (useOldValue) {
         s2 = s2.substring(4);
@@ -2661,8 +2767,8 @@ class TSQLConnection extends TDatabase {
     throw EDatabaseError("AbstractError: TSQLConnection.UnPrepareStatement");
   }
 
-  void execute(TSQLCursor cursor, TSQLTransaction? aTransaction,
-      TParams? aParams) {
+  void execute(
+      TSQLCursor cursor, TSQLTransaction? aTransaction, TParams? aParams) {
     throw EDatabaseError("AbstractError: TSQLConnection.Execute");
   }
 
@@ -2690,8 +2796,7 @@ class TSQLConnection extends TDatabase {
   }
 
   dynamic getTransactionHandle(TSQLHandle trans) {
-    throw EDatabaseError(
-        "AbstractError: TSQLConnection.GetTransactionHandle");
+    throw EDatabaseError("AbstractError: TSQLConnection.GetTransactionHandle");
   }
 
   bool commit(TSQLHandle trans) {
@@ -2746,7 +2851,7 @@ class TSQLTransaction extends TDBTransaction {
   late TStringList _params;
 
   // constructor Create（L2332-2337）
-  TSQLTransaction([TComponent? aOwner]) : super(aOwner) {
+  TSQLTransaction([super.aOwner]) {
     _params = TStringList();
     action = TCommitRollbackAction.caRollback;
   }
@@ -2904,7 +3009,7 @@ class TSQLTransaction extends TDBTransaction {
     if (db == null) {
       databaseError(SErrDatabasenAssigned);
     }
-    db!.maybeConnect();
+    db.maybeConnect();
 
     _trans ??= db.allocateTransactionHandle();
 
@@ -2983,8 +3088,7 @@ class TSQLSequence extends TPersistent {
   TSQLSequenceApplyEvent applyEvent = TSQLSequenceApplyEvent.saeOnNewRecord;
 
   // constructor Create（L2542-2548）
-  TSQLSequence(TCustomSQLQuery? aQuery)
-      : _query = aQuery {
+  TSQLSequence(TCustomSQLQuery? aQuery) : _query = aQuery {
     applyEvent = TSQLSequenceApplyEvent.saeOnNewRecord;
     incrementBy = 1;
   }
@@ -3028,9 +3132,7 @@ class TQuerySQLStatement extends TCustomSQLStatement {
   final TCustomSQLQuery _query;
 
   // constructor（L2604-2608）：FQuery:=TCustomSQLQuery(AOwner)
-  TQuerySQLStatement(TCustomSQLQuery aOwner)
-      : _query = aOwner,
-        super(aOwner);
+  TQuerySQLStatement(TCustomSQLQuery super.aOwner) : _query = aOwner;
 
   // CreateDataLink（L2610-2613）
   @override
@@ -3143,7 +3245,8 @@ class TCustomSQLQuery extends TCustomBufDataset {
   set alwaysUpdateable(bool v) => _alwaysUpdateable = v;
 // zz ### flutter extension
   String _tableName = '';
-  String updateTableName = ''; // @@@ explicitly specifies the update table for a multi-table join (overrides an unparseable _tableName)
+  String updateTableName =
+      ''; // @@@ explicitly specifies the update table for a multi-table join (overrides an unparseable _tableName)
   late TCustomSQLStatement _statement;
   late TStringList _insertSQL;
   late TStringList _updateSQL;
@@ -3177,11 +3280,10 @@ class TCustomSQLQuery extends TCustomBufDataset {
   // ??? metaclass mapping (convention 2): InitialiseUpdateStatement's
   // TComponentClass(Query.ClassType).Create(Nil) uses this virtual factory,
   // the subclass (TSQLQuery) overrides it to return its own type
-  TCustomSQLQuery newInstance(TComponent? aOwner) =>
-      TCustomSQLQuery(aOwner);
+  TCustomSQLQuery newInstance(TComponent? aOwner) => TCustomSQLQuery(aOwner);
 
   // constructor Create（L2686-2715）
-  TCustomSQLQuery([TComponent? aOwner]) : super(aOwner) {
+  TCustomSQLQuery([super.aOwner]) {
     _statement = createSQLStatement(this);
 
     _insertSQL = TStringList();
@@ -3241,13 +3343,10 @@ class TCustomSQLQuery extends TCustomBufDataset {
     super.database = value;
     if (db != null &&
         db.transaction != null &&
-        (transaction == null ||
-            !identical(transaction!.database, database))) {
+        (transaction == null || !identical(transaction!.database, database))) {
       transaction = db.transaction;
     }
   }
-
-  TDatabase? get database => super.database;
 
   // SetTransaction（L2765-2775）
   @override
@@ -3262,8 +3361,6 @@ class TCustomSQLQuery extends TCustomBufDataset {
       database = transaction!.database;
     }
   }
-
-  TDBTransaction? get transaction => super.transaction;
 
   // IsPrepared（L2777-2784）
   bool isPrepared() {
@@ -3354,8 +3451,7 @@ class TCustomSQLQuery extends TCustomBufDataset {
           databaseError(SErrRefreshEmptyResult, this);
         } else {
           if (q.recordCount != 1) {
-            databaseErrorFmt(
-                SErrRefreshNotSingleton, [q.recordCount], this);
+            databaseErrorFmt(SErrRefreshNotSingleton, [q.recordCount], this);
           }
           for (var i = 0; i < q.fields.count; i++) {
             final f = q.fields[i];
@@ -3638,9 +3734,7 @@ class TCustomSQLQuery extends TCustomBufDataset {
         createFields();
 
         if (_updateable && _usePrimaryKeyAsKey && !isUniDirectional) {
-          for (var counter = 0;
-              counter < serverIndexDefs.count;
-              counter++) {
+          for (var counter = 0; counter < serverIndexDefs.count; counter++) {
             if (serverIndexDefs[counter]
                 .options
                 .contains(TIndexOption.ixPrimary)) {
@@ -3655,10 +3749,7 @@ class TCustomSQLQuery extends TCustomBufDataset {
               for (var fieldc = 0; fieldc < indexFields.length; fieldc++) {
                 final f = findField(indexFields[fieldc]);
                 if (f != null) {
-                  f.providerFlags = {
-                    ...f.providerFlags,
-                    TProviderFlag.pfInKey
-                  };
+                  f.providerFlags = {...f.providerFlags, TProviderFlag.pfInKey};
                 }
               }
             }
@@ -3866,8 +3957,8 @@ class TCustomSQLQuery extends TCustomBufDataset {
   }
 
   // SetSchemaInfo（L3363-3369）
-  void setSchemaInfo(
-      TSchemaType aSchemaType, String aSchemaObjectName, String aSchemaPattern) {
+  void setSchemaInfo(TSchemaType aSchemaType, String aSchemaObjectName,
+      String aSchemaPattern) {
     _schemaType = aSchemaType;
     _schemaObjectName = aSchemaObjectName;
     _schemaPattern = aSchemaPattern;
@@ -3972,8 +4063,7 @@ class TCustomSQLQuery extends TCustomBufDataset {
   @override
   void notification(TComponent aComponent, TOperation operation) {
     super.notification(aComponent, operation);
-    if (operation == TOperation.opRemove &&
-        identical(aComponent, dataSource)) {
+    if (operation == TOperation.opRemove && identical(aComponent, dataSource)) {
       dataSource = null;
     }
   }
@@ -4014,8 +4104,7 @@ class TCustomSQLQuery extends TCustomBufDataset {
       errorCode = 0;
     }
 
-    return EUpdateError(
-        SOnUpdateError, "$e", errorCode, prevErrorCode, e);
+    return EUpdateError(SOnUpdateError, "$e", errorCode, prevErrorCode, e);
   }
 
   // PSGetTableName（L3545-3548）
@@ -4030,7 +4119,7 @@ class TCustomSQLQuery extends TCustomBufDataset {
 // ═════════════════════════════════════════════════════════════════════════════
 
 class TSQLQuery extends TCustomSQLQuery {
-  TSQLQuery([TComponent? aOwner]) : super(aOwner);
+  TSQLQuery([super.aOwner]);
 
   // The metaclass factory (used by InitialiseUpdateStatement; convention 2)
   @override
@@ -4050,9 +4139,7 @@ class TSQLQuery extends TCustomSQLQuery {
       while (!eof) {
         final k = (findField(keyField)?.asString ?? '').trim();
         if (k.isNotEmpty) {
-          m[k] = [
-            for (final c in cols) (findField(c)?.asString ?? '').trim()
-          ];
+          m[k] = [for (final c in cols) (findField(c)?.asString ?? '').trim()];
         }
         next();
       }
@@ -4077,7 +4164,7 @@ class TSQLScript extends TCustomSQLScript {
   TDBTransaction? _transaction;
 
   // constructor Create（L3605-3609）
-  TSQLScript([TComponent? aOwner]) : super(aOwner) {
+  TSQLScript([super.aOwner]) {
     _query = createQuery();
   }
 
@@ -4247,7 +4334,7 @@ class TSQLConnector extends TSQLConnection {
   TSQLConnection? _proxy;
   String _connectorType = '';
 
-  TSQLConnector([TComponent? aOwner]) : super(aOwner);
+  TSQLConnector([super.aOwner]);
 
   TSQLConnection? get proxy => _proxy;
 
@@ -4286,7 +4373,8 @@ class TSQLConnector extends TSQLConnection {
     _proxy!.role = role;
     _proxy!.userName = userName;
     _proxy!._sqlTransaction = transaction;
-    _proxy!.logEvents = logEvents; // the original source has this duplicated twice; carried over as-is
+    _proxy!.logEvents =
+        logEvents; // the original source has this duplicated twice; carried over as-is
     _proxy!.onLog = onLog;
     _proxy!.options = options;
     final d = getConnectionDef(connectorType);
@@ -4314,7 +4402,7 @@ class TSQLConnector extends TSQLConnection {
     if (d == null) {
       databaseErrorFmt(SErrUnknownConnectorType, [connectorType], this);
     }
-    final cls = d!.connectionClass();
+    final cls = d.connectionClass();
     _proxy = cls!(this);
     fieldNameQuoteChars = _proxy!.fieldNameQuoteChars;
     connOptions = _proxy!.connOptions;
@@ -4377,8 +4465,8 @@ class TSQLConnector extends TSQLConnection {
   }
 
   @override
-  void execute(TSQLCursor cursor, TSQLTransaction? aTransaction,
-      TParams? aParams) {
+  void execute(
+      TSQLCursor cursor, TSQLTransaction? aTransaction, TParams? aParams) {
     checkProxy();
     _proxy!.execute(cursor, aTransaction, aParams);
   }
@@ -4478,8 +4566,8 @@ class TSQLConnector extends TSQLConnection {
   String getSchemaInfoSQL(
       TSchemaType schemaType, String schemaObjectName, String schemaPattern) {
     checkProxy();
-    return _proxy!.getSchemaInfoSQL(
-        schemaType, schemaObjectName, schemaPattern);
+    return _proxy!
+        .getSchemaInfoSQL(schemaType, schemaObjectName, schemaPattern);
   }
 }
 
@@ -4572,7 +4660,8 @@ class TWapCursor extends TSQLCursor {
   String preparedSQL = '';
   TParamBinding paramBinding = <int>[];
   List<Map<String, dynamic>> rows = const [];
-  List<String>? columns; // @@@ column-name metadata provided by the backend (nullable)
+  List<String>?
+      columns; // @@@ column-name metadata provided by the backend (nullable)
   int rowIndex = -1;
   bool executed = false; // whether openAsync has already finished preloading
 }
@@ -4599,7 +4688,7 @@ class TWapSQLConnection extends TSQLConnection {
   final List<_PendingDML> _pendingDML = [];
   TRowsCount _lastRowsAffected = -1;
 
-  TWapSQLConnection([TComponent? aOwner, this.driver]) : super(aOwner) {
+  TWapSQLConnection([super.aOwner, this.driver]) {
     // @@@ The backend is a WapDb gateway (a MySQL-family database): handles both '' doubling and \ escaping;
     // @@@ DatabaseName isn't needed (already bound on the gateway side)
     connOptions = {
@@ -4615,8 +4704,10 @@ class TWapSQLConnection extends TSQLConnection {
 
   void _checkDriver() {
     if (driver == null) {
-      databaseError("@@@ TWapSQLConnection.driver is not set"
-          '(pass it via registerLazarusDbDriver or the constructor)', this);
+      databaseError(
+          "@@@ TWapSQLConnection.driver is not set"
+          '(pass it via registerLazarusDbDriver or the constructor)',
+          this);
     }
   }
 
@@ -4713,15 +4804,16 @@ class TWapSQLConnection extends TSQLConnection {
 
   // ---- Execute (synchronous) --------------------------------------------------------
   @override
-  void execute(TSQLCursor cursor, TSQLTransaction? aTransaction,
-      TParams? aParams) {
+  void execute(
+      TSQLCursor cursor, TSQLTransaction? aTransaction, TParams? aParams) {
     final c = cursor as TWapCursor;
     if (c.fSelectable) {
       // @@@ SELECT data must be preloaded via openAsync first (see the design note in the file header)
       if (!c.executed) {
         databaseError(
             "@@@ SELECT needs to be asynchronously preloaded via openAsync() before open() can be called; "
-            'please change q.open() to await q.openAsync()', this);
+            'please change q.open() to await q.openAsync()',
+            this);
       }
       c.rowIndex = -1; // resets the traversal position
     } else {
@@ -4754,8 +4846,8 @@ class TWapSQLConnection extends TSQLConnection {
       if (cols != null) {
         var no = 1;
         for (final n in cols) {
-          addFieldDef(fieldDefs, no, n, TFieldType.ftString, 255, 0,
-              false, false, false);
+          addFieldDef(fieldDefs, no, n, TFieldType.ftString, 255, 0, false,
+              false, false);
           no++;
         }
       }
@@ -4831,10 +4923,9 @@ class TWapSQLConnection extends TSQLConnection {
   void loadBlobIntoBuffer(TFieldDef fieldDef, PBufBlobField aBlobBuf,
       TSQLCursor cursor, TSQLTransaction? aTransaction) {
     final c = cursor as TWapCursor;
-    final v =
-        (c.rowIndex >= 0 && c.rowIndex < c.rows.length)
-            ? c.rows[c.rowIndex][fieldDef.name]
-            : null;
+    final v = (c.rowIndex >= 0 && c.rowIndex < c.rows.length)
+        ? c.rows[c.rowIndex][fieldDef.name]
+        : null;
     final bb = TBlobBuffer();
     if (v is Uint8List) {
       bb.buffer = v;
@@ -4925,9 +5016,10 @@ extension TWapSQLQueryAsync on TCustomSQLQuery {
   TWapSQLConnection get _wapConn {
     final c = sqlConnection;
     if (c is! TWapSQLConnection) {
-      databaseError("@@@ The openAsync family requires a TWapSQLConnection", this);
+      databaseError(
+          "@@@ The openAsync family requires a TWapSQLConnection", this);
     }
-    return c as TWapSQLConnection;
+    return c;
   }
 
   /// @@@ SELECT: prepare → await fetches the whole batch → loads it into the cursor → synchronous open()
@@ -4938,8 +5030,8 @@ extension TWapSQLQueryAsync on TCustomSQLQuery {
     prepare(); // goes through the faithful pipeline: macro expansion/GetStatementInfo/prepareStatement
     final c = cursor as TWapCursor;
     if (c.fSelectable) {
-      final res = await conn.driver!
-          .rawQuery(c.preparedSQL, conn._bindArgs(c, params));
+      final res =
+          await conn.driver!.rawQuery(c.preparedSQL, conn._bindArgs(c, params));
       if (!res.success) {
         throw ESQLDatabaseError.createFmt(
             res.errorMessage ?? 'query failed', [], conn, 0, "");
@@ -4965,7 +5057,8 @@ extension TWapSQLQueryAsync on TCustomSQLQuery {
   /// @@@ Replays the update log → await to send it. Backend errors surface here.
   Future<void> applyUpdatesAsync([int maxErrors = 0]) async {
     final conn = _wapConn;
-    applyUpdates(maxErrors); // calls applyRecUpdate entry by entry → execute pushes into the queue
+    applyUpdates(
+        maxErrors); // calls applyRecUpdate entry by entry → execute pushes into the queue
     await conn.flushPending();
   }
 
@@ -5023,8 +5116,7 @@ class WapDb {
 
   // ── Transaction: sends multiple statements at once (atomicity) ──────────────────
   // statements: [{ 'sql': '...', 'params': [...] }, ...]
-  static Future<void> transaction(
-      List<Map<String, dynamic>> statements) async {
+  static Future<void> transaction(List<Map<String, dynamic>> statements) async {
 // aa ### flutter extension
     // @@@ SQL diagnostic output: every DML statement passes through here, the single point they all go through.
     //     When debugging a save issue (e.g. "a particular record just never saves no matter what"), without the actual SQL you can only
@@ -5053,7 +5145,9 @@ class WapDb {
     String sql, [
     List<dynamic> params = const [],
   ]) async {
-    await transaction([{'sql': sql, "params": params}]);
+    await transaction([
+      {'sql': sql, "params": params}
+    ]);
   }
 
   // ── Ping: checks whether the backend is alive ────────────────────────────────────

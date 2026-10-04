@@ -69,7 +69,8 @@ import 'lazarus_extctrls.dart' show TRadioGroup;
 class TFieldDataLink extends TDataLink {
   TField? _field;
   String _fieldName = '';
-  Object? control; // FControl: the attached control (weakly-typed injection from the widget layer)
+  Object?
+      control; // FControl: the attached control (weakly-typed injection from the widget layer)
 
   // Callbacks (L49-52, 97-100)
   TNotifyEvent? onDataChange;
@@ -111,7 +112,8 @@ class TFieldDataLink extends TDataLink {
   // IsKeyField (L1627-1644)
   bool isKeyField(TField aField) {
     final keyFields = _field!.keyFields;
-    final strPos = TIntRef(0); // ExtractFieldName uses 0-based indexing (lazarus_db)
+    final strPos =
+        TIntRef(0); // ExtractFieldName uses 0-based indexing (lazarus_db)
     while (strPos.value < keyFields.length) {
       final keyFieldName = extractFieldName(keyFields, strPos);
       if (aField.fieldName.toUpperCase() == keyFieldName.toUpperCase()) {
@@ -145,6 +147,7 @@ class TFieldDataLink extends TDataLink {
     }
   }
 
+  @override
   bool get editing => _editing;
   bool get editingSource => _editingSource;
 
@@ -255,10 +258,10 @@ class TFieldDataLink extends TDataLink {
   }
 
   // Edit (L1883-1900): attempts to enter edit state
+  @override
   bool edit() {
-    final editingSrc = !_editing &&
-        dataSet != null &&
-        !dsEditModes.contains(dataSet!.state);
+    final editingSrc =
+        !_editing && dataSet != null && !dsEditModes.contains(dataSet!.state);
 
     if (!_editing && canModify) {
       super.edit();
@@ -307,7 +310,8 @@ class TDBEdit extends StatefulWidget {
   final TDataSource? dataSource; // DataSource
   final String dataField; // DataField
   final bool readOnly; // ReadOnly
-  final TextAlign textAlign; // Alignment (already a TextAlign on the widget side)
+  final TextAlign
+      textAlign; // Alignment (already a TextAlign on the widget side)
   final TextStyle? font; // Font
   final int? maxLength; // MaxLength
 // aa ### flutter extension
@@ -326,8 +330,10 @@ class TDBEdit extends StatefulWidget {
   // @@@ expands: fills the parent container's height (the SizedBox(height: 56) around _edit).
   //     TextField's assertion requires maxLines/minLines to both be null when expands is true.
   final bool expands;
-  final bool autofocus;       // auto-focuses on entering the screen (used for the first editable field)
-  final FocusNode? focusNode; // an externally-supplied FocusNode (lets other code hand focus in)
+  final bool
+      autofocus; // auto-focuses on entering the screen (used for the first editable field)
+  final FocusNode?
+      focusNode; // an externally-supplied FocusNode (lets other code hand focus in)
 // zz ### flutter extension
 
   const TDBEdit({
@@ -354,7 +360,7 @@ class _TDBEditState extends State<TDBEdit> {
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
 // aa ### flutter extension
-  bool _ownsFocusNode = false;   // only dispose a FocusNode we created ourselves
+  bool _ownsFocusNode = false; // only dispose a FocusNode we created ourselves
 // zz ### flutter extension
   bool _syncingFromData = false; // prevents a DataChange↔onChanged loop
 // aa ### flutter extension: select-all on entering edit mode
@@ -390,8 +396,8 @@ class _TDBEditState extends State<TDBEdit> {
 
     _dataLink = TFieldDataLink();
     _dataLink.control = this;
-    _dataLink.onDataChange = _onDataChange;     // field → widget
-    _dataLink.onUpdateData = _onUpdateData;     // widget → field
+    _dataLink.onDataChange = _onDataChange; // field → widget
+    _dataLink.onUpdateData = _onUpdateData; // widget → field
     _dataLink.onActiveChange = _onActiveChange;
     _dataLink.onEditingChange = _onEditingChange;
 
@@ -428,8 +434,7 @@ class _TDBEditState extends State<TDBEdit> {
       if (!mounted || !_focusNode.hasFocus) return;
       final len = _controller.text.length;
       if (len > 0) {
-        _controller.selection =
-            TextSelection(baseOffset: 0, extentOffset: len);
+        _controller.selection = TextSelection(baseOffset: 0, extentOffset: len);
       }
     });
   }
@@ -453,7 +458,9 @@ class _TDBEditState extends State<TDBEdit> {
   void dispose() {
     _dataLink.free(); // TDataLink.destroy → unregisters
     _controller.dispose();
-    if (_ownsFocusNode) _focusNode.dispose(); // @@@ an externally-supplied one isn't released here
+    if (_ownsFocusNode)
+      _focusNode
+          .dispose(); // @@@ an externally-supplied one isn't released here
     super.dispose();
   }
 
@@ -561,10 +568,17 @@ class _TDBEditState extends State<TDBEdit> {
         maxLines: widget.expands ? null : widget.maxLines,
         minLines:
             (widget.expands || widget.maxLines == 1) ? null : widget.minLines,
-        keyboardType:
-            widget.maxLines == 1 ? null : TextInputType.multiline,
-        textAlignVertical:
-            widget.maxLines == 1 ? null : TextAlignVertical.top,
+        keyboardType: widget.maxLines == 1 ? null : TextInputType.multiline,
+        // @@@ 2026-08-14 fix: single-line mode used to leave this null
+        //     (unspecified) -- once the outer widget is stretched by a
+        //     fixed-height SizedBox (e.g. a form layout giving every field
+        //     28px uniformly), leaving it unspecified skews it toward the
+        //     top edge, misaligning it against a neighboring label aligned
+        //     with Align.center -- it ends up looking bottom-aligned.
+        //     Explicitly specifying center is what makes it stable.
+        textAlignVertical: widget.maxLines == 1
+            ? TextAlignVertical.center
+            : TextAlignVertical.top,
         expands: widget.expands,
         decoration: const InputDecoration(
           isDense: true,
@@ -600,7 +614,8 @@ class TDBMemo extends StatelessWidget {
   final bool readOnly; // ReadOnly
   final TextStyle? font; // Font
   final int? maxLength; // MaxLength
-  final int? lines; // number of lines to display (null = scrolls with the container's height)
+  final int?
+      lines; // number of lines to display (null = scrolls with the container's height)
   final bool autofocus;
   final FocusNode? focusNode;
 
@@ -637,7 +652,8 @@ class TDBMemo extends StatelessWidget {
       readOnly: readOnly,
       font: font,
       maxLength: maxLength,
-      maxLines: null, // unlimited lines: Enter inserts a newline, doesn't move to the next field
+      maxLines:
+          null, // unlimited lines: Enter inserts a newline, doesn't move to the next field
       minLines: fill ? null : lines,
       expands: fill, // fills the parent container (the SizedBox around _edit)
       autofocus: autofocus,
@@ -702,7 +718,8 @@ class TDBRadioGroup extends StatefulWidget {
   final String dataField; // DataField
   final String caption; // Caption
   final List<String> items; // Items: display text
-  final List<String>? values; // Values: the value actually written to the field (null → uses items)
+  final List<String>?
+      values; // Values: the value actually written to the field (null → uses items)
   final int columns; // Columns
   final bool readOnly; // ReadOnly
   final double? width;
@@ -852,8 +869,8 @@ class _TDBNavigatorState extends State<TDBNavigator> {
   // between buttons. LCL has no such concept (Delphi's navigator has
   // each button take its own Tab stop).
   final FocusNode _groupNode = FocusNode(); // the row's single external stop
-  final List<FocusNode> _btnNodes = [];     // each button's focusNode
-  int _focusedBtn = 0;                      // index of the currently focused button
+  final List<FocusNode> _btnNodes = []; // each button's focusNode
+  int _focusedBtn = 0; // index of the currently focused button
 // zz ### flutter extension
 
   @override
@@ -1064,11 +1081,13 @@ class _TDBNavigatorState extends State<TDBNavigator> {
             return KeyEventResult.handled;
           }
           if (k == LogicalKeyboardKey.arrowLeft) {
-            _focusedBtn = (_focusedBtn - 1 + _btnNodes.length) % _btnNodes.length;
+            _focusedBtn =
+                (_focusedBtn - 1 + _btnNodes.length) % _btnNodes.length;
             _btnNodes[_focusedBtn].requestFocus();
             return KeyEventResult.handled;
           }
-          return KeyEventResult.ignored; // Tab etc. go to the default handler → leaves the navigator
+          return KeyEventResult
+              .ignored; // Tab etc. go to the default handler → leaves the navigator
         },
         child: Row(mainAxisSize: MainAxisSize.min, children: btns),
       ),

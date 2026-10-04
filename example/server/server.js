@@ -1,12 +1,12 @@
 // ============================================================
 //  WapForm REST API Server
-//  Database: shopcloud (MariaDB 10.4 / MySQL)
+//  Database: sales (MariaDB 10.4 / MySQL)
 //
 //  Revision History:
 //    2026-05-24  V1.0  Initial release
-//    2026-05-24  V1.1  Full shopcloud schema, charset utf8mb4
-//    2026-08-01  V1.2  dateStrings:true（修日期差一天）；DML 記錄影響列數
-//    2026-08-01  V1.3  /query 也記錄 SQL 與筆數；新增 GET /columns 查欄位型別
+//    2026-05-24  V1.1  Full sales schema, charset utf8mb4
+//    2026-08-01  V1.2  dateStrings:true (fixes a one-day date offset); DML now logs affected row count
+//    2026-08-01  V1.3  /query now also logs SQL and row count; added GET /columns for column types
 //
 //  Setup:
 //    npm install express mysql2 cors
@@ -31,24 +31,28 @@ app.use(express.json({ limit: '10mb' }));
 const pool = mysql.createPool({
   host:              'localhost',
   port:              3306,
-  database:          'ag',
-  user:              'xyz',
-  password:          '123',
+  database:          'sales',
+  user:              'wapform',
+  password:          'wapform123',
   charset:           'utf8mb4',
   timezone:          '+08:00',
-  // @@@ DATE/DATETIME 直接以字串回傳，不經過 JS Date 物件。
-  //     沒有這個設定時：mysql2 把 DATE 還原成 Date（本地 +08:00 午夜），
-  //     Express 回應時 JSON.stringify 呼叫 toISOString() 轉成 UTC ——
-  //       DB 2026-07-31 → "2026-07-30T16:00:00.000Z"
-  //     前端取日期部分就變成 07-30，整個系統的日期都差一天。
-  //     timezone: '+08:00' 只影響解讀，擋不住序列化這一步。
+  // @@@ Return DATE/DATETIME as plain strings, bypassing the JS Date
+  //     object entirely. Without this: mysql2 turns a DATE column back
+  //     into a Date (midnight local time, +08:00), and when Express
+  //     serializes the response, JSON.stringify calls toISOString(),
+  //     which converts it to UTC --
+  //       DB 2026-07-31 -> "2026-07-30T16:00:00.000Z"
+  //     -- so the frontend's date-only slice ends up as 07-30, and every
+  //     date in the whole system is off by one day. timezone: '+08:00'
+  //     only affects how a value is *read*; it can't stop this
+  //     serialization step from happening.
   dateStrings:       true,
   waitForConnections: true,
   connectionLimit:   10,
   queueLimit:        0,
 });
 
-// ── 診斷開關：DML 執行後印出 SQL 與影響列數 ──────────────────
+// -- Diagnostic switch: prints the SQL and affected-row count after every DML --
 const SQL_LOG = true;
 
 // ── Allowed statement types ──────────────────────────────────
@@ -71,13 +75,13 @@ app.get('/ping', async (req, res) => {
 });
 
 // ── GET /tables ──────────────────────────────────────────────
-// Returns list of all tables in shopcloud
+// Returns list of all tables in sales
 app.get('/tables', async (req, res) => {
   try {
     const [rows] = await pool.query(
       "SELECT TABLE_NAME, TABLE_ROWS, TABLE_COMMENT " +
       "FROM information_schema.TABLES " +
-      "WHERE TABLE_SCHEMA = 'ag' ORDER BY TABLE_NAME"
+      "WHERE TABLE_SCHEMA = 'sales' ORDER BY TABLE_NAME"
     );
     res.json({ tables: rows });
   } catch (e) {
@@ -86,9 +90,11 @@ app.get('/tables', async (req, res) => {
 });
 
 // ── GET /columns?table=sh ────────────────────────────────────
-// @@@ 查欄位型別。日期查詢對不上時，第一件事就是確認欄位到底是
-//     DATE 還是 VARCHAR —— 若是 VARCHAR 存 'YYYY-MM-DD'，用
-//     '20260731' 去比就是字串比較（'-' 0x2D < '0' 0x30），永遠不相等。
+// @@@ Looks up column types. When a date query doesn't match anything,
+//     the first thing to check is whether the column is actually a
+//     DATE or a VARCHAR -- if it's a VARCHAR storing 'YYYY-MM-DD',
+//     comparing against '20260731' is a plain string comparison
+//     ('-' is 0x2D, '0' is 0x30), which never matches.
 app.get('/columns', async (req, res) => {
   const table = req.query.table;
   if (!table) return res.status(400).json({ error: 'table is required' });
@@ -116,11 +122,13 @@ app.post('/query', async (req, res) => {
   try {
     const [result] = await pool.execute(sql, params);
 
-    // @@@ 診斷：查詢也要記錄。原本只記 /transaction（DML），SELECT 完全沒印，
-    //     「查不到資料」時看不到實際送出的 WHERE 條件，只能靠猜。
+    // @@@ Diagnostic: queries get logged too now. This used to only log
+    //     /transaction (DML) -- SELECT was never printed at all, so
+    //     when "nothing comes back," there was no way to see the actual
+    //     WHERE clause that went out, only guesswork.
     if (SQL_LOG) {
       const n = Array.isArray(result) ? result.length : result.affectedRows;
-      console.log(`[query] rows=${n}${n === 0 ? '  <-- 沒有任何資料' : ''}`);
+      console.log(`[query] rows=${n}${n === 0 ? '  <-- no rows returned' : ''}`);
       console.log(`        sql: ${sql}`);
       if (params && params.length) {
         console.log(`        prm: ${JSON.stringify(params)}`);
@@ -165,12 +173,14 @@ app.post('/transaction', async (req, res) => {
     const results = [];
     for (const s of statements) {
       const [result] = await conn.execute(s.sql, s.params || []);
-      // @@@ 診斷：DML 影響 0 列時，前端不會收到任何錯誤（看起來存了、其實沒存）。
-      //     把 SQL、參數與 affectedRows 印出來，才查得出 WHERE 條件對不對。
-      //     不需要時把 SQL_LOG 設成 false。
+      // @@@ Diagnostic: when a DML statement affects 0 rows, the frontend
+      //     never sees any error (it looks saved, but nothing actually
+      //     changed). Printing the SQL, parameters, and affectedRows is
+      //     what makes it possible to tell whether the WHERE clause was
+      //     even right. Set SQL_LOG to false once this isn't needed.
       if (SQL_LOG && !Array.isArray(result)) {
         const n = result.affectedRows;
-        console.log(`[dml] affected=${n}${n === 0 ? '  <-- 沒有任何一列被改到' : ''}`);
+        console.log(`[dml] affected=${n}${n === 0 ? '  <-- no rows were affected' : ''}`);
         console.log(`      sql: ${s.sql}`);
         console.log(`      prm: ${JSON.stringify(s.params || [])}`);
       }
@@ -199,6 +209,6 @@ app.post('/transaction', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`WapForm API  →  http://localhost:${PORT}`);
-  console.log(`Database     →  shopcloud @ localhost:3306`);
+  console.log(`Database     →  sales @ localhost:3306`);
   console.log(`Endpoints    →  GET /ping  GET /tables  POST /query  POST /transaction`);
 });

@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<wml>
+  <card id="P" title="Shipper Master" width="600">
+    <dbtable tablename="fm">
+      <field fieldname="fno" displaylabel="Shipper Code"/>
+      <field fieldname="fname" displaylabel="Shipper Name"/>
+    </dbtable>
+    <datasource dataset="fm">
+      <p align="center">
+        <navigator/>
+      </p>
+        <dbgrid height="400">
+          <item field="fno" size="20"/>
+          <item field="fname" size="20"/>
+        </dbgrid>
+    </datasource>
+    <do type="prev" label="Close">
+      <prev/>
+    </do>
+  </card>
+</wml>

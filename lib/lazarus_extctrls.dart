@@ -211,7 +211,8 @@ Widget _layoutCells(List<Widget> cells, int columns, TColumnLayout layout) {
     for (var c = 0; c < cols; c++) {
       final int idx = (layout == TColumnLayout.clHorizontalThenVertical)
           ? r * cols + c
-          : c * rowCount + r; // fill column by column: the r-th item of column c
+          : c * rowCount +
+              r; // fill column by column: the r-th item of column c
       if (idx >= n) continue;
       if (rowCells.isNotEmpty) rowCells.add(const SizedBox(width: 12));
       rowCells.add(cells[idx]);
@@ -377,7 +378,8 @@ class TCheckGroup extends StatelessWidget {
             enabled: _itemEnabled(i),
             font: style,
             dense: true,
-            onChange: _itemEnabled(i) ? (_) => onItemClick?.call(this, i) : null,
+            onChange:
+                _itemEnabled(i) ? (_) => onItemClick?.call(this, i) : null,
           ),
         ),
     ];
@@ -714,7 +716,8 @@ class _ShapePainter extends CustomPainter {
   Path _star(Rect r, {bool down = false}) {
     final p = Path();
     final outer = math.min(r.width, r.height) / 2;
-    final inner = outer * 0.382; // inner/outer radius ratio for a regular five-pointed star
+    final inner = outer *
+        0.382; // inner/outer radius ratio for a regular five-pointed star
     for (var i = 0; i < 10; i++) {
       final rad = i.isEven ? outer : inner;
       var a = -math.pi / 2 + i * math.pi / 5;
@@ -1057,7 +1060,8 @@ class TFlowPanel extends StatelessWidget {
 // zz !!! not fully translated
 // ─────────────────────────────────────────────────────────────────────────────
 class TSplitter extends StatelessWidget {
-  final Axis axis; // a vertical bar (dragged left/right) or a horizontal bar (dragged up/down)
+  final Axis
+      axis; // a vertical bar (dragged left/right) or a horizontal bar (dragged up/down)
   final double thickness; // divider thickness
   final bool beveled; // Beveled
   final void Function(double delta)? onMoved; // OnMoved (drag delta, in pixels)
@@ -1078,8 +1082,9 @@ class TSplitter extends StatelessWidget {
       height: vertical ? null : thickness,
       decoration: BoxDecoration(
         color: Colors.grey.shade300,
-        border:
-            beveled ? Border.all(color: Colors.grey.shade500, width: 0.5) : null,
+        border: beveled
+            ? Border.all(color: Colors.grey.shade500, width: 0.5)
+            : null,
       ),
     );
     return MouseRegion(
@@ -1090,7 +1095,8 @@ class TSplitter extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onHorizontalDragUpdate:
             vertical ? (d) => onMoved?.call(d.delta.dx) : null,
-        onVerticalDragUpdate: vertical ? null : (d) => onMoved?.call(d.delta.dy),
+        onVerticalDragUpdate:
+            vertical ? null : (d) => onMoved?.call(d.delta.dy),
         child: bar,
       ),
     );

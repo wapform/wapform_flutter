@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<wml>
+	<card id="P" title="Customer Master" width="960">
+		<dbquery id="cu">
+			<![CDATA[select * from cu order by cno]]>
+			<field fieldname="Cno" displaylabel="Customer Code"/>
+			<field fieldname="Cname" displaylabel="Customer Name"/>
+			<field fieldname="Cshort" displaylabel="Customer Short"/>
+			<field fieldname="Addr1" displaylabel="Address 1"/>
+			<field fieldname="Addr2" displaylabel="Address 2"/>
+			<field fieldname="AC" displaylabel="Tax ID"/>
+			<field fieldname="Zip" displaylabel="Zip Code"/>
+			<field fieldname="Ziq" displaylabel="Shipping Zone"/>
+			<field fieldname="Phone" displaylabel="Phone"/>
+			<field fieldname="FAX" displaylabel="Fax"/>
+			<field fieldname="GSM" displaylabel="Mobile"/>
+			<field fieldname="Email" displaylabel="Email"/>    
+			<field fieldname="Password" displaylabel="Password"/>    
+			<field fieldname="Charger" displaylabel="Owner"/>
+			<field fieldname="Contact" displaylabel="Contact"/>
+			<field fieldname="Level" displaylabel="Level"/>
+			<field fieldname="Pay" displaylabel="Payment"/>
+			<field fieldname="AType" displaylabel="Type"/>
+			<field fieldname="Capital" displaylabel="Capital"/>
+			<field fieldname="CDate" displaylabel="Created Date"/>
+			<field fieldname="Rem" displaylabel="Customer Remarks"/>
+			<field fieldname="Remark" displaylabel="Company Remarks"/>
+		</dbquery>
+		<datasource dataset="cu">
+			<dbfilter result="R">
+				<item field="cno" size="20" />
+				<item field="cname" size="20" />
+				<onevent type="onfilter">
+					<dbquery id="cu"><![CDATA[select * from cu where $R order by cno]]></dbquery>
+				</onevent>
+			</dbfilter>
+			<p align="center">
+				<navigator/>
+			</p>
+			<dbgrid height="400" multiselect="true">
+				<item field="Cno" size="16"/>
+				<item field="CDate" size="14"/>
+				<item field="Pay" size="10"/>
+				<item field="AType" size="10"/>
+				<item field="Cname" size="40"/>
+				<item field="Cshort" size="16"/>
+				<item field="Phone" size="20"/>
+				<item field="Contact" size="10"/>
+				<item field="Addr1" size="60"/>
+				<item field="Addr2" size="60"/>
+				<item field="AC" size="10"/>
+				<item field="Zip" size="16"/>
+				<item field="Ziq" size="16"/>
+				<item field="FAX" size="16"/>
+				<item field="GSM" size="16"/>
+				<item field="Email" size="30"/>         
+				<item field="Password" size="40"/>         
+				<item field="Charger" size="16"/>
+				<item field="Capital" size="16"/>
+				<item field="Rem" size="40"/>
+				<item field="Remark" size="40"/>
+			</dbgrid>
+		</datasource>
+		<do type="accept" label="Print">
+			<go href="#P1"/>
+		</do>
+		<do type="prev" label="Close">
+			<prev/>
+		</do>
+	</card>
+  <card id="P1" title="Print Report" device="prv" paper="A4">
+    <setvar name="ROWIDX" value="0"/>
+    <dbquery id="sys"><![CDATA[select * from sys]]></dbquery>
+    <report dataset="cu" dialog="CNo" rows="50">
+      <page>
+        <setvar name="ROWIDX" value="1"/>
+        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr><td colspan="3"><p align="center"><big>$(sys.company)</big></p></td></tr>
+          <tr><td colspan="3"><p align="center"><big>Customer List</big></p></td></tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td width="100">Page:$(PAGE)</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td>Date:$(DATE)</td>
+          </tr>
+        </table>
+<p align="center">123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890</p>
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" align="center">
+          <tr class="row">
+            <th width="100">Customer Code</th>
+            <th width="100">Customer Name</th>
+            <th width="150">Fax</th>
+            <th width="80">Contact</th>
+            <th>Invoice Address</th>
+          </tr>
+          <tr class="row">
+            <th></th>
+            <th>Phone</th>
+            <th></th>
+            <th>Tax ID</th>
+            <th>Company Address</th>
+          </tr>
+          <group>
+            <tr class="$(IF(ROWIDX mod 2 = 1, 'row1', 'row2'))">
+              <td align="center">$(cu.CNo)</td>
+              <td>$(cu.CName)</td>
+              <td>$(cu.Fax)</td>
+              <td>$(cu.Contact)</td>
+              <td rowspan="2">$(cu.Addr1)</td>
+            </tr>
+            <tr class="$(IF(ROWIDX mod 2 = 1, 'row1', 'row2'))">
+              <td></td>
+              <td>$(cu.Phone)</td>
+              <td>&#160;</td>
+              <td>$(cu.Ac)</td>
+            </tr>
+            <setvar name="ROWIDX" value="ROWIDX+1"/>
+          </group>
+        </table>
+      </page>
+      <p align="center">123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890</p>
+    </report>
+  </card>
+</wml>

@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<wml>
+	<card id="P" title="Password Data Maintenance" width="960">
+		<dbquery id="mnu">
+			<![CDATA[select * from mnu order by id]]>
+			<field fieldname="id" displaylabel="id"/>
+			<field fieldname="sub" displaylabel="sub"/>
+			<field fieldname="title" displaylabel="Title"/>
+			<field fieldname="href" displaylabel="Client Target"/>
+			<field fieldname="http" displaylabel="Server Target"/>
+			<field fieldname="activate" displaylabel="activate"/>
+			<onevent type="beforedelete">
+				<dbquery><![CDATA[delete from login where id='$mnu.id']]></dbquery>
+			</onevent>
+		</dbquery>
+		<dbquery id="login">
+			<![CDATA[select * from login order by id, itm]]>
+			<field fieldname="id" displaylabel="id"/>
+			<field fieldname="itm" displaylabel="itm"/>
+			<field fieldname="uid" displaylabel="User"/>
+			<field fieldname="r" displaylabel="Read"/>
+			<field fieldname="w" displaylabel="Write"/>
+			<onevent type="onnewrecord">
+				<setvar name="loginid" value="mnu.id"/>
+				<setvar name="loginr" value="1"/>
+				<setvar name="loginw" value="1"/>
+				<dbquery id="maxitm"><![CDATA[select max(itm) as itm from login where id='$mnuid']]></dbquery>
+				<setvar name="loginitm" value="FORMAT('%2.2d',maxitm.itm+1)"/>
+			</onevent>
+		</dbquery>
+		<datasource dataset="mnu">
+			<p><navigator/></p>
+			<dbgrid height="200">
+				<item field="id" size="10"/>
+				<item field="sub" size="10"/>
+				<item field="title" size="30"/>
+				<item field="href" size="30"/>
+				<item field="activate" size="10" range="1;0"/>
+			</dbgrid>
+			<datasource name="ds" dataset="login" mastersource="mnu" masterfields="id">
+				<p><navigator/></p>
+				<dbgrid name="gd" height="200">
+					<item field="itm" size="10"/>
+					<item field="uid" lookup="users;userid"/>
+					<item field="w" title="Enabled" type="checkbox" range="1;0" size="10"/>
+				</dbgrid>
+			</datasource>
+		</datasource>
+		<do type="prev" label="Close">
+			<prev/>
+		</do>
+	</card>
+</wml>

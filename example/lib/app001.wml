@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<wml>
+	<card id="P" title="System Parameters">
+		<dbquery id="sys">
+			<![CDATA[select * from sys]]>
+			<field fieldname="No" displaylabel="No"/>
+			<field fieldname="Company" displaylabel="Company Name"/>
+			<field fieldname="Addr" displaylabel="Company Address"/>
+			<field fieldname="AC" displaylabel="Tax ID"/>
+			<field fieldname="Zip" displaylabel="Zip Code"/>
+			<field fieldname="Phone" displaylabel="Phone"/>
+			<field fieldname="FAX" displaylabel="Fax"/>
+			<field fieldname="TaxRate" displaylabel="Tax Rate"/>
+			<field fieldname="Printer1" displaylabel="Printer1"/>
+			<field fieldname="Printer2" displaylabel="Printer2"/>
+			<field fieldname="Printer3" displaylabel="Printer3"/>
+			<field fieldname="Design" displaylabel="Print Footer"/>
+			<field fieldname="AcBeg" displaylabel="Closing Date From"/>
+			<field fieldname="AcEnd" displaylabel="Closing Date To"/>
+			<field fieldname="Rem" displaylabel="Order Remarks"/>
+			<field fieldname="New" displaylabel="Latest Updates"/>
+			<field fieldname="sales" displaylabel="Promotions"/>
+			<field fieldname="a2500" displaylabel="Gift Options"/>
+		</dbquery>
+		<datasource dataset="sys">
+			<p>
+				<fieldset>
+					Company Name:<input field="Company" size="30"/><br/>
+					Company Address:<input field="Addr" size="40"/><br/>
+					Tax ID:<input field="AC" size="10"/><br/>
+					Zip Code:<input field="Zip" size="10"/><br/>
+					Phone:<input field="Phone" size="15"/><br/>
+					Fax:<input field="FAX" size="15"/><br/>
+					Tax Rate:<input field="TaxRate" size="2"/><br/>
+					Printer 1:<input field="Printer1" size="20"/><br/>
+					Printer 2:<input field="Printer2" size="20"/><br/>
+					Printer 3:<input field="Printer3" size="20"/><br/>
+					Closing Date From:<input field="AcBeg" size="20"/><br/>
+					Closing Date To:<input field="AcEnd" size="20"/><br/>
+					<author>
+						Order Remarks:<input field="Rem" size="60"/><br/>
+					</author>
+					Latest Updates:<input field="New" size="60"/><br/>
+					Promotions:<input field="sales" size="60"/><br/>
+					Gift Options:<input field="a2500" size="60"/><br/>
+				</fieldset>
+			</p>
+		</datasource>
+		<do type="accept" label="alert">
+			<alert message="ONE"/>
+			<alert message="TWO"/>
+		</do>
+		<do type="prev" label="Close">
+			<prev/>
+		</do>
+	</card>
+</wml>

@@ -1,10 +1,12 @@
 name: wapform_flutter_example
 description: >
-  Example app for wapform_flutter — a single "系統參數建檔" (system
-  parameters master file) screen, generator-style, talking to the
-  WapDb HTTP gateway in server/server.js.
+  Reference gallery for wapform_flutter — 12 real generator-output
+  pages (System Parameters, Product Master, Customer Master, a
+  master-detail Shipment Order, a grouped Accounts Receivable
+  Statement report, and more), each paired with its source .wml file,
+  talking to the WapDb HTTP gateway in server/server.js.
 publish_to: 'none'
-version: 0.1.0
+version: 0.2.0
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -15,6 +17,13 @@ dependencies:
     sdk: flutter
   wapform_flutter:
     path: ../
+  # Used directly by a few of the 12 example pages (not by the package
+  # itself) — app006/app007/app012/app023 render report/help snippets
+  # via flutter_html, app006 opens an external link via url_launcher.
+  # Run `flutter pub add` to resolve the actual latest compatible
+  # versions rather than trusting a hand-typed number here.
+  flutter_html: any
+  url_launcher: any
 
 dev_dependencies:
   flutter_test:
@@ -23,3 +32,12 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    # wapform_colors.dart's WapColors.load() reads this by default
+    # (assets/wapform.htm) to pull the row/zebra-stripe background
+    # colors used by reports and grids out of its embedded CSS. If
+    # this asset isn't bundled, WapColors silently falls back to its
+    # built-in default colors instead (see the try/catch in
+    # wapform_colors.dart) -- not a crash, but the example then
+    # doesn't demonstrate the CSS-driven color path.
+    - assets/wapform.htm

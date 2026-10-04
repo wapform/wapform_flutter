@@ -218,6 +218,11 @@ class _TEditState extends State<TEdit> {
       enabled: widget.enabled,
       readOnly: widget.readOnly,
       textAlign: textAlignOf(widget.alignment),
+      // @@@ 2026-08-14 added: once the outer widget is stretched by a
+      //     fixed-height container, leaving this unspecified skews it
+      //     toward the top edge, misaligning it against a neighboring
+      //     center-aligned label.
+      textAlignVertical: TextAlignVertical.center,
       obscureText: widget.echoMode == TEchoMode.emPassword,
       maxLength: widget.maxLength > 0 ? widget.maxLength : null,
       inputFormatters: formatters,
@@ -226,8 +231,7 @@ class _TEditState extends State<TEdit> {
         isDense: true,
         counterText: "",
         hintText: widget.textHint.isNotEmpty ? widget.textHint : null,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         border: const OutlineInputBorder(),
       ),
       onChanged: (v) {
@@ -462,8 +466,7 @@ class _TComboBoxState extends State<TComboBox> {
             style: widget.font,
             decoration: const InputDecoration(
               isDense: true,
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
               border: OutlineInputBorder(),
             ),
             onChanged: widget.onChange,
@@ -549,8 +552,7 @@ class _TListBoxState extends State<TListBox> {
       child: ListView.builder(
         itemCount: widget.items.length,
         itemBuilder: (ctx, i) {
-          final sel =
-              widget.multiSelect ? _selected.contains(i) : i == _index;
+          final sel = widget.multiSelect ? _selected.contains(i) : i == _index;
           return InkWell(
             onTap: widget.enabled
                 ? () {
@@ -572,8 +574,7 @@ class _TListBoxState extends State<TListBox> {
             child: Container(
               width: double.infinity,
               color: sel ? Colors.blue.shade100 : null,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Text(widget.items[i], style: widget.font),
             ),
           );
@@ -785,8 +786,11 @@ class TRadioButton<T> extends StatelessWidget {
             visualDensity: dense ? VisualDensity.compact : null,
             materialTapTargetSize:
                 dense ? MaterialTapTargetSize.shrinkWrap : null,
-            onChanged:
-                enabled ? (v) { if (v != null) onChange?.call(v); } : null,
+            onChanged: enabled
+                ? (v) {
+                    if (v != null) onChange?.call(v);
+                  }
+                : null,
           ),
           Flexible(
             child: Text(
@@ -808,7 +812,8 @@ class TButton extends StatelessWidget {
   final String caption; // Caption
   final VoidCallback? onClick; // OnClick
   final bool enabled; // Enabled
-  final bool isDefault; // Default (triggered by Enter; maps to autofocus on the Flutter side)
+  final bool
+      isDefault; // Default (triggered by Enter; maps to autofocus on the Flutter side)
 
   const TButton({
     super.key,
@@ -887,8 +892,7 @@ class TGroupBox extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(caption,
-              style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(caption, style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           if (child != null) child!,
         ],

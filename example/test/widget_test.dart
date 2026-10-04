@@ -1,27 +1,18 @@
 // example/test/widget_test.dart
 //
-// A smoke test only — it deliberately does NOT wait for the gateway
-// ping to resolve (pumpAndSettle would hang/flake here since there's
-// no server.js running in a test environment), just checks the first
-// frame renders without throwing and shows the loading state.
+// A smoke test only: the first frame of the example app builds without
+// throwing. It does not wait for the login / gateway round trips
+// (there is no server.js running in a test environment).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:wapform_flutter_example/main.dart';
 
 void main() {
-  testWidgets('home page renders and starts checking the gateway',
-      (tester) async {
-    await tester.pumpWidget(const WapformExampleApp());
-    // Single pump: the async WapDb.ping() call in initState hasn't
-    // resolved yet, so this only asserts the initial "checking" frame.
+  testWidgets('example app builds its first frame', (tester) async {
+    await tester.pumpWidget(const WapApp());
     await tester.pump();
 
-    expect(find.text('wapform_flutter example'), findsOneWidget);
-    expect(find.textContaining('Checking http://localhost:3000'),
-        findsOneWidget);
-    // The button is disabled until the gateway check succeeds.
-    final button = tester.widget<FilledButton>(find.byType(FilledButton));
-    expect(button.onPressed, isNull);
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

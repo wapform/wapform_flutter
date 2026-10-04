@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<wml>
+	<card id="P" title="Brand Master" width="960">
+		<dbquery id="ve">
+			<![CDATA[select * from ve order by vno]]>
+			<field fieldname="Vno" displaylabel="Brand Code"/>
+			<field fieldname="Vname" displaylabel="Brand Name"/>
+			<field fieldname="Vshort" displaylabel="Brand Short"/>
+			<field fieldname="Addr1" displaylabel="Address 1"/>
+			<field fieldname="Addr2" displaylabel="Address 2"/>
+			<field fieldname="AC" displaylabel="Tax ID"/>
+			<field fieldname="Zip" displaylabel="Zip Code"/>
+			<field fieldname="Phone" displaylabel="Phone"/>
+			<field fieldname="FAX" displaylabel="Fax"/>
+			<field fieldname="GSM" displaylabel="Mobile"/>
+			<field fieldname="Charger" displaylabel="Owner"/>
+			<field fieldname="Contact" displaylabel="Contact"/>
+		</dbquery>
+		<datasource dataset="ve">
+			<dbfilter result="R">
+				<item field="vno" size="16" />
+				<item field="vname" size="16" />
+				<onevent type="onfilter">
+					<dbquery id="ve"><![CDATA[select * from ve where $R order by vno]]></dbquery>
+				</onevent>
+			</dbfilter>
+			<p align="center">
+				<navigator/>
+			</p>
+			<dbgrid height="400" entertotab="false" multiselect="true">
+				<item field="Vno" size="14"/>
+				<item field="Vname" size="30"/>
+				<item field="Vshort" size="20"/>
+				<item field="Addr1" size="40"/>
+				<item field="Addr2" size="40"/>
+				<item field="AC" size="10"/>
+				<item field="Zip" size="10"/>
+				<item field="Phone" size="16"/>
+				<item field="FAX" size="16"/>
+				<item field="GSM" size="16"/>
+				<item field="Charger" size="10"/>
+				<item field="Contact" size="10"/>
+			</dbgrid>
+		</datasource>
+		<do type="prev" label="Close">
+			<prev/>
+		</do>
+	</card>
+</wml>

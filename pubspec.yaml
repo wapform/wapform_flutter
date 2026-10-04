@@ -1,19 +1,19 @@
 name: wapform_flutter
 description: >
-  A Flutter port of a Lazarus/Free Pascal (FPC) based WML form and report
-  engine. Includes line-by-line Dart translations of FPC's db/sqldb/
-  dbctrls/dbgrids/grids/stdctrls/extctrls units, plus original WapForm
-  modules (expression evaluator, tag engine, lookup box, banded report
-  builder) built on top of them.
-version: 0.2.1
+  WapForm for Flutter Community Edition: an open-source Flutter port
+  of a Lazarus/FPC WAP form and report engine for Web and mobile.
+version: 1.6.5
 homepage: https://github.com/wapform/wapform_flutter
 repository: https://github.com/wapform/wapform_flutter
 
 # LGPL-2.1 with the FPC static-linking exception ("Modified LGPL").
-# pub.dev's SPDX picker has no exact entry for the modified exception
-# text, so LGPL-2.1-only is used here as the closest umbrella identifier.
-# See LICENSE, COPYING.LGPL.txt and COPYING.modifiedLGPL.txt for the
-# actual terms that apply to this package.
+# Note: pubspec.yaml has no officially-supported `license:` field
+# (see dart-lang/pub-dev#5535 — still an open feature request as of
+# writing), so pub.dev does not actually read the line below; it's kept
+# here only as a human-readable hint. The only thing pub.dev's license
+# detector reads is the `LICENSE` file itself, which now contains the
+# full text directly (see LICENSE, COPYING.LGPL.txt and
+# COPYING.modifiedLGPL.txt for the canonical, unabridged terms).
 license: LGPL-2.1-only
 
 environment:
@@ -28,6 +28,11 @@ dependencies:
   flutter_html: ^3.0.0
   flutter_html_table: ^3.0.0
   printing: ^5.13.0
+  webview_flutter: ^4.0.0
+  flutter_native_html_to_pdf: ^3.0.0
+  pdf: ^3.11.0
+  # flutter_html 3.0.0 does not compile with html 0.15.7 (QuerySelector.matches removed)
+  html: '>=0.15.4 <0.15.7'
 
 dev_dependencies:
   flutter_test:
@@ -35,4 +40,16 @@ dev_dependencies:
   flutter_lints: ^4.0.0
 
 flutter:
-  # No assets/plugins of its own — pure Dart source package.
+  # ⚠ NOT VERIFIED: webview_flutter and flutter_native_html_to_pdf are
+  # imported unconditionally in wapform_report.dart (no
+  # `if (dart.library.html)`-style conditional import guarding them,
+  # unlike src/report_web.dart). Both were added and verified against
+  # real Android hardware to fix a hanging Printing.convertHtml() bug —
+  # but flutter_native_html_to_pdf in particular ("native" is in the
+  # name; it drives Android's PrintDocumentAdapter) may not have a Web
+  # implementation at all. Because the import is unconditional, if
+  # either package lacks Web support, `flutter build web` could fail to
+  # compile entirely for anyone depending on this package — which would
+  # directly contradict this package's Web-first positioning. This has
+  # NOT been checked here; run `flutter build web` before relying on
+  # this and report back if it breaks.

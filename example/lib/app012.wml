@@ -1,0 +1,171 @@
+<?xml version="1.0"?>
+<wml>
+	<card id="P" title="Accounts Receivable Statement Print">
+		<p>
+			Please enter the print range and load 80-line report paper<br />
+			<br />
+			<br />
+			Customer Code:<input name="CUSTNO_FROM" value="000000" size="14" />
+			~<input name="CUSTNO_TO" value="ZZZZZZ" size="14" /><br />
+			<br />
+			Ship Date:<input name="SHIPDATE_FROM" type="date" size="14" value="20200101" />
+			~<input name="SHIPDATE_TO" type="date" size="14" value="20261231" /><br />
+			<br />
+			report:<input name="report_MODE" value="S" size="1" />(S.Screen P.Printer)<br />
+		</p>
+		<do type="accept" label="Print">
+			<go href="#P1" />
+		</do>
+		<do type="prev" label="Close">
+			<prev />
+		</do>
+	</card>
+	<card id="P1" title="Print Report" device="$(IF (report_MODE='S','PRV','PRN'))" paper="Letter">
+    <dbquery id="sys"><![CDATA[select * from sys]]></dbquery>
+		<dbquery id="sh">
+			<![CDATA[
+    SELECT
+      sh.cno, sh.sno, sh.sdate, sh.TaxRate, sh.Amount, sh.Tax, sh.Paid, sh.Rem,
+      cu.cname, cu.Phone, cu.Fax, cu.Addr1, cu.ac
+    FROM
+      sh, cu
+    WHERE
+      (sh.sdate >= '$SHIPDATE_FROM') and (sh.sdate <= '$SHIPDATE_TO')
+      and
+      sh.cno >= '$CUSTNO_FROM' and sh.cno <= '$CUSTNO_TO'
+      and
+      cu.cno = sh.cno
+    ORDER BY
+      sh.cno, sh.sdate, sh.sno
+    ]]>
+		</dbquery>
+		<report dataset="sh" dialog="cno;sno">
+			<group change="sh.cno">
+				<setvar name="PAGENO" value="0" />
+				<setvar name="BAL_BEGIN" value="0" />
+				<setvar name="AMOUNT_SUM" value="0" />
+				<setvar name="TAX_SUM" value="0" />
+				<setvar name="PAID_SUM" value="0" />
+				<setvar name="BAL_END" value="0" />
+				<page>
+					<![CDATA[<table width="740" align="center"><tr><td>]]>
+					<setvar name="PAGENO" value="PAGENO+1" />
+					<table border="0" cellpadding="0" cellspacing="0" width="100%">
+						<tr>
+							<td colspan="4">
+								<p align="center"><big>$(sys.Company)</big></p>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="4">
+								<p align="center"><big>Accounts Receivable Statement</big></p>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="4">&#160;</td>
+						</tr>
+						<tr>
+							<td width="350">Customer:$(sh.cname)[$(sh.cno)]</td>
+							<td width="180">Phone:$(sh.Phone)</td>
+							<td width="120">&#160;</td>
+							<td width="130">Page:$(PAGENO)</td>
+						</tr>
+						<tr>
+							<td>Address:$(sh.Addr1)</td>
+							<td>Fax:$(sh.Fax)</td>
+							<td>Tax ID:$(sh.ac)</td>
+							<td>Date:$(DATE)</td>
+						</tr>
+					</table>
+					<table class="p09" width="100%">
+						<tr>
+							<th width="90">Ship Date</th>
+							<th width="90">Shipment No</th>
+							<th width="90">Amount</th>
+							<th width="90">Tax</th>
+							<th width="90">Total incl. Tax</th>
+							<th width="90">Paid</th>
+							<th width="90">Balance Due</th>
+						</tr>
+						<group change="datetostr(sh.sdate)">
+							<group change="datetostr(sh.sdate)+sh.sno">
+								<group>
+									<tr>
+										<td>
+											<p align="center">$(sh.sdate)</p>
+										</td>
+										<td>
+											<p align="center">$(sh.sno)</p>
+										</td>
+										<td>
+											<p align="right">$(sh.amount)</p>
+										</td>
+										<td>
+											<p align="right">$(sh.tax)</p>
+										</td>
+										<td>
+											<p align="right">$(sh.amount+sh.tax)</p>
+										</td>
+										<td>
+											<p align="right">$(sh.paid)</p>
+										</td>
+										<td>
+											<p align="right">$(sh.amount+sh.tax-sh.paid)</p>
+										</td>
+									</tr>
+								</group>
+								<setvar name="AMOUNT_SUM" value="AMOUNT_SUM+sh.amount" />
+								<setvar name="TAX_SUM" value="TAX_SUM+sh.tax" />
+								<setvar name="PAID_SUM" value="PAID_SUM+sh.paid" />
+							</group>
+						</group>
+					</table>
+					<![CDATA[</td></tr></table>]]>
+				</page>
+				<hr size="1" align="center" />
+				<dbquery id="R">
+					<![CDATA[
+    select cno, SUM(Amount) as A, SUM(Tax) as B, SUM(Paid) as C
+      from sh where sh.sdate < '$(SHIPDATE_FROM)' and cno='$sh.cno' group by cno
+    order by cno
+    ]]>
+				</dbquery>
+				<setvar name="BAL_BEGIN" value="R.A+R.B-R.C" />
+				<setvar name="BAL_END" value="BAL_BEGIN+AMOUNT_SUM+TAX_SUM-PAID_SUM" />
+				<![CDATA[<table width="740" align="center"><tr><td>]]>
+				<table border="0" cellpadding="0" cellspacing="0" width="100%">
+					<tr>
+						<td>Company Address:$(sys.Addr)</td>
+						<td width="150" align="right">Prior Balance:</td>
+						<td width="100" align="right">$(FORMAT('%8.0n',BAL_BEGIN*1.0))</td>
+					</tr>
+					<tr>
+						<td>Company Phone:$(sys.Phone)</td>
+						<td align="right">+ Sales This Period:</td>
+						<td align="right">$(FORMAT('%8.0n',AMOUNT_SUM*1.0))</td>
+					</tr>
+					<tr>
+						<td>Company Fax:$(sys.Fax)</td>
+						<td align="right">+ Tax This Period:</td>
+						<td align="right">$(FORMAT('%8.0n',TAX_SUM*1.0))</td>
+					</tr>
+					<tr>
+						<td>
+							<p>&#160;</p>
+						</td>
+						<td align="right">- Paid This Period:</td>
+						<td align="right">$(FORMAT('%8.0n',PAID_SUM*1.0))</td>
+					</tr>
+					<tr>
+						<td>
+							<p>&#160;</p>
+						</td>
+						<td align="right">= Balance Due:</td>
+						<td align="right">$(FORMAT('%8.0n',BAL_END*1.0))</td>
+					</tr>
+				</table>
+				<![CDATA[</td></tr></table>]]>
+			</group>
+		</report>
+	</card>
+</wml>
