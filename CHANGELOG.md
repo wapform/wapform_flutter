@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.6.7
 
 - **Supported platforms declared: Android and Web** (`platforms:` in
   `pubspec.yaml`). Web builds were verified with `flutter build web` of
