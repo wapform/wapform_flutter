@@ -157,6 +157,27 @@
         <item field="ChkNo" size="10"/>
         <item field="fty" size="16"/>
         <item field="RemPay" size="40"/>
+        <!-- Cell colors, checked for each row: a <column> with field= colors only that column,
+             without field= the whole row; brush = background, color = text, cnd = when it applies. -->
+        <onevent type="oncalccellcolors">
+          <!-- One pastel row color per payment state, a stronger color on the key cell.
+               Rules run top to bottom and later ones win for the same cell. -->
+          <!-- paid in full: green -->
+          <column field="sdate" brush="#EAF6EC"/>
+          <column field="Paid" color="#2E7D32" cnd="sh.UnPaid=0"/>
+          <!-- overpaid (e.g. a rounding difference): yellow -->
+          <column brush="#FFF9E0" cnd="sh.UnPaid&lt;0"/>
+          <column field="UnPaid" color="#B7791F" cnd="sh.UnPaid&lt;0"/>
+          <!-- not paid at all: red -->
+          <column brush="#FDECEC" cnd="sh.UnPaid&gt;0"/>
+          <column field="UnPaid" brush="#F8C9C9" color="#B71C1C" cnd="sh.UnPaid&gt;0"/>
+          <!-- partly paid: orange (overrides the red above) -->
+          <column brush="#FFF1E0" cnd="(sh.Paid&gt;0) and (sh.UnPaid&gt;0)"/>
+          <column field="UnPaid" brush="#FFD9B0" color="#C65100" cnd="(sh.Paid&gt;0) and (sh.UnPaid&gt;0)"/>
+          <!-- payment terms -->
+          <column field="Pay" color="#7B1FA2" cnd="sh.Pay='COD'"/>
+          <column field="Pay" color="#1565C0" cnd="sh.Pay='Net30'"/>
+        </onevent>
       </dbgrid>
     </datasource>
 

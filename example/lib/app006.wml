@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <wml>
-	<card id="P" title="Shipment Order Master" margin="5" width="1200">
+	<card id="P" title="Shipment Order Master" margin="5" width="1300">
 		<setvar name="DOCDATE" value="FORMAT('%2.2d',YEAR(DATE)-1911)+FORMAT('%2.2d',MONTH(DATE))+FORMAT('%2.2d',DAY(DATE))"/>
 		<setvar name="BARCODEGUARD" value="0"/>
 		<setvar name="DeletingItems" value="0"/>

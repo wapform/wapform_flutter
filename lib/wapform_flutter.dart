@@ -6,6 +6,12 @@
 // ═════════════════════════════════════════════════════════════════════════
 
 // ── FPC/Lazarus translation layer ──────────────────────────────────────
+/// WapForm for Flutter: runs WapForm (WML) applications on Flutter.
+///
+/// Imports every module of the package. Each module can also be imported
+/// on its own, e.g. `package:wapform_flutter/wapform_expression.dart`.
+library;
+
 export 'lazarus_db.dart';
 export 'lazarus_sqldb.dart';
 export 'lazarus_dbctrls.dart';

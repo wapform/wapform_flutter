@@ -6,6 +6,21 @@ report engine for Web and mobile.
 
 > With WapForm, platform limits disappear.
 
+## Manuals
+
+The complete WapForm technical manual (WML cards, datasets, fields,
+events, reports and the expression function library, with examples for
+Windows, Web and Flutter) is included in three languages:
+
+| Language | Manual |
+|---|---|
+| English | [doc/wapform_manual_en.md](https://github.com/wapform/wapform_flutter/blob/main/doc/wapform_manual_en.md) |
+| 繁體中文 | [doc/wapform_manual_zh-TW.md](https://github.com/wapform/wapform_flutter/blob/main/doc/wapform_manual_zh-TW.md) |
+| 日本語 | [doc/wapform_manual_ja.md](https://github.com/wapform/wapform_flutter/blob/main/doc/wapform_manual_ja.md) |
+
+The API reference of this package is in [MANUAL.md](MANUAL.md) and on
+pub.dev's API docs.
+
 ## Why this exists
 
 Cross-platform was never really the expensive part — the real cost is

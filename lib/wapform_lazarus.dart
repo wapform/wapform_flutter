@@ -58,6 +58,10 @@
 //  lazarus_sqldb_connection.dart, lazarus_sqldb_query.dart, wapform_expression.dart
 // ════════════════════════════════════════════════════════════════════════════
 
+/// The WML tag engine: [setvar], [expression], [condition], [invoke],
+/// the `expand*` text functions, [DataSetRegistry] and [DbQuery].
+library;
+
 import 'dart:typed_data'; // @@@ used for TBookmark (Uint8List)
 
 import 'lazarus_db.dart';
@@ -69,6 +73,11 @@ import 'wapform_expression.dart';
 WapEvaluator? _currentEvaluator;
 DataSetRegistry? _currentRegistry;
 
+/// Makes [ev] (and [registry]) the engine used by [setvar], [expression],
+/// [condition], [invoke] and the `expand*` functions.
+///
+/// Call it when a card's screen initializes, and again after returning
+/// from another card.
 void useEngine(WapEvaluator ev, [DataSetRegistry? registry]) {
   _currentEvaluator = ev;
   _currentRegistry = registry;
@@ -215,9 +224,16 @@ String _expand(String s, String mode) {
   return buf.toString().replaceAll("`", "'");
 }
 
+/// Expands `$name`, `$(expression)` and `$$` in [s], inserting values as is.
 String expandText(String s) => _expand(s, "text");
+
+/// Like [expandText], for inserting whole SQL fragments (`$S`); [DbQuery.query] uses it by default.
 String expandSql(String s) => _expand(s, "sqlraw");
+
+/// Like [expandSql], but string values are single-quoted and escaped; numbers are inserted as is.
 String expandSqlAuto(String s) => _expand(s, "sql");
+
+/// Like [expandSql], but every value is single-quoted and escaped.
 String expandSqlQuoted(String s) => _expand(s, "quoted");
 
 /// @@@ Notification fired when a variable is rewritten by setvar (lets the
@@ -249,13 +265,23 @@ void setvar(String name, dynamic value) {
     final aryName = name.substring(0, lb);
     final idxExpr = name.substring(lb + 1, rb);
     final k = expression(idxExpr);
-    final idx = (k is int) ? k : int.tryParse("$k") ?? 0;
+    final idx = (k is num) ? k.toInt() : int.tryParse("$k") ?? 0;
     final cur = ev.getVar(aryName);
-    final list = (cur is List) ? cur : <dynamic>[];
-    while (list.length <= idx) {
-      list.add(null);
+    var list = (cur is List) ? cur : <dynamic>[];
+    try {
+      while (list.length <= idx) {
+        list.add(null);
+      }
+      list[idx] = v;
+    } on TypeError {
+      // a typed list (e.g. List<int> from Dart code) can't hold null or
+      // other types: continue with a List<dynamic> copy
+      list = List<dynamic>.of(list);
+      while (list.length <= idx) {
+        list.add(null);
+      }
+      list[idx] = v;
     }
-    list[idx] = v;
     ev.setVar(aryName, list);
     _notifyVarChanged(aryName);
     return;
@@ -400,6 +426,12 @@ class _DataSetExprAdapter extends ExprDataSet {
   @override
   bool hasField(String name) => _ds.findField(name) != null;
 
+  @override
+  dynamic fieldValueAt(int index) {
+    if (index < 0 || index >= _ds.fields.count) return null;
+    return fieldValue(_ds.fields[index].fieldName);
+  }
+
   // @@@ When a WML <field> has no type= attribute, the field gets built as
   //     a TStringField and reads out as a string; but the underlying DB
   //     field may actually be numeric. Expression `+` treats a String
@@ -462,37 +494,55 @@ class _DataSetExprAdapter extends ExprDataSet {
 //  DataSetRegistry — corresponds to the original code's global object
 //  list; the map's value type is now the lazarus version of TDataSet.
 // ═════════════════════════════════════════════════════════════════════════════
+/// The datasets of one card, by id (case-insensitive).
+///
+/// Expressions such as `em.emp_name` resolve `em` through the registry
+/// given to [useEngine].
 class DataSetRegistry {
   final Map<String, TDataSet> _dataSets = {};
 
+  /// All registered datasets, keyed by lower-case id.
   Map<String, TDataSet> get dataSets => _dataSets;
+
+  /// Ids of the registered datasets.
   List<String> get registeredIds => _dataSets.keys.toList();
+
+  /// Number of registered datasets.
   int get count => _dataSets.length;
+
+  /// Whether a dataset is registered under [id].
   bool contains(String id) => _dataSets.containsKey(id);
+
+  /// The dataset registered under [id], or null.
   TDataSet? find(String id) =>
       _dataSets[id.toLowerCase()]; // @@@ case-insensitive
 
   // findQuery covers the usage that the original code's findTable was
   // used for (Lazarus/SQLdb has no TTable; whole-table queries are also
   // TSQLQuery)
+  /// The [TSQLQuery] registered under [id], or null.
   TSQLQuery? findQuery(String id) => _dataSets[id.toLowerCase()] is TSQLQuery
       ? _dataSets[id.toLowerCase()] as TSQLQuery
       : null; // @@@ case-insensitive
 
+  /// Registers [ds] under [id], replacing any previous one.
   void put(String id, TDataSet ds) =>
       _dataSets[id.toLowerCase()] = ds; // @@@ case-insensitive
 
+  /// Resolves a dataset name for the expression engine ([WapEvaluator.datasetResolver]).
   ExprDataSet? resolveDataSet(String name) {
     final ds = _dataSets[
         name.toLowerCase()]; // @@@ case-insensitive → both $tt and $TT resolve
     return ds == null ? null : _DataSetExprAdapter(ds);
   }
 
+  /// Closes and removes the dataset registered under [id].
   void release(String id) {
     final ds = _dataSets.remove(id.toLowerCase()); // @@@ case-insensitive
     if (ds != null && ds.active) ds.close();
   }
 
+  /// Closes and removes every dataset (when the card is closed).
   void releaseAll() {
     for (final ds in _dataSets.values) {
       if (ds.active) ds.close();
@@ -507,8 +557,12 @@ class DataSetRegistry {
 //  DbTable has no counterpart, and whole-table usage also goes through
 //  here uniformly (SELECT * FROM table).
 // ═════════════════════════════════════════════════════════════════════════════
+/// Runs SQL for a card (WML `<dbquery>`): SELECTs become registered datasets.
 class DbQuery {
+  /// Name of the database (informational).
   final String databaseName;
+
+  /// Where [query] registers the datasets it opens.
   final DataSetRegistry registry;
 
   // ??? Differs from the original code: the original only recognized a
@@ -516,8 +570,10 @@ class DbQuery {
   // object to be able to actually issue the query (the Lazarus version
   // has no global session/database registry that could resolve a
   // connection from a string).
+  /// The connection the SQL is sent through.
   final TSQLConnection connection;
 
+  /// Creates a query helper for [registry] using [connection].
   DbQuery({
     required this.registry,
     required this.connection,

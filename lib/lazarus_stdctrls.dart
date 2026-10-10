@@ -62,10 +62,13 @@
 //  Depends on: flutter/material, lazarus_db.dart (TAlignment/TNotifyEvent shims, etc.)
 // ═════════════════════════════════════════════════════════════════════════════
 
+/// Standard controls (labels, edits, buttons, check boxes, radio groups).
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'lazarus_db.dart' show TAlignment, TNotifyEvent;
+import 'lazarus_db.dart' show TAlignment;
 
 // TEditCharCase (L39)
 enum TEditCharCase { ecNormal, ecUppercase, ecLowerCase }
@@ -782,10 +785,12 @@ class TRadioButton<T> extends StatelessWidget {
         children: [
           Radio<T>(
             value: value,
+            // ignore: deprecated_member_use
             groupValue: groupValue,
             visualDensity: dense ? VisualDensity.compact : null,
             materialTapTargetSize:
                 dense ? MaterialTapTargetSize.shrinkWrap : null,
+            // ignore: deprecated_member_use
             onChanged: enabled
                 ? (v) {
                     if (v != null) onChange?.call(v);

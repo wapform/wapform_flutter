@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+// ignore_for_file: unused_element, unused_field
+import 'package:flutter/material.dart';
 
 import 'package:wapform_flutter/lazarus_db.dart';
 import 'package:wapform_flutter/lazarus_sqldb.dart';
@@ -38,7 +39,8 @@ TField _fieldOf(String type) {
     case 'boolean':
       return TBooleanField();
     default:
-      return TStringField();
+      // size 0 = no length limit (the default 20 cut longer values such as file names)
+      return TStringField()..size = 0;
   }
 }
 
@@ -189,6 +191,7 @@ class _App023CardPState
   late final WapEvaluator _ev = widget.ev ?? WapEvaluator();
   late final DataSetRegistry _reg = widget.reg ?? DataSetRegistry();
   bool get _ownsReg => widget.reg == null;
+  final List<String> _ownedDs = []; // datasets this card created
 
   TSQLQuery dbquery(String id, String sqlText,
       {void Function(TSQLQuery ds)? define}) {
@@ -203,6 +206,7 @@ class _App023CardPState
       q.name = id;
       _reg.put(id, q);
       isNew = true;
+      _ownedDs.add(id);
     }
     if (sqlText.isNotEmpty) {
       final sql = expandSql(sqlText);
@@ -310,6 +314,12 @@ class _App023CardPState
     _cu.free();
     _fm.free();
       _reg.releaseAll();
+    } else {
+      // shared registry: drop the datasets this card created, so a
+      // reopened card re-creates them with events bound to its new State
+      for (final id in _ownedDs) {
+        _reg.release(id);
+      }
     }
     super.dispose();
   }
@@ -998,18 +1008,20 @@ class _App023CardPState
                                     _vcheck("UNPAID_ONLY", "Y"),
                                   ]),
                                 ]),
+                                Column(crossAxisAlignment: _xa(""), mainAxisSize: MainAxisSize.min, children: [
                                   _line([
                                     TButton(caption: "Search", onClick: () async { await _xyz(); if (mounted) setState(() {}); }),
                                   ]),
                                   _line([
                                     TButton(caption: "Clear", onClick: () async { await _clr(); if (mounted) setState(() {}); }),
                                   ]),
+                                ]),
                               ]),
                               // <datasource dataset="sh">
                               _nav(_shSrc, post: _shPost, insert: _shInsert, del: _shDelete),
                               Center(child: // <dbgrid width="1180" height="350">
                               FocusTraversalOrder(
-                                order: NumericFocusOrder(13),
+                                order: const NumericFocusOrder(13),
                                 child: FocusTraversalGroup(
                                   child: TDBGrid(
                                     dataSource: _shSrc,
@@ -1029,6 +1041,22 @@ class _App023CardPState
                                           if (mounted) setState(() {});
                                         },
                                       );
+                                    },
+                                    // <onevent type="oncalccellcolors">
+                                    cellStyle: (field) {
+                                      Color? brush, color;
+                                      final f = field.toLowerCase();
+                                      if (f == "sdate") { brush = parseHexColor("#EAF6EC"); }
+                                      if (f == "paid" && condition("sh.UnPaid=0")) { color = parseHexColor("#2E7D32"); }
+                                      if (condition("sh.UnPaid<0")) { brush = parseHexColor("#FFF9E0"); }
+                                      if (f == "unpaid" && condition("sh.UnPaid<0")) { color = parseHexColor("#B7791F"); }
+                                      if (condition("sh.UnPaid>0")) { brush = parseHexColor("#FDECEC"); }
+                                      if (f == "unpaid" && condition("sh.UnPaid>0")) { brush = parseHexColor("#F8C9C9"); color = parseHexColor("#B71C1C"); }
+                                      if (condition("(sh.Paid>0) and (sh.UnPaid>0)")) { brush = parseHexColor("#FFF1E0"); }
+                                      if (f == "unpaid" && condition("(sh.Paid>0) and (sh.UnPaid>0)")) { brush = parseHexColor("#FFD9B0"); color = parseHexColor("#C65100"); }
+                                      if (f == "pay" && condition("sh.Pay='COD'")) { color = parseHexColor("#7B1FA2"); }
+                                      if (f == "pay" && condition("sh.Pay='Net30'")) { color = parseHexColor("#1565C0"); }
+                                      return (brush == null && color == null) ? null : TDBGridCellStyle(brush: brush, color: color);
                                     },
                                   ),
                                 ),

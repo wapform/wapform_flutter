@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+// ignore_for_file: unused_element, unused_field
+import 'package:flutter/material.dart';
 
 import 'package:wapform_flutter/lazarus_db.dart';
 import 'package:wapform_flutter/lazarus_sqldb.dart';
@@ -9,7 +10,6 @@ import 'package:wapform_flutter/lazarus_extctrls.dart';
 import 'package:wapform_flutter/wapform_lookup_box.dart';
 import 'package:wapform_flutter/wapform_expression.dart';
 import 'package:wapform_flutter/wapform_lazarus.dart';
-import 'package:flutter_html/flutter_html.dart';
 import 'package:wapform_flutter/wapform_report.dart';
 import 'package:wapform_flutter/wapform_filter.dart';
 
@@ -41,7 +41,8 @@ TField _fieldOf(String type) {
     case 'boolean':
       return TBooleanField();
     default:
-      return TStringField();
+      // size 0 = no length limit (the default 20 cut longer values such as file names)
+      return TStringField()..size = 0;
   }
 }
 
@@ -192,6 +193,7 @@ class _App004CardPState
   late final WapEvaluator _ev = widget.ev ?? WapEvaluator();
   late final DataSetRegistry _reg = widget.reg ?? DataSetRegistry();
   bool get _ownsReg => widget.reg == null;
+  final List<String> _ownedDs = []; // datasets this card created
 
   TSQLQuery dbquery(String id, String sqlText,
       {void Function(TSQLQuery ds)? define}) {
@@ -206,6 +208,7 @@ class _App004CardPState
       q.name = id;
       _reg.put(id, q);
       isNew = true;
+      _ownedDs.add(id);
     }
     if (sqlText.isNotEmpty) {
       final sql = expandSql(sqlText);
@@ -276,6 +279,12 @@ class _App004CardPState
     _cuSrc.dataSet = null;
     _cu.free();
       _reg.releaseAll();
+    } else {
+      // shared registry: drop the datasets this card created, so a
+      // reopened card re-creates them with events bound to its new State
+      for (final id in _ownedDs) {
+        _reg.release(id);
+      }
     }
     super.dispose();
   }
@@ -822,7 +831,7 @@ class _App004CardPState
                               _nav(_cuSrc, post: _cuPost, insert: _cuInsert, del: _cuDelete),
                               Center(child: // <dbgrid width="940" height="400">
                               FocusTraversalOrder(
-                                order: NumericFocusOrder(1),
+                                order: const NumericFocusOrder(1),
                                 child: FocusTraversalGroup(
                                   child: TDBGrid(
                                     dataSource: _cuSrc,
@@ -1015,6 +1024,7 @@ class _App004CardP1State
   late final WapEvaluator _ev = widget.ev ?? WapEvaluator();
   late final DataSetRegistry _reg = widget.reg ?? DataSetRegistry();
   bool get _ownsReg => widget.reg == null;
+  final List<String> _ownedDs = []; // datasets this card created
 
   bool _loading = true;
   String _error = '';
@@ -1033,6 +1043,7 @@ class _App004CardP1State
       q.name = id;
       _reg.put(id, q);
       isNew = true;
+      _ownedDs.add(id);
     }
     if (sqlText.isNotEmpty) {
       final sql = expandSql(sqlText);
@@ -1066,6 +1077,12 @@ class _App004CardP1State
     if (_ownsReg) {
     _sys.free();
       _reg.releaseAll();
+    } else {
+      // shared registry: drop the datasets this card created, so a
+      // reopened card re-creates them with events bound to its new State
+      for (final id in _ownedDs) {
+        _reg.release(id);
+      }
     }
     super.dispose();
   }

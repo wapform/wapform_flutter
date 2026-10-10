@@ -4,6 +4,7 @@
 // Only compiled in when dart:html is available (see report_web.dart's
 // conditional import) — never referenced on mobile/desktop builds.
 // ═════════════════════════════════════════════════════════════════════════
+// ignore: deprecated_member_use, avoid_web_libraries_in_flutter
 import 'dart:html' as html_lib;
 import 'dart:ui_web' as ui_web;
 import 'package:flutter/widgets.dart';
@@ -18,8 +19,8 @@ void openHtmlForPrint(String html) {
 }
 
 /// Embeds [html] in place using a registered <iframe> platform view.
-/// Used instead of flutter_html for full reports, to avoid issues with
-/// flutter_html splitting content across widget fragments.
+/// WapPage shows every card this way on the Web, so the preview is
+/// rendered by the browser exactly like the printed page.
 Widget? buildHtmlIframe(String html) {
   final blob = html_lib.Blob([html], 'text/html');
   final url = html_lib.Url.createObjectUrl(blob);

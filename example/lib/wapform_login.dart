@@ -226,12 +226,12 @@ class _WapLoginCardState extends State<WapLoginCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── 標題列 ──
-                  Row(
+                  const Row(
                     children: [
-                      const Icon(Icons.dns_outlined,
+                      Icon(Icons.dns_outlined,
                           size: 20, color: Color(0xFF1A6FB5)),
-                      const SizedBox(width: 8),
-                      const Text('WAPFORM Connect',
+                      SizedBox(width: 8),
+                      Text('WAPFORM Connect',
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.w700)),
                     ],

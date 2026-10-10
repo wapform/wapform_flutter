@@ -1,5 +1,55 @@
 # Changelog
 
+## 1.6.8
+
+- **WapForm technical manual in English, Traditional Chinese and
+  Japanese** (`doc/`): the complete WML reference — cards, datasets,
+  fields, events, reports, the expression function library — with
+  worked examples for Windows, Web and Flutter. See
+  [doc/wapform_manual_en.md](doc/wapform_manual_en.md),
+  [doc/wapform_manual_zh-TW.md](doc/wapform_manual_zh-TW.md) and
+  [doc/wapform_manual_ja.md](doc/wapform_manual_ja.md).
+- **Plain function names.** Every expression function that existed only
+  under a prefixed name (`tt_PADL`, `COB_UPPER_CASE`, …) is now also
+  registered under its plain name (`PADL`, `REPEAT`, `SPLIT`,
+  `UPPER_CASE`, …). The prefixed names and the public `tt_*` / `COB_*`
+  Dart functions keep working unchanged in 1.6.x (they are removed in
+  2.0.0), so existing WML and Dart code needs no change.
+- **Integer arithmetic stays integer.** `+`, `-` and `*` on two integers
+  now return an integer instead of a float, so a counter written as
+  `setvar("K", "K+1")` is `1`, not `1.0` (and `STR(K)` shows `1`).
+- **Array range declarations.** `setvar("X", "[1..999]")` declares a
+  zero-filled array whose indexes up to 999 are valid.
+- **`setvar("X[i]", ...)` fixes.** A float index (`2.0`) is accepted
+  instead of being treated as 0, and a typed Dart list (`List<int>`) is
+  extended without a `TypeError`.
+- **`ds.FIELDS[n]`** reads a field value by position (1-based) in
+  expressions.
+- **Custom functions.** `WapEvaluator` now exposes `addFunction0Param` …
+  `addFunction4Param` and `addFunctionAParam`.
+- **Example pages: events survive reopening a page.** A page opened with
+  a shared `DataSetRegistry` (as the example menu does) used to leave the
+  datasets it created in the registry when it closed. Reopening the page
+  then reused those datasets, whose `afterScroll` and other events were
+  still bound to the closed page, so moving the cursor no longer refreshed
+  the screen. Each page now records the datasets it created and releases
+  them from a shared registry on dispose.
+- **`ROUND()` precision.** Rounding to decimal places no longer leaves
+  binary noise: `ROUND(6.6,1)` is `6.6`, `ROUND(1.005,2)` is `1.01`.
+- **Integer fields round like Delphi.** Assigning a fractional value to an
+  integer field (for example a calculated `Amount*TaxRate/100` = 157.5)
+  now rounds half to even like Delphi's `Round` (158) instead of
+  truncating (157), so totals match the Windows engine.
+- **Grid cell colors.** `TDBGrid.cellStyle` sets a cell's background and
+  text color per row (WML `<onevent type="oncalccellcolors">`).
+- **Clean static analysis.** Removed unused code and leftover debug
+  prints (`[DEBUG7 …]` console output from datasets).
+- **API documentation.** Library, class and member docs for the public
+  API, including every built-in expression function.
+- **Compatible with 1.6.7.** `WapPage` (including `htmlStyle`) and the
+  `flutter_html` dependency are unchanged; pages generated for 1.6.7
+  compile and run as before.
+
 ## 1.6.7
 
 - **Supported platforms declared: Android and Web** (`platforms:` in
@@ -92,11 +142,11 @@
 
 ## 1.6.4
 
-- **Removed the `tt_*`/"COBOL-intrinsic" framing of the function
+- **Removed the prefixed-group framing of the function
   library** from `README.md` (File reference's
   `wapform_expression.dart` entry and the `function.wml`/
   `function.dart` section) and `example/README.md` — functions are no
-  longer separated into `tt_`/`cb_` prefixes, so describing the
+  longer separated into prefixed groups, so describing the
   library that way no longer matches reality.
 - **Dropped the "13th file" framing** for `function.wml`/
   `function.dart` in both READMEs. Both now close with a pointer to
@@ -388,7 +438,7 @@
   which version range of the original **`myexp_flutter`** project
   (an earlier, separate codebase this file's expression engine was
   merged from — not part of this package) a section of code came
-  from, e.g. `tt_ custom function library V1.3`. Three of the four
+  from, e.g. a "custom function library V1.3" marker. Three of the four
   appeared without "myexp" nearby, so out of context they read the
   same way — prefixed all three with "myexp" to make the source
   unambiguous; left the fourth alone since it already sits two lines
@@ -688,7 +738,7 @@ issue found in `lib/`, not just the ones pub.dev happened to show).
   pass only searched for the exact `int.tryParse` variant.
 - Fixed 3 more in `lib/lazarus_sqldb.dart` (lines 1686/2907/4317),
   including one `is!` check followed by a redundant `as` cast.
-- Fixed 1 in `lib/wapform_expression.dart:1859` (`tt_ADDWORKDAYS`'s
+- Fixed 1 in `lib/wapform_expression.dart:1859` (`ADDWORKDAYS`'s
   workday-stepping loop): `d = d!.add(...)` — `d` was already promoted
   non-null by an earlier `if (d == null) return null;`.
 - Fixed 3 `unnecessary_cast` warnings (`lib/lazarus_db.dart:5588`,
@@ -722,7 +772,7 @@ issue found in `lib/`, not just the ones pub.dev happened to show).
   package itself, and the unused methods look like template scaffolding
   that may be intentionally there for reference.
 - Not touched: the large number of `info`-level
-  `non_constant_identifier_names` warnings on `tt_*`/`COB_*` function
+  `non_constant_identifier_names` warnings on prefixed function
   names in `wapform_expression.dart` — these intentionally preserve the
   original COBOL/Pascal-derived naming convention; renaming several
   hundred of them to `lowerCamelCase` would be a much bigger, more
@@ -779,7 +829,7 @@ issue found in `lib/`, not just the ones pub.dev happened to show).
 
 - Added `test/wapform_expression_test.dart`: unit tests for the WML
   expression engine (`WapEvaluator`) — arithmetic, `cond()`, variable
-  management (`setVar`/`setRow`/`clearVars`), a sample of the `tt_*`
+  management (`setVar`/`setRow`/`clearVars`), a sample of the extended
   built-in function library, and `datasetResolver`-backed `$id.field`
   expressions via a lightweight fake `ExprDataSet` (no network/DB
   dependency, so this runs anywhere with `flutter test`). CI now runs

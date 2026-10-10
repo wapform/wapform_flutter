@@ -13,9 +13,16 @@
 // File history (this file's own internal edit log — unrelated to the
 // package version in pubspec.yaml):
 //   2026-06-06  rev1  Removed PdfColor; now HTML/CSS only, Flutter Color remains
-import 'package:flutter/services.dart';
-import 'package:flutter/painting.dart'; // Color
+/// Shared report and grid colors ([WapColors]).
+library;
 
+import 'package:flutter/services.dart';
+// Color
+
+/// Shared report and grid colors read from the CSS in `assets/wapform.htm`.
+///
+/// Call [load] once at start-up; until then (or when the asset is missing)
+/// the built-in defaults are used.
 class WapColors {
   WapColors._();
 
@@ -31,6 +38,7 @@ class WapColors {
     'td3': 0xFFD1D7DC,
   };
 
+  /// Reads the color classes from [asset]; falls back to the built-in defaults.
   static Future<void> load({String asset = 'assets/wapform.htm'}) async {
     if (_loaded) return;
     try {
@@ -82,21 +90,41 @@ class WapColors {
   /// CSS hex string (for HTML/PDF)
   static String hex(String cls) {
     final c = flutter(cls);
+    // ignore: deprecated_member_use
     return '#${c.red.toRadixString(16).padLeft(2, '0')}'
+        // ignore: deprecated_member_use
         '${c.green.toRadixString(16).padLeft(2, '0')}'
+        // ignore: deprecated_member_use
         '${c.blue.toRadixString(16).padLeft(2, '0')}';
   }
 
+  /// Names of all known color classes, sorted.
   static List<String> get classes => _map.keys.toList()..sort();
 
+  /// Background of a report row (`class="row"`).
   static Color get trRow => flutter('row');
+
+  /// Background of odd rows (`class="row1"`).
   static Color get trRow1 => flutter('row1');
+
+  /// Background of even rows (`class="row2"`).
   static Color get trRow2 => flutter('row2');
+
+  /// Cell background `class="td1"`.
   static Color get tdRow1 => flutter('td1');
+
+  /// Cell background `class="td2"`.
   static Color get tdRow2 => flutter('td2');
+
+  /// Cell background `class="td3"`.
   static Color get tdRow3 => flutter('td3');
 
+  /// [trRow] as a CSS color code.
   static String get hexTrRow => hex('row');
+
+  /// [trRow1] as a CSS color code.
   static String get hexTrRow1 => hex('row1');
+
+  /// [trRow2] as a CSS color code.
   static String get hexTrRow2 => hex('row2');
 }

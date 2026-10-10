@@ -28,7 +28,6 @@
 
 import 'package:flutter/widgets.dart';
 
-import 'package:wapform_flutter/lazarus_db.dart';
 import 'package:wapform_flutter/lazarus_sqldb.dart';
 import 'package:wapform_flutter/wapform_expression.dart'; // WapEvaluator/DataSetRegistry are defined here
 import 'package:wapform_flutter/wapform_lazarus.dart';

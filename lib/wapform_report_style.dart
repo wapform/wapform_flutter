@@ -6,10 +6,14 @@
 //  Provided as functions because the CSS embeds $pageSize (paper
 //  size) and WapColors (row background colors).
 // ════════════════════════════════════════════════════════════════
+/// CSS used to show and print reports.
+library;
+
 import 'wapform_colors.dart';
 
 // Print version (same look as the on-screen preview, minus the
 // "reader" chrome; row background colors are not applied when printing)
+/// CSS for printing a report on [pageSize] paper.
 String reportCssPrint(String pageSize) => '''
 /* aa ### flutter extension
    Print version: same appearance as the screen preview, with the
@@ -127,6 +131,7 @@ body > table td > table:not(:first-of-type) tr:not(.row):not(.row1):not(.row2):n
 //     HTML width attribute), so switching landscape/portrait or paper
 //     size updates the screen without touching the WML, and without
 //     resorting to a long string to force the layout wide.
+/// CSS for showing a report on screen, [pageWidthPx] wide.
 String reportCssScreen([double pageWidthPx = 750]) => '''
 /* aa ### flutter extension
    ═══════════════════════════════════════════════════════════════════════
@@ -287,6 +292,7 @@ body > table td > table:not(:first-of-type) tr:not(.row):not(.row1):not(.row2):n
 ''';
 
 // Compact style for the demo card (_SrcReport)
+/// CSS for printing an HTML ([WapPage.src]) card on [pageSize] paper.
 String reportCssSrc(String pageSize) => '''
   @media print { @page { size: $pageSize; margin: 12mm; } }
   body { font-family: sans-serif; font-size: 13.3px; margin: 16px; }

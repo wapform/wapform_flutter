@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+// ignore_for_file: unused_element, unused_field
+import 'package:flutter/material.dart';
 
 import 'package:wapform_flutter/lazarus_db.dart';
 import 'package:wapform_flutter/lazarus_sqldb.dart';
@@ -9,7 +10,6 @@ import 'package:wapform_flutter/lazarus_extctrls.dart';
 import 'package:wapform_flutter/wapform_lookup_box.dart';
 import 'package:wapform_flutter/wapform_expression.dart';
 import 'package:wapform_flutter/wapform_lazarus.dart';
-import 'package:flutter_html/flutter_html.dart';
 import 'package:wapform_flutter/wapform_report.dart';
 
 const String _kDb = 'WapProductionDB';
@@ -40,7 +40,8 @@ TField _fieldOf(String type) {
     case 'boolean':
       return TBooleanField();
     default:
-      return TStringField();
+      // size 0 = no length limit (the default 20 cut longer values such as file names)
+      return TStringField()..size = 0;
   }
 }
 
@@ -191,6 +192,7 @@ class _App006CardPState
   late final WapEvaluator _ev = widget.ev ?? WapEvaluator();
   late final DataSetRegistry _reg = widget.reg ?? DataSetRegistry();
   bool get _ownsReg => widget.reg == null;
+  final List<String> _ownedDs = []; // datasets this card created
 
   TSQLQuery dbquery(String id, String sqlText,
       {void Function(TSQLQuery ds)? define}) {
@@ -205,6 +207,7 @@ class _App006CardPState
       q.name = id;
       _reg.put(id, q);
       isNew = true;
+      _ownedDs.add(id);
     }
     if (sqlText.isNotEmpty) {
       final sql = expandSql(sqlText);
@@ -496,6 +499,12 @@ class _App006CardPState
     _pa.free();
     _xy.free();
       _reg.releaseAll();
+    } else {
+      // shared registry: drop the datasets this card created, so a
+      // reopened card re-creates them with events bound to its new State
+      for (final id in _ownedDs) {
+        _reg.release(id);
+      }
     }
     super.dispose();
   }
@@ -1241,8 +1250,8 @@ class _App006CardPState
       insetPadding: const EdgeInsets.all(12),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1200, maxHeight: 840),
-        child: SizedBox(width: 1200, child: Column(
+        constraints: const BoxConstraints(maxWidth: 1300, maxHeight: 840),
+        child: SizedBox(width: 1300, child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -1286,7 +1295,7 @@ class _App006CardPState
                                   controller: _tab,
                                   isScrollable: true,
                                   labelColor: _kBlue,
-                                  tabs: [
+                                  tabs: const [
                                     Tab(text: "Shipment Entry"),
                                     Tab(text: "Shipment Search"),
                                   ],
@@ -1314,7 +1323,7 @@ class _App006CardPState
                                           _line([
                                             _lbl("Customer Code:"),
                                             _lookupBox(_sh, _cu, "cno", 14,
-                                                "cno", const ["cname"], order: 3, onPicked: (k) async { if (_sh.state == TDataSetState.dsBrowse) _sh.edit(); setvar("sh.cno", "'" + k.replaceAll("'", "''") + "'"); _sh.dataEvent(TDataEvent.deRecordChange, 0); await _shCnoChange(); }),  // lookup="cu;cno;cname"
+                                                "cno", const ["cname"], order: 3, onPicked: (k) async { if (_sh.state == TDataSetState.dsBrowse) _sh.edit(); setvar("sh.cno", "'${k.replaceAll("'", "''")}'"); _sh.dataEvent(TDataEvent.deRecordChange, 0); await _shCnoChange(); }),  // lookup="cu;cno;cname"
                                             _edit(_shSrc, "cshort", 10, ro: true),
                                             _edit(_shSrc, "cupay", 10, ro: true),
                                           ]),
@@ -1369,14 +1378,14 @@ class _App006CardPState
                                         Expanded(child: _nav(_snSrc, post: _snPost, insert: _snInsert, del: _snDelete)),
                                         TButton(caption: "PRICE", onClick: _goPRICE),
                                       ]),
-                                      Center(child: // <dbgrid width="1180" height="200">
+                                      Center(child: // <dbgrid width="1280" height="200">
                                       FocusTraversalOrder(
-                                        order: NumericFocusOrder(11),
+                                        order: const NumericFocusOrder(11),
                                         child: FocusTraversalGroup(
                                           child: TDBGrid(
                                             dataSource: _snSrc,
                                             columns: _snCols,
-                                            width: 1180,
+                                            width: 1280,
                                             height: 200,
                                             onRowPost: _snPost,
                                             onRowInsert: () => _snInsert(atEnd: true),
@@ -1525,14 +1534,14 @@ class _App006CardPState
                                       ], border: true),
                                       // <datasource dataset="xy">
                                       _nav(_xySrc, post: _xyPost, insert: _xyInsert, del: _xyDelete),
-                                      Center(child: // <dbgrid width="1180" height="450">
+                                      Center(child: // <dbgrid width="1280" height="450">
                                       FocusTraversalOrder(
-                                        order: NumericFocusOrder(26),
+                                        order: const NumericFocusOrder(26),
                                         child: FocusTraversalGroup(
                                           child: TDBGrid(
                                             dataSource: _xySrc,
                                             columns: _xyCols,
-                                            width: 1180,
+                                            width: 1280,
                                             height: 450,
                                             onRowPost: _xyPost,
                                             onExitLastRow: () => FocusScope.of(context).nextFocus(),
@@ -1610,6 +1619,7 @@ class _App006CardPRICEState
   late final WapEvaluator _ev = widget.ev ?? WapEvaluator();
   late final DataSetRegistry _reg = widget.reg ?? DataSetRegistry();
   bool get _ownsReg => widget.reg == null;
+  final List<String> _ownedDs = []; // datasets this card created
 
   TSQLQuery dbquery(String id, String sqlText,
       {void Function(TSQLQuery ds)? define}) {
@@ -1624,6 +1634,7 @@ class _App006CardPRICEState
       q.name = id;
       _reg.put(id, q);
       isNew = true;
+      _ownedDs.add(id);
     }
     if (sqlText.isNotEmpty) {
       final sql = expandSql(sqlText);
@@ -1669,6 +1680,12 @@ class _App006CardPRICEState
     _cpSrc.dataSet = null;
     _cp.free();
       _reg.releaseAll();
+    } else {
+      // shared registry: drop the datasets this card created, so a
+      // reopened card re-creates them with events bound to its new State
+      for (final id in _ownedDs) {
+        _reg.release(id);
+      }
     }
     super.dispose();
   }
@@ -2122,7 +2139,7 @@ class _App006CardPRICEState
       insetPadding: const EdgeInsets.all(12),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1200, maxHeight: 840),
+        constraints: const BoxConstraints(maxWidth: 1300, maxHeight: 840),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -2164,14 +2181,14 @@ class _App006CardPRICEState
                               // <datasource dataset="cp">
                               _nav(_cpSrc),
                               const SizedBox(height: 8),
-                              Center(child: // <dbgrid width="1180" height="240">
+                              Center(child: // <dbgrid width="1280" height="240">
                               FocusTraversalOrder(
-                                order: NumericFocusOrder(1),
+                                order: const NumericFocusOrder(1),
                                 child: FocusTraversalGroup(
                                   child: TDBGrid(
                                     dataSource: _cpSrc,
                                     columns: _cpCols,
-                                    width: 1180,
+                                    width: 1280,
                                     height: 240,
                                     onExitLastRow: () => FocusScope.of(context).nextFocus(),
                                   ),
@@ -2349,6 +2366,7 @@ class _App006CardP1State
   late final WapEvaluator _ev = widget.ev ?? WapEvaluator();
   late final DataSetRegistry _reg = widget.reg ?? DataSetRegistry();
   bool get _ownsReg => widget.reg == null;
+  final List<String> _ownedDs = []; // datasets this card created
 
   bool _loading = true;
   String _error = '';
@@ -2367,6 +2385,7 @@ class _App006CardP1State
       q.name = id;
       _reg.put(id, q);
       isNew = true;
+      _ownedDs.add(id);
     }
     if (sqlText.isNotEmpty) {
       final sql = expandSql(sqlText);
@@ -2399,6 +2418,12 @@ class _App006CardP1State
   void dispose() {
     if (_ownsReg) {
       _reg.releaseAll();
+    } else {
+      // shared registry: drop the datasets this card created, so a
+      // reopened card re-creates them with events bound to its new State
+      for (final id in _ownedDs) {
+        _reg.release(id);
+      }
     }
     super.dispose();
   }
@@ -2591,6 +2616,7 @@ class _App006CardP2State
   late final WapEvaluator _ev = widget.ev ?? WapEvaluator();
   late final DataSetRegistry _reg = widget.reg ?? DataSetRegistry();
   bool get _ownsReg => widget.reg == null;
+  final List<String> _ownedDs = []; // datasets this card created
 
   bool _loading = true;
   String _error = '';
@@ -2609,6 +2635,7 @@ class _App006CardP2State
       q.name = id;
       _reg.put(id, q);
       isNew = true;
+      _ownedDs.add(id);
     }
     if (sqlText.isNotEmpty) {
       final sql = expandSql(sqlText);
@@ -2643,6 +2670,12 @@ class _App006CardP2State
   void dispose() {
     if (_ownsReg) {
       _reg.releaseAll();
+    } else {
+      // shared registry: drop the datasets this card created, so a
+      // reopened card re-creates them with events bound to its new State
+      for (final id in _ownedDs) {
+        _reg.release(id);
+      }
     }
     super.dispose();
   }

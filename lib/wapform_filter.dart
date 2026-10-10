@@ -8,13 +8,23 @@
 // is taken verbatim from the onfilter handler's <dbquery> text, which
 // already contains the literal "$R" token this widget's onQuery/onSearch
 // logic replaces.
+/// The filter bar ([WapFilter]) behind WML `<dbfilter>`.
+library;
+
 import 'package:flutter/material.dart';
 
+/// One input field of a [WapFilter] (WML `<dbfilter><item>`).
 class FilterItem {
+  /// Database field the condition applies to.
   final String field;
+
+  /// Caption shown above the input.
   final String label;
+
+  /// Input width in characters.
   final int size;
 
+  /// Creates a filter field for [field].
   const FilterItem({
     required this.field,
     required this.label,
@@ -22,21 +32,35 @@ class FilterItem {
   });
 }
 
+/// A filter bar that turns typed conditions into a SQL WHERE clause (WML `<dbfilter>`).
+///
+/// Each field accepts `A` (equals), `A~Z` (range), `A~` (from), `~Z` (to)
+/// and `%` patterns (like). The conditions are joined with `and`, replace
+/// `$R` in [sqlTemplate], and the finished SQL is passed to [onQuery].
 class WapFilter extends StatefulWidget {
+  /// Width of the bar; fills the parent when null.
   final double? width; // nullable: can be omitted by the caller
+  /// The input fields, in display order.
   final List<FilterItem> items;
+
+  /// SQL containing `$R`, which is replaced by the built conditions (`1=1` when empty).
   final String sqlTemplate;
+
+  /// Called with the finished SQL when Search or Clear is pressed (WML `onfilter`).
   final Function(String sql) onQuery;
+
+  /// Color of the bar's border.
   final Color borderColor;
 
+  /// Creates a filter bar for [items].
   const WapFilter({
-    Key? key,
+    super.key,
     this.width, // no default of 700 -- left for the caller to decide; fills automatically if unset
     required this.items,
     required this.sqlTemplate,
     required this.onQuery,
     this.borderColor = const Color(0xFFD3D1C7),
-  }) : super(key: key);
+  });
 
   @override
   State<WapFilter> createState() => _WapFilterState();

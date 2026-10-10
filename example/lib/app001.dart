@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+// ignore_for_file: unused_element, unused_field
+import 'package:flutter/material.dart';
 
 import 'package:wapform_flutter/lazarus_db.dart';
 import 'package:wapform_flutter/lazarus_sqldb.dart';
@@ -38,7 +39,8 @@ TField _fieldOf(String type) {
     case 'boolean':
       return TBooleanField();
     default:
-      return TStringField();
+      // size 0 = no length limit (the default 20 cut longer values such as file names)
+      return TStringField()..size = 0;
   }
 }
 
@@ -189,6 +191,7 @@ class _App001CardPState
   late final WapEvaluator _ev = widget.ev ?? WapEvaluator();
   late final DataSetRegistry _reg = widget.reg ?? DataSetRegistry();
   bool get _ownsReg => widget.reg == null;
+  final List<String> _ownedDs = []; // datasets this card created
 
   TSQLQuery dbquery(String id, String sqlText,
       {void Function(TSQLQuery ds)? define}) {
@@ -203,6 +206,7 @@ class _App001CardPState
       q.name = id;
       _reg.put(id, q);
       isNew = true;
+      _ownedDs.add(id);
     }
     if (sqlText.isNotEmpty) {
       final sql = expandSql(sqlText);
@@ -267,6 +271,12 @@ class _App001CardPState
     _sysSrc.dataSet = null;
     _sys.free();
       _reg.releaseAll();
+    } else {
+      // shared registry: drop the datasets this card created, so a
+      // reopened card re-creates them with events bound to its new State
+      for (final id in _ownedDs) {
+        _reg.release(id);
+      }
     }
     super.dispose();
   }
@@ -732,7 +742,7 @@ class _App001CardPState
     if (didPop) return;
     // Must be able to close even if the save fails/throws/hangs (try + 5-second timeout)
     try { await _saveIfEditing().timeout(const Duration(seconds: 5)); } catch (_) {}
-    if (mounted) Navigator.of(context).pop();
+    if (context.mounted) Navigator.of(context).pop();
    },
    child: Dialog(
       insetPadding: const EdgeInsets.all(12),

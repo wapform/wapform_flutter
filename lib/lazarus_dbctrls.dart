@@ -53,6 +53,9 @@
 //  Depends on: lazarus_db.dart (TDataLink/TField/TDataSet/extractFieldName…)
 // ═════════════════════════════════════════════════════════════════════════════
 
+/// Data-aware controls (edit boxes, check boxes, navigator) bound to a [TDataSource].
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // @@@ LogicalKeyboardKey / KeyDownEvent
 import 'package:flutter/scheduler.dart'; // @@@ SchedulerPhase: if a data change happens during build, defer to post-frame before calling setState
@@ -214,6 +217,7 @@ class TFieldDataLink extends TDataLink {
   // RecordChanged (L1802-1807): this field changed / the whole record
   // changed / a lookup's key field changed → Reset
   @override
+  // ignore: avoid_renaming_method_parameters
   void recordChanged(TField? aField) {
     if (aField == null ||
         identical(aField, _field) ||
@@ -242,6 +246,7 @@ class TFieldDataLink extends TDataLink {
   // setFocus is delegated to the attached control (if it provides a
   // requestFocus callback).
   @override
+  // ignore: avoid_renaming_method_parameters
   void focusControl(TFieldRef? aField) {
     if (aField != null && identical(aField, _field)) {
       // The original code did aField^ := nil (clearing the var
@@ -458,9 +463,10 @@ class _TDBEditState extends State<TDBEdit> {
   void dispose() {
     _dataLink.free(); // TDataLink.destroy → unregisters
     _controller.dispose();
-    if (_ownsFocusNode)
+    if (_ownsFocusNode) {
       _focusNode
           .dispose(); // @@@ an externally-supplied one isn't released here
+    }
     super.dispose();
   }
 

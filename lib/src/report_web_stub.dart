@@ -24,6 +24,5 @@ void openHtmlForPrint(String html) {
 }
 
 /// Embeds [html] in place via a platform view. Web-only feature — returns
-/// null on other platforms so the caller falls back to rendering the HTML
-/// with flutter_html.
+/// null on other platforms, where WapPage uses a WebView instead.
 Widget? buildHtmlIframe(String html) => null;

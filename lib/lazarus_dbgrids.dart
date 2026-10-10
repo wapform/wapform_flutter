@@ -62,6 +62,9 @@
 //        lazarus_grids.dart (TGridColumn/TGridColumns/TGridColumnTitle)
 // ═════════════════════════════════════════════════════════════════════════════
 
+/// The data-aware grid ([TDBGrid]) behind WML `<dbgrid>`.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // @@@ Tab key handling
 
@@ -313,6 +316,7 @@ class TColumn extends TGridColumn {
   }
 
   int get designIndex => _designIndex;
+  // ignore: unnecessary_getters_setters
   bool get isAutomaticColumn => _isAutomaticColumn;
   set isAutomaticColumn(bool v) => _isAutomaticColumn = v;
 
@@ -712,6 +716,28 @@ String boolToStr(bool value) =>
 //     data for a particular column).
 //     fieldName → that column's dropdown config; returning null means
 //     the column uses plain-text editing.
+/// Colors for one grid cell; null keeps the grid's default.
+/// (What WML's <onevent type="oncalccellcolors"><column brush= color=/> sets.)
+class TDBGridCellStyle {
+  final Color? brush; // background
+  final Color? color; // text
+  const TDBGridCellStyle({this.brush, this.color});
+}
+
+/// Called for every cell while the dataset is on that cell's row, so a
+/// condition can read the row's field values. Returns null for no change.
+typedef TDBGridCellStyler = TDBGridCellStyle? Function(String fieldName);
+
+/// '#RRGGBB' / 'RRGGBB' (or '#AARRGGBB') → Color; anything else → null.
+Color? parseHexColor(String s) {
+  var h = s.trim();
+  if (h.startsWith('#')) h = h.substring(1);
+  if (h.length == 6) h = 'FF$h';
+  if (h.length != 8) return null;
+  final v = int.tryParse(h, radix: 16);
+  return v == null ? null : Color(v);
+}
+
 class TDBGridLookupSpec {
   final Map<String, List<String>> rows; // {key: [display columns...]}
   final List<double> colWidths; // width of each dropdown column
@@ -766,6 +792,9 @@ class TDBGrid extends StatefulWidget {
   //     the document number first; skipping that produces incomplete
   //     records. Auto-insert is disabled when this is null.
   final Future<void> Function()? onRowInsert;
+
+  /// Per-cell background / text color (see TDBGridCellStyler).
+  final TDBGridCellStyler? cellStyle;
 // zz ### flutter extension
 // zz ### flutter extension
 
@@ -788,6 +817,7 @@ class TDBGrid extends StatefulWidget {
     this.onRowActivate,
     this.onExitLastRow,
     this.onRowInsert,
+    this.cellStyle,
   });
 
   @override
@@ -1070,25 +1100,6 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
       }
     }
     return result;
-  }
-
-  // ---- Reads a given column's display value for a given row (relative to the buffer index) ----------------------------
-  String _cellText(int rowOffset, TColumn col) {
-    final ds = _dataLink.dataSet;
-    if (ds == null) return '';
-    // Temporarily move the active record to the target row to read the value (TDataLink.activeRecord)
-    final savedActive = _dataLink.activeRecord;
-    String text = '';
-    try {
-      _dataLink.activeRecord = rowOffset;
-      final f = col.field;
-      text = f?.displayText ?? '';
-    } catch (_) {
-      text = '';
-    } finally {
-      _dataLink.activeRecord = savedActive;
-    }
-    return text;
   }
 
   int get _rowCount => _dataLink.recordCount;
@@ -1754,6 +1765,7 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
     // the value, then moving it back) = 2 × column count moves, which got
     // slow to repaint with many rows. Here the whole row is read in one pass.
     final texts = <String>[];
+    final styles = <TDBGridCellStyle?>[];
     final savedActive = _dataLink.activeRecord;
     try {
       _dataLink.activeRecord = rowOffset;
@@ -1763,6 +1775,14 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
         } catch (_) {
           texts.add("");
         }
+        // cell colors are decided while the dataset is still on this row
+        TDBGridCellStyle? st;
+        if (widget.cellStyle != null) {
+          try {
+            st = widget.cellStyle!(col.field?.fieldName ?? col.fieldName);
+          } catch (_) {}
+        }
+        styles.add(st);
       }
     } finally {
       _dataLink.activeRecord = savedActive;
@@ -1823,6 +1843,8 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
                           cols[ci].width.toDouble(),
                           alignment: _align(cols[ci].alignment),
                           rightBorder: showColLines,
+                          background: styles[ci]?.brush,
+                          textColor: styles[ci]?.color,
                         ),
                       ),
               ),
@@ -1958,20 +1980,26 @@ class _TDBGridState extends State<TDBGrid> implements IDBGridHost {
   Widget _cell(String text, double width,
       {Alignment alignment = Alignment.centerLeft,
       bool bold = false,
-      bool rightBorder = false}) {
+      bool rightBorder = false,
+      Color? background,
+      Color? textColor}) {
     return Container(
       width: width,
       height: 28,
       alignment: alignment,
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: rightBorder
+      decoration: (rightBorder || background != null)
           ? BoxDecoration(
-              border: Border(right: BorderSide(color: Colors.grey.shade300)))
+              color: background,
+              border: rightBorder
+                  ? Border(right: BorderSide(color: Colors.grey.shade300))
+                  : null)
           : null,
       child: Text(
         text,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(fontWeight: bold ? FontWeight.bold : null),
+        style: TextStyle(
+            fontWeight: bold ? FontWeight.bold : null, color: textColor),
       ),
     );
   }

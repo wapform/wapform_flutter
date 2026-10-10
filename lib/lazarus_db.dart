@@ -83,6 +83,10 @@
 //  simplified foundation, still used by rcp078.dart; the two sides share class names and must not be imported together).
 // ═════════════════════════════════════════════════════════════════════════════
 
+/// Datasets, fields and data sources: a Dart port of the Free Pascal `db`
+/// unit ([TDataSet], [TField], [TDataSource]).
+library;
+
 import 'dart:typed_data';
 
 // aa !!! not fully translated
@@ -109,16 +113,20 @@ import 'dart:typed_data';
 typedef TNotifyEvent = void Function(Object sender);
 
 // ---- TOperation / TComponentState（classes.pp）-----------------------------
+/// Whether a component is being inserted into or removed from its owner (FPC `TOperation`).
 enum TOperation { opInsert, opRemove }
 
+/// Flags describing a component's life-cycle state, e.g. loading or destroying (FPC `TComponentState`).
 enum TComponentStateItem { csLoading, csReading, csDesigning, csDestroying }
 
 typedef TComponentState = Set<TComponentStateItem>;
 
 // ---- TSeekOrigin（classes.pp）-----------------------------------------------
+/// Origin of a stream seek: beginning, current position or end.
 enum TSeekOrigin { soBeginning, soCurrent, soEnd }
 
 // ---- TPersistent（classes.pp）-----------------------------------------------
+/// Base of objects that can be assigned to each other (FPC `TPersistent`).
 class TPersistent {
   // Assign: by default throws the other side's AssignTo back at it; if neither side overrides it, it throws —
   // same semantics as classes.pp's TPersistent.Assign/AssignError.
@@ -137,6 +145,7 @@ class TPersistent {
 }
 
 // ---- TCollectionItem / TCollection / TOwnedCollection（classes.pp）---------
+/// An item of a [TCollection].
 class TCollectionItem extends TPersistent {
   TCollection? _collection;
 
@@ -190,6 +199,7 @@ class TCollectionItem extends TPersistent {
 typedef TCollectionItemFactory = TCollectionItem Function(
     TCollection aCollection);
 
+/// A list of [TCollectionItem]s of one class (FPC `TCollection`).
 class TCollection extends TPersistent {
   final TCollectionItemFactory itemFactory;
   final List<TCollectionItem> _items = [];
@@ -271,6 +281,7 @@ class TCollection extends TPersistent {
   }
 }
 
+/// A [TCollection] that knows its owner.
 class TOwnedCollection extends TCollection {
   final TPersistent? _owner;
 
@@ -282,9 +293,11 @@ class TOwnedCollection extends TCollection {
 }
 
 // ---- TComponent (a subset of classes.pp) -------------------------------------------
+/// Base of named, owned components such as datasets and connections (FPC `TComponent`).
 class TComponent extends TPersistent {
   String _componentName = '';
   // Name: TDataSet.SetName needs to override this, so it's implemented as a getter/setter instead
+  // ignore: unnecessary_getters_setters
   String get name => _componentName;
   set name(String value) => _componentName = value;
 
@@ -344,6 +357,7 @@ class TComponent extends TPersistent {
 }
 
 // ---- TStrings / TStringList (a subset of classes.pp) ------------------------
+/// Abstract list of strings with `name=value` support (FPC `TStrings`).
 class TStrings extends TPersistent {
   final List<String> _list = [];
   int _updateCount = 0;
@@ -435,9 +449,11 @@ class TStrings extends TPersistent {
   }
 }
 
+/// A [TStrings] stored in memory (FPC `TStringList`).
 class TStringList extends TStrings {}
 
 // ---- TStream / TMemoryStream / TBytesStream (a subset of classes.pp) --------------
+/// Abstract byte stream (FPC `TStream`).
 abstract class TStream {
   int get size;
   set size(int value) {
@@ -490,6 +506,7 @@ abstract class TStream {
   }
 }
 
+/// A [TStream] kept in memory; used for blob fields.
 class TMemoryStream extends TStream {
   final List<int> _data = [];
 
@@ -754,24 +771,53 @@ typedef LargeInt = int;
 // switched to an object per convention 1, this helper type isn't needed; only the dsMaxStringSize constant is kept.
 
 // TDataSetState (db.pas L49-51, all 14 values)
+/// Edit state of a [TDataSet] (FPC `TDataSetState`).
 enum TDataSetState {
+  /// The dataset is closed.
   dsInactive,
+
+  /// Open and not being edited.
   dsBrowse,
+
+  /// The current record is being edited.
   dsEdit,
+
+  /// A new record is being inserted.
   dsInsert,
+
+  /// Search keys are being set.
   dsSetKey,
+
+  /// Calculated fields are being computed.
   dsCalcFields,
+
+  /// A record is being checked against the filter.
   dsFilter,
+
+  /// Accessing new values during an update.
   dsNewValue,
+
+  /// Accessing old values during an update.
   dsOldValue,
+
+  /// Accessing current server values.
   dsCurValue,
+
+  /// Records are read in a block; controls are not updated.
   dsBlockRead,
+
+  /// Internally calculated fields are being computed.
   dsInternalCalc,
+
+  /// The dataset is opening.
   dsOpening,
+
+  /// Field values are being refreshed.
   dsRefreshFields,
 }
 
 // TDataEvent (db.pas L53-56, all 15 values)
+/// Notifications a [TDataSet] sends to its [TDataSource]s and data links.
 enum TDataEvent {
   deFieldChange,
   deRecordChange,
@@ -791,16 +837,20 @@ enum TDataEvent {
 }
 
 // TUpdateStatus / TUpdateStatusSet（db.pas L58-59）
+/// Whether a cached record was modified, inserted or deleted.
 enum TUpdateStatus { usUnmodified, usModified, usInserted, usDeleted }
 
 typedef TUpdateStatusSet = Set<TUpdateStatus>;
 
 // TUpdateMode / TResolverResponse（db.pas L61-62）
+/// Which fields identify a record in generated UPDATE / DELETE statements.
 enum TUpdateMode { upWhereAll, upWhereChanged, upWhereKeyOnly }
 
+/// What to do after an update error.
 enum TResolverResponse { rrSkip, rrAbort, rrMerge, rrApply, rrIgnore }
 
 // TProviderFlag / TProviderFlags（db.pas L64-65）
+/// How a field takes part in generated SQL (key, update, where).
 enum TProviderFlag {
   pfInUpdate,
   pfInWhere,
@@ -817,6 +867,7 @@ typedef TProviderFlags = Set<TProviderFlag>;
 // ---- Exception classes（db.pas L81-97）--------------------------------------
 
 // EDatabaseError = class(Exception)
+/// Error raised by datasets, fields and connections (FPC `EDatabaseError`).
 class EDatabaseError implements Exception {
   final String message;
   EDatabaseError(this.message);
@@ -826,6 +877,7 @@ class EDatabaseError implements Exception {
 }
 
 // EUpdateError = class(EDatabaseError) (db.pas L83-97, implementation L2321-2337)
+/// An [EDatabaseError] raised while applying cached updates.
 class EUpdateError extends EDatabaseError {
   final String context;
   final int errorCode;
@@ -849,6 +901,7 @@ class EUpdateError extends EDatabaseError {
 
 // TFieldType (db.pas L106-112, all 40 values, ordered to match Delphi compatibility,
 // must not be reordered — several places compare by ordinal/range, and the order is part of the behavior)
+/// Data type of a field (FPC `TFieldType`).
 enum TFieldType {
   ftUnknown,
   ftString,
@@ -899,6 +952,7 @@ typedef TFieldMap = List<int>;
 // ---- TDateTimeRec（db.pas L120-127）----------------------------------------
 // A Pascal variant record (three interpretations of the same memory), Dart has no union,
 // so it's changed to a three-field class; each call site only reads the one field matching its TFieldType — behaviorally equivalent.
+/// A date/time value as stored in a record buffer.
 class TDateTimeRec {
   int date = 0; // ftDate: a date serial (in days)
   int time = 0; // ftTime: a count of milliseconds
@@ -906,6 +960,7 @@ class TDateTimeRec {
 }
 
 // TFieldAttribute / TFieldAttributes（db.pas L129-130）
+/// Extra attributes of a field definition (hidden, read-only, required…).
 enum TFieldAttribute {
   faHiddenCol,
   faReadonly,
@@ -945,6 +1000,7 @@ Never databaseErrorFmt(String fmt, List<dynamic> args, [TComponent? comp]) {
 
 // function ExtractFieldName(const Fields: string; var Pos: Integer): string;
 // A Pascal var parameter → wrapped as a _PosRef in Dart (reference semantics for a single int)
+/// A mutable int passed by reference (Pascal `var` parameter).
 class TIntRef {
   int value;
   TIntRef(this.value);
@@ -976,6 +1032,7 @@ const int cpUTF16 = 1200; // CP_UTF16
 const int cpUTF8 = 65001; // CP_UTF8
 
 // ---- TNamedItem (db.pas L134-144, implementation L2341-2358) --------------------------
+/// A [TCollectionItem] with a name.
 class TNamedItem extends TCollectionItem {
   String _name = '';
 
@@ -1005,6 +1062,7 @@ class TNamedItem extends TCollectionItem {
 }
 
 // ---- TDefCollection (db.pas L148-161, implementation L2362-2410) ----------------------
+/// A collection of named definitions belonging to a dataset.
 class TDefCollection extends TOwnedCollection {
   final TDataSet? _dataset;
   bool updated = false;
@@ -1068,6 +1126,7 @@ class TDefCollection extends TOwnedCollection {
 }
 
 // ---- TFieldDef (db.pas L165-201, implementation fields.inc L31-192) -------------------
+/// Definition of one field of a dataset: name, type, size (FPC `TFieldDef`).
 class TFieldDef extends TNamedItem {
   TFieldAttributes _attributes = <TFieldAttribute>{};
   TSystemCodePage _codePage = 0;
@@ -1237,6 +1296,7 @@ class TFieldDef extends TNamedItem {
 // the role the original source's "class function FieldDefClass" (replaceable by subclasses) fills.
 
 // ---- TFieldDefs (db.pas L206-230, implementation fields.inc L208-330) -----------------
+/// The [TFieldDef]s of a dataset.
 class TFieldDefs extends TDefCollection {
   bool hiddenFields = false;
 
@@ -1371,12 +1431,14 @@ class TFieldDefs extends TDefCollection {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // TAlignment (a classes-unit shim, used by TField.Alignment)
+/// Horizontal alignment of a field's text.
 enum TAlignment { taLeftJustify, taRightJustify, taCenter }
 
 // TEditMask (MaskUtils, source not provided) → String (convention 6)
 typedef TEditMask = String;
 
 // TFieldKind / TFieldKinds（db.pas L235-236）
+/// Where a field's value comes from: data, calculated, lookup….
 enum TFieldKind { fkData, fkCalculated, fkLookup, fkInternalCalc }
 
 typedef TFieldKinds = Set<TFieldKind>;
@@ -1385,6 +1447,7 @@ typedef TFieldKinds = Set<TFieldKind>;
 typedef TFieldNotifyEvent = void Function(TField sender);
 
 // A var aText parameter → wrapped as TStringRef (the Pascal var-parameter convention, same as TIntRef)
+/// A mutable string passed by reference (Pascal `var` parameter).
 class TStringRef {
   String value;
   TStringRef(this.value);
@@ -1403,12 +1466,14 @@ typedef TFieldChars = Set<String>;
 // value" that preserves exactly the same calling protocol:
 //   GetIsNull = not GetData(null)     —— passing null just asks "is there a value"
 //   Clear     = SetData(null)         —— passing null means "set to NULL"
+/// Raw value of a field as read from or written to a record buffer.
 class TValueBuffer {
   dynamic value;
   TValueBuffer([this.value]);
 }
 
 // TLookupListRec（db.pas L246-249）
+/// One cached key/value pair of a lookup field.
 class TLookupListRec {
   dynamic key;
   dynamic value;
@@ -1416,6 +1481,7 @@ class TLookupListRec {
 }
 
 // ---- TLookupList (db.pas L253-264, implementation L2612-2700) -------------------------
+/// Cache of the values of a lookup field.
 class TLookupList {
   final List<TLookupListRec> _list = [];
 
@@ -1491,6 +1557,10 @@ const String _sString = 'String';
 const String _sBytes = 'Bytes';
 
 // ---- TField (db.pas L268-468, implementation fields.inc L347-1108) --------------------
+/// One column of a [TDataSet]; reads and writes the current record (FPC `TField`).
+///
+/// Use `asString`, `asInteger`, `asFloat`, `value` and so on; in WML
+/// expressions the field is written `ds.fieldname`.
 class TField extends TComponent {
   TAlignment _alignment = TAlignment.taLeftJustify;
   String attributeSet = '';
@@ -1516,6 +1586,7 @@ class TField extends TComponent {
   TDataSet? _lookupDataSet;
   // @@@ lookupDataSet is a published property of db.pas (around L390);
   // @@@ only a private field was kept before and the accessor was missing — added it back
+  // ignore: unnecessary_getters_setters
   TDataSet? get lookupDataSet => _lookupDataSet;
   set lookupDataSet(TDataSet? value) => _lookupDataSet = value;
   String lookupKeyFields = '';
@@ -2146,6 +2217,7 @@ class TField extends TComponent {
   TFieldDef? get fieldDef => _fieldDef;
   bool get hasConstraints => _hasConstraints;
 
+  // ignore: unnecessary_getters_setters
   String get fieldName => _fieldName;
   set fieldName(String v) => _fieldName = v;
 
@@ -2168,6 +2240,7 @@ typedef TFieldClass = TField Function(TComponent? aOwner);
 // zz !!! not fully translated
 // The original source uses SysUtils' FormatFloat/FloatToStrF/FormatDateTime and
 // locale settings variables. Source not provided; the subset db.pas actually needs is provided here:
+/// Number format used when a float is shown as text.
 enum TFloatFormat { ffGeneral, ffExponent, ffFixed, ffNumber, ffCurrency }
 
 const String decimalSeparator = '.';
@@ -2273,6 +2346,7 @@ DateTime strToTime(String s) {
 // ---------------------------------------------------------------------
 //  TStringField (db.pas L472-514, implementation fields.inc L1116-1373)
 // ---------------------------------------------------------------------
+/// A text field.
 class TStringField extends TField {
   TSystemCodePage _codePage = cpACP;
   bool fixedChar = false;
@@ -2451,6 +2525,7 @@ class TStringField extends TField {
 //  TWideStringField (db.pas L516-544, implementation fields.inc L1380-1497)
 //  A Dart String is already UTF-16, so wide and narrow strings merge; the only remaining difference is the DataSize calculation
 // ---------------------------------------------------------------------
+/// A Unicode text field.
 class TWideStringField extends TStringField {
   // constructor（L1389-1394）
   TWideStringField([super.aOwner]) {
@@ -2482,6 +2557,7 @@ class TWideStringField extends TStringField {
 // ---------------------------------------------------------------------
 //  TNumericField (db.pas L546-565, implementation fields.inc L1505-1555)
 // ---------------------------------------------------------------------
+/// Base of number fields; adds display and edit formats.
 class TNumericField extends TField {
   String _displayFormat = '';
   String _editFormat = '';
@@ -2536,6 +2612,7 @@ class TNumericField extends TField {
 // ---------------------------------------------------------------------
 //  TLongintField (db.pas L567-595, implementation fields.inc L1562-1725)
 // ---------------------------------------------------------------------
+/// A 32-bit integer field.
 class TLongintField extends TNumericField {
   int _minValue = 0;
   int _maxValue = 0;
@@ -2630,7 +2707,7 @@ class TLongintField extends TNumericField {
   // SetAsFloat（L1661-1665）
   @override
   void setAsFloat(double aValue) {
-    setAsInteger(aValue.round());
+    setAsInteger(_roundHalfEven(aValue));
   }
 
   // SetAsInteger（L1667-1676）
@@ -2656,7 +2733,7 @@ class TLongintField extends TNumericField {
     if (aValue is int) {
       setAsInteger(aValue);
     } else if (aValue is num) {
-      setAsInteger(aValue.toInt());
+      setAsInteger(_roundHalfEven(aValue));
     } else {
       final i = int.tryParse("$aValue");
       if (i == null) {
@@ -2710,6 +2787,7 @@ class TLongintField extends TNumericField {
 }
 
 // TIntegerField = Class(TLongintField)（db.pas L597）
+/// An integer field; fractional values are rounded like Delphi `Round` (half to even).
 class TIntegerField extends TLongintField {
   TIntegerField([super.aOwner]);
 }
@@ -2718,6 +2796,7 @@ class TIntegerField extends TLongintField {
 //  TLargeintField (db.pas L601-632, implementation fields.inc L1732-1885)
 //  Dart's int is 64-bit itself, logically isomorphic to TLongintField with a different range
 // ---------------------------------------------------------------------
+/// A 64-bit integer field.
 class TLargeintField extends TNumericField {
   int _minValue = 0;
   int _maxValue = 0;
@@ -2798,7 +2877,7 @@ class TLargeintField extends TNumericField {
 
   @override
   void setAsFloat(double aValue) {
-    setAsLargeInt(aValue.round());
+    setAsLargeInt(_roundHalfEven(aValue));
   }
 
   @override
@@ -2834,7 +2913,7 @@ class TLargeintField extends TNumericField {
     if (aValue is int) {
       setAsLargeInt(aValue);
     } else if (aValue is num) {
-      setAsLargeInt(aValue.toInt());
+      setAsLargeInt(_roundHalfEven(aValue));
     } else {
       final i = int.tryParse("$aValue");
       if (i == null) {
@@ -2871,6 +2950,7 @@ class TLargeintField extends TNumericField {
 }
 
 // ---- TSmallintField (db.pas L634-641, implementation fields.inc L1889-1902) ----------
+/// A 16-bit integer field.
 class TSmallintField extends TLongintField {
   TSmallintField([super.aOwner]) {
     setDataType(TFieldType.ftSmallint);
@@ -2884,6 +2964,7 @@ class TSmallintField extends TLongintField {
 }
 
 // ---- TWordField (db.pas L643-650, implementation fields.inc L1907-1921) --------------
+/// An unsigned 16-bit integer field.
 class TWordField extends TLongintField {
   TWordField([super.aOwner]) {
     setDataType(TFieldType.ftWord);
@@ -2898,6 +2979,7 @@ class TWordField extends TLongintField {
 }
 
 // ---- TAutoIncField (db.pas L652-659, implementation fields.inc L1925-1941) -----------
+/// An auto-increment integer field.
 class TAutoIncField extends TLongintField {
   TAutoIncField([super.aOwner]) {
     setDataType(TFieldType.ftAutoInc);
@@ -2917,6 +2999,7 @@ class TAutoIncField extends TLongintField {
 // ---------------------------------------------------------------------
 //  TFloatField (db.pas L661-696, implementation fields.inc L1945-2110)
 // ---------------------------------------------------------------------
+/// A floating-point field.
 class TFloatField extends TNumericField {
   bool _currency = false;
   double _maxValue = 0;
@@ -2963,8 +3046,10 @@ class TFloatField extends TNumericField {
     }
   }
 
+  // ignore: unnecessary_getters_setters
   double get maxValue => _maxValue;
   set maxValue(double v) => _maxValue = v;
+  // ignore: unnecessary_getters_setters
   double get minValue => _minValue;
   set minValue(double v) => _minValue = v;
 
@@ -3103,6 +3188,7 @@ class TFloatField extends TNumericField {
 }
 
 // ---- TCurrencyField (db.pas L698-705, implementation fields.inc L2114-2120) ----------
+/// A money field.
 class TCurrencyField extends TFloatField {
   TCurrencyField([super.aOwner]) {
     setDataType(TFieldType.ftCurrency);
@@ -3113,6 +3199,7 @@ class TCurrencyField extends TFloatField {
 // ---------------------------------------------------------------------
 //  TBooleanField (db.pas L707-731, implementation fields.inc L2124-2237)
 // ---------------------------------------------------------------------
+/// A true/false field.
 class TBooleanField extends TField {
   String _displayValues = '';
   // FDisplays : Array[Boolean,Boolean] of String
@@ -3233,6 +3320,7 @@ class TBooleanField extends TField {
 // ---------------------------------------------------------------------
 //  TDateTimeField (db.pas L733-756, implementation fields.inc L2241-2351)
 // ---------------------------------------------------------------------
+/// A date and time field.
 class TDateTimeField extends TField {
   String _displayFormat = '';
 
@@ -3348,6 +3436,7 @@ class TDateTimeField extends TField {
 }
 
 // ---- TDateField (db.pas L758-763, implementation fields.inc L2356-2361) --------------
+/// A date field.
 class TDateField extends TDateTimeField {
   TDateField([super.aOwner]) {
     setDataType(TFieldType.ftDate);
@@ -3355,6 +3444,7 @@ class TDateField extends TDateTimeField {
 }
 
 // ---- TTimeField (db.pas L765-772, implementation fields.inc L2366-2383) --------------
+/// A time-of-day field.
 class TTimeField extends TDateTimeField {
   TTimeField([super.aOwner]) {
     setDataType(TFieldType.ftTime);
@@ -3378,6 +3468,7 @@ class TTimeField extends TDateTimeField {
 //  so the length prefix doesn't need separate encoding, but the semantics of "ftBytes fixed-length
 //  zero-pad/truncate, ftVarBytes preserves the actual length" are kept.
 // ---------------------------------------------------------------------
+/// Base of fixed-size binary fields.
 class TBinaryField extends TField {
   TBinaryField([super.aOwner]);
 
@@ -3468,6 +3559,7 @@ class TBinaryField extends TField {
 }
 
 // ---- TBytesField (db.pas L792-799, implementation fields.inc L2526-2539) -------------
+/// A fixed-size binary field.
 class TBytesField extends TBinaryField {
   TBytesField([super.aOwner]) {
     setDataType(TFieldType.ftBytes);
@@ -3480,6 +3572,7 @@ class TBytesField extends TBinaryField {
 }
 
 // ---- TVarBytesField (db.pas L801-808, implementation fields.inc L2545-2558) ----------
+/// A variable-size binary field.
 class TVarBytesField extends TBytesField {
   TVarBytesField([super.aOwner]) {
     setDataType(TFieldType.ftVarBytes);
@@ -3495,6 +3588,7 @@ class TVarBytesField extends TBytesField {
 //  TBCDField (db.pas L810-846, implementation fields.inc L2562-2729)
 //  The underlying type is system.Currency (a 4-decimal-place fixed-point number) → double (convention 5)
 // ---------------------------------------------------------------------
+/// A fixed-point decimal field.
 class TBCDField extends TNumericField {
   bool _currency = false;
   double _maxValue = 0;
@@ -3525,12 +3619,16 @@ class TBCDField extends TNumericField {
     size = 4;
   }
 
+  // ignore: unnecessary_getters_setters
   bool get currency => _currency;
   set currency(bool v) => _currency = v;
+  // ignore: unnecessary_getters_setters
   int get precision => _precision;
   set precision(int v) => _precision = v;
+  // ignore: unnecessary_getters_setters
   double get maxValue => _maxValue;
   set maxValue(double v) => _maxValue = v;
+  // ignore: unnecessary_getters_setters
   double get minValue => _minValue;
   set minValue(double v) => _minValue = v;
 
@@ -3680,6 +3778,7 @@ class TBCDField extends TNumericField {
 // ---------------------------------------------------------------------
 const int maxFMTBcdFractionSize = 255; // fmtbcd unit MAXFMTBcdFractionSize
 
+/// A high-precision decimal field.
 class TFMTBCDField extends TNumericField {
   bool _currency = false;
   double _maxValue = 0;
@@ -3713,8 +3812,10 @@ class TFMTBCDField extends TNumericField {
     size = 4; // default number of digits after decimal place
   }
 
+  // ignore: unnecessary_getters_setters
   bool get currency => _currency;
   set currency(bool v) => _currency = v;
+  // ignore: unnecessary_getters_setters
   int get precision => _precision;
   set precision(int v) => _precision = v;
 
@@ -3872,6 +3973,7 @@ class TFMTBCDField extends TNumericField {
 // ---------------------------------------------------------------------
 //  TBlobField (db.pas L891-939, implementation fields.inc L2917-3206)
 // ---------------------------------------------------------------------
+/// Whether a blob stream is opened for reading or writing.
 enum TBlobStreamMode { bmRead, bmWrite, bmReadWrite }
 
 // TBlobType = ftBlob..ftWideMemo (deprecated, still translated as an alias)
@@ -3891,6 +3993,7 @@ const Set<TFieldType> ftBlobTypes = {
   TFieldType.ftWideMemo,
 };
 
+/// A binary large object field.
 class TBlobField extends TField {
   bool modified = false;
   bool transliterate = false;
@@ -4057,6 +4160,7 @@ class TBlobField extends TField {
 
 // ---- TMemoField (db.pas L941-958, implementation fields.inc L3210-3253) --------------
 // The codepage conversion chain merges away under Dart's String (convention 3); the class and type settings are kept
+/// A long text field.
 class TMemoField extends TBlobField {
   TSystemCodePage _codePage = 0;
 
@@ -4068,6 +4172,7 @@ class TMemoField extends TBlobField {
 }
 
 // ---- TWideMemoField (db.pas L960-977, implementation fields.inc L3257-3304) ----------
+/// A long Unicode text field.
 class TWideMemoField extends TBlobField {
   TWideMemoField([super.aOwner]) {
     setDataType(TFieldType.ftWideMemo);
@@ -4084,6 +4189,7 @@ class TWideMemoField extends TBlobField {
 }
 
 // ---- TGraphicField (db.pas L979-984, implementation fields.inc L3308-3313) -----------
+/// A blob field holding an image.
 class TGraphicField extends TBlobField {
   TGraphicField([super.aOwner]) {
     setDataType(TFieldType.ftGraphic);
@@ -4091,6 +4197,7 @@ class TGraphicField extends TBlobField {
 }
 
 // ---- TVariantField (db.pas L986-1016, implementation fields.inc L3355-3440) ----------
+/// A field that holds any kind of value.
 class TVariantField extends TField {
   TVariantField([super.aOwner]) {
     setDataType(TFieldType.ftVariant);
@@ -4169,6 +4276,7 @@ class TVariantField extends TField {
 
 // ---- TGuidField (db.pas L1018-1030, implementation fields.inc L3317-3351) ------------
 // TGUID → normalized to a '{...}' string (convention: a record type is represented by its string form)
+/// A field holding a GUID string.
 class TGuidField extends TStringField {
   static const String nullGuid = '{00000000-0000-0000-0000-000000000000}';
 
@@ -4211,6 +4319,7 @@ class TGuidField extends TStringField {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // ---- TFieldsEnumerator（fields.inc L3444-3460）------------------------------
+/// Iterates over the [TField]s of a [TFields].
 class TFieldsEnumerator {
   final TFields _fields;
   int _position = -1;
@@ -4226,6 +4335,7 @@ class TFieldsEnumerator {
 }
 
 // ---- TFields (db.pas L1120-1165, implementation fields.inc L3464-3656) ----------------
+/// The fields of a dataset, by position and by name.
 class TFields {
   TDataSet? _dataSet;
   final List<TField> _fieldList = [];
@@ -4499,6 +4609,7 @@ const Set<TDataSetState> dsWriteModes = {
 };
 
 // ---- TIndexOption / TIndexDef (db.pas L1034-1062, implementation L2414-2465) ----------
+/// Options of an index (primary, unique, descending…).
 enum TIndexOption {
   ixPrimary,
   ixUnique,
@@ -4510,6 +4621,7 @@ enum TIndexOption {
 
 typedef TIndexOptions = Set<TIndexOption>;
 
+/// Definition of one index of a dataset.
 class TIndexDef extends TNamedItem {
   String _caseInsFields = '';
   String _descFields = '';
@@ -4548,6 +4660,7 @@ class TIndexDef extends TNamedItem {
   }
 
   // Expression（L2440-2448）
+  // ignore: unnecessary_getters_setters
   String get expression => _expression;
   set expression(String aValue) => _expression = aValue;
 
@@ -4569,6 +4682,7 @@ class TIndexDef extends TNamedItem {
 }
 
 // ---- TIndexDefs (db.pas L1066-1080, implementation L2470-2558) ------------------------
+/// The [TIndexDef]s of a dataset.
 class TIndexDefs extends TDefCollection {
   // constructor（L2481-2485）
   TIndexDefs(TDataSet? aDataSet)
@@ -4641,6 +4755,7 @@ class TIndexDefs extends TDefCollection {
 
 // ---- TCheckConstraint / TCheckConstraints (db.pas L1084-1112, implementation
 //      L2562-2608) —— the original source is almost entirely `//!! To be implemented` empty shells, translated as-is
+/// A record-level constraint.
 class TCheckConstraint extends TCollectionItem {
   String customConstraint = '';
   String errorMessage = '';
@@ -4656,6 +4771,7 @@ class TCheckConstraint extends TCollectionItem {
   }
 }
 
+/// The [TCheckConstraint]s of a dataset.
 class TCheckConstraints extends TCollection {
   final TPersistent? _owner;
 
@@ -4685,13 +4801,16 @@ typedef TBlobData = Uint8List;
 typedef TParamBinding = List<int>;
 
 // TParamType / TParamTypes / TParamStyle（db.pas L1171-1174）
+/// Direction of a query parameter (input, output…).
 enum TParamType { ptUnknown, ptInput, ptOutput, ptInputOutput, ptResult }
 
 typedef TParamTypes = Set<TParamType>;
 
+/// How parameters are written in SQL (`:name`, `?`…).
 enum TParamStyle { psInterbase, psPostgreSQL, psSimulated }
 
 // TSQLParseOption / TSQLParseOptions（db.pas L1300-1301）
+/// Options used when parameters are extracted from SQL.
 enum TSQLParseOption { spoCreate, spoEscapeSlash, spoEscapeRepeat, spoUseMacro }
 
 typedef TSQLParseOptions = Set<TSQLParseOption>;
@@ -4749,6 +4868,20 @@ const List<_VarKind> _fieldTypeToVariantMap = [
 // ---- Pascal Variant conversion semantics (the implicit conversion in GetAsXxx's Result:=FValue) --------
 // A Pascal Variant automatically converts when assigned to a target type, throwing EVariantError if it can't.
 // This helper group faithfully matches that semantics (a numeric string converts to a number, a non-numeric one throws).
+/// Delphi Round(): round half to even (157.5 -> 158, 16.5 -> 16, -0.5 -> 0).
+/// Integer fields assigned a fractional value use this, as the Windows
+/// engine does; Dart's toInt() would truncate (157.5 -> 157).
+int _roundHalfEven(num v) {
+  if (v is int) return v;
+  final d = v.toDouble();
+  final f = d.floorToDouble();
+  final diff = d - f;
+  if (diff > 0.5) return f.toInt() + 1;
+  if (diff < 0.5) return f.toInt();
+  final i = f.toInt();
+  return i.isEven ? i : i + 1;
+}
+
 int _varAsInteger(dynamic v) {
   if (v is int) return v;
   if (v is bool) return v ? 1 : 0;
@@ -4806,6 +4939,7 @@ String _varAsString(dynamic v) {
 
 // ---- TTimeStamp (a SysUtils shim; used by TParam.GetData/SetData's
 //      ftTime/ftDate/ftDateTime buffer representation) ------------------------------
+/// Date and time split into day and milliseconds.
 class TTimeStamp {
   int time; // milliseconds since midnight
   int date; // days since 0001-01-01, plus 1
@@ -4915,6 +5049,7 @@ bool skipComments(String s, TIntRef p, bool escapeSlash, bool escapeRepeat) {
 }
 
 // ---- TParam (db.pas L1178-1283, implementation dsparams.inc L516-1244) ----------------
+/// One parameter of a query (`:name` in the SQL).
 class TParam extends TCollectionItem {
   String nativeStr = '';
   dynamic _value;
@@ -5625,6 +5760,7 @@ class TParam extends TCollectionItem {
 typedef TParamClass = TParam Function(TCollection? aCollection);
 
 // ---- TParamsEnumerator (db.pas L1288-1297, implementation dsparams.inc L27-43) --------
+/// Iterates over the [TParam]s of a [TParams].
 class TParamsEnumerator {
   final TParams _params;
   int _position = -1;
@@ -5640,6 +5776,7 @@ class TParamsEnumerator {
 }
 
 // ---- TParams (db.pas L1303-1339, implementation dsparams.inc L47-514, L1247-1270) -----
+/// The parameters of a query.
 class TParams extends TCollection {
   final TPersistent? _paramsOwner;
 
@@ -5961,6 +6098,7 @@ typedef TBookmark = Uint8List;
 typedef TBookmarkStr = String;
 
 // TBookmarkFlag（db.pas L1351）
+/// Position flag of a record buffer (current, BOF, EOF, inserted).
 enum TBookmarkFlag { bfCurrent, bfBOF, bfEOF, bfInserted }
 
 // ---- TRecordBuffer（db.pas L1360-1364）--------------------------------------
@@ -5973,6 +6111,7 @@ enum TBookmarkFlag { bfCurrent, bfBOF, bfEOF, bfInserted }
 //   bookmarkData/bookmarkFlag  attached bookmark data (the storage region for GetBookmarkData/Flag)
 // The "buffer window" pointer movement (Shift/Exchange/ReAlloc) is fully preserved, just with the
 // thing being moved changed from a pointer to an object reference — same semantics.
+/// A record buffer of a dataset.
 class TRecordBuffer {
   final Map<String, dynamic> fieldData = <String, dynamic>{};
   final Map<String, dynamic> calcData = <String, dynamic>{};
@@ -5986,23 +6125,30 @@ class TRecordBuffer {
 typedef TBufferList = List<TRecordBuffer?>;
 
 // TGetMode / TGetResult（db.pas L1366-1368）
+/// Which record to fetch: current, next or prior.
 enum TGetMode { gmCurrent, gmNext, gmPrior }
 
+/// Result of a record fetch: OK, BOF, EOF or error.
 enum TGetResult { grOK, grBOF, grEOF, grError }
 
 // TResyncMode（db.pas L1370）
+/// Options for re-synchronising a dataset's buffers.
 enum TResyncModeItem { rmExact, rmCenter }
 
 typedef TResyncMode = Set<TResyncModeItem>;
 
 // TDataAction / TUpdateAction / TUpdateKind（db.pas L1372-1376）
+/// What to do after a dataset error: fail, abort or retry.
 enum TDataAction { daFail, daAbort, daRetry }
 
+/// What to do after an update error in cached updates.
 enum TUpdateAction { uaFail, uaAbort, uaSkip, uaRetry, uaApplied }
 
+/// Kind of change being applied: modify, insert or delete.
 enum TUpdateKind { ukModify, ukInsert, ukDelete }
 
 // TLocateOption(s)（db.pas L1379-1380）
+/// Options of [TDataSet.locate]: case-insensitive, partial key.
 enum TLocateOption { loCaseInsensitive, loPartialKey }
 
 typedef TLocateOptions = Set<TLocateOption>;
@@ -6012,6 +6158,7 @@ typedef TDataOperation = void Function();
 typedef TDataSetNotifyEvent = void Function(TDataSet dataSet);
 
 // A var DataAction parameter → wrapped as TDataActionRef (the same convention as TIntRef)
+/// A mutable [TDataAction] passed by reference.
 class TDataActionRef {
   TDataAction value;
   TDataActionRef(this.value);
@@ -6021,10 +6168,12 @@ typedef TDataSetErrorEvent = void Function(
     TDataSet dataSet, EDatabaseError e, TDataActionRef dataAction);
 
 // TFilterOption(s) / TFilterRecordEvent（db.pas L1388-1392）
+/// Options of a dataset filter.
 enum TFilterOption { foCaseInsensitive, foNoPartialCompare }
 
 typedef TFilterOptions = Set<TFilterOption>;
 
+/// A mutable bool passed by reference (Pascal `var` parameter).
 class TBoolRef {
   bool value;
   TBoolRef(this.value);
@@ -6033,6 +6182,7 @@ class TBoolRef {
 typedef TFilterRecordEvent = void Function(TDataSet dataSet, TBoolRef accept);
 
 // TPSCommandType（db.pas L1400-1410）
+/// Kind of command a provider runs.
 enum TPSCommandType {
   ctUnknown,
   ctQuery,
@@ -6050,6 +6200,7 @@ enum TPSCommandType {
 // (the original source also puts PS* in TDataSet's protected section), so no separate declaration is needed.
 
 // EAbort (a SysUtils shim; used by TryDoing's daAbort branch)
+/// Silent exception that cancels an operation without an error message (FPC `EAbort`).
 class EAbort implements Exception {
   final String message = 'Operation aborted';
   @override
@@ -6109,6 +6260,11 @@ TDateTimeRec dateTimeToDateTimeRec(TFieldType dt, DateTime data) {
 // Const DefaultBufferCount = 10（dataset.inc L21）
 const int defaultBufferCount = 10;
 
+/// A set of records with a cursor (FPC `TDataSet`).
+///
+/// Navigate with `first`, `next`, `prior`, `last`; edit with `edit`,
+/// `insert`, `post`, `cancel`, `delete`. In WML this is what `<dbquery>`
+/// creates; expressions read the current record as `ds.field`.
 class TDataSet extends TComponent {
   // ---- private fields (db.pas L1441-1495, F-prefix removed, _-prefix used instead) ----------------
   bool _openAfterRead = false;
@@ -6385,16 +6541,9 @@ class TDataSet extends TComponent {
     }
 
     if (!controlsDisabled() && _state != TDataSetState.dsBlockRead) {
-      if (myDataSourceCount > 0) {
-        print(
-            '[DEBUG7 dataEvent] name=$name event=$event actually notified $myDataSourceCount DataSource(s)');
-      }
       for (var i = 0; i < myDataSourceCount; i++) {
         myDataSources(i).processEvent(event, info);
       }
-    } else if (controlsDisabled() && myDataSourceCount > 0) {
-      print(
-          '[DEBUG7 dataEvent] name=$name event=$event blocked by controlsDisabled (would have been $myDataSourceCount DataSource(s))');
     }
   }
 
@@ -6434,14 +6583,7 @@ class TDataSet extends TComponent {
   // "setState() or markNeedsBuild() called during build". Now respects
   // controlsDisabled() the same way dataEvent() does.
   void doAfterScroll() {
-    if (controlsDisabled()) {
-      print('[DEBUG7 doAfterScroll] name=$name blocked by controlsDisabled');
-      return;
-    }
-    if (afterScroll != null) {
-      print(
-          '[DEBUG7 doAfterScroll] name=$name actually fired the afterScroll callback');
-    }
+    if (controlsDisabled()) return;
     afterScroll?.call(this);
   }
 
@@ -7157,6 +7299,7 @@ class TDataSet extends TComponent {
     _filterOptions = value;
   }
 
+  // ignore: unnecessary_getters_setters
   String get filter => _filterText;
   set filter(String value) {
     _filterText = value;
@@ -8110,6 +8253,7 @@ class TDataSet extends TComponent {
   int get activeRecordIndex => _activeRecord; // property ActiveRecord
   int get currentRecordIndex => _currentRecord; // property CurrentRecord
   int get blobFieldCount => _blobFieldCount;
+  // ignore: unnecessary_getters_setters
   int get bookmarkSize => _bookmarkSize;
   set bookmarkSize(int v) => _bookmarkSize = v;
   TRecordBuffer? get calcBuffer => _calcBuffer;
@@ -8120,6 +8264,7 @@ class TDataSet extends TComponent {
 
 // ---- TDataSetEnumerator (db.pas L1772-1781, implementation dataset.inc
 //      L2506-2527）+ operator Enumerator（L2501-2504）------------------------
+/// Iterates over the records of a [TDataSet].
 class TDataSetEnumerator {
   final TDataSet _dataSet;
   bool _enumBOF = true;
@@ -8160,6 +8305,7 @@ TDataSetEnumerator dataSetEnumerator(TDataSet aDataSet) =>
 typedef TFieldRef = TField;
 
 // ---- TDataLink (db.pas L1785-1842, implementation datasource.inc L5-329) --------------
+/// Connects a control or detail dataset to a [TDataSource].
 class TDataLink extends TPersistent {
   int _firstRecord = 0;
   int _bufferCount = 1;
@@ -8434,17 +8580,20 @@ class TDataLink extends TPersistent {
 
   bool get active => _active;
   bool get editing => _editing;
+  // ignore: unnecessary_getters_setters
   int get firstRecord => _firstRecord;
   set firstRecord(int v) => _firstRecord = v;
 }
 
 // ---- TDetailDataLink (db.pas L1846-1851, implementation datasource.inc L336-340) ------
+/// A [TDataLink] used by a detail dataset.
 class TDetailDataLink extends TDataLink {
   // GetDetailDataSet（L336-340）
   TDataSet? get detailDataSet => null;
 }
 
 // ---- TMasterDataLink (db.pas L1855-1878, implementation datasource.inc L347-435) ------
+/// Links a detail dataset to its master (WML `masterfields`).
 class TMasterDataLink extends TDetailDataLink {
   final TDataSet _detailDataSet;
   String _fieldNames = '';
@@ -8531,6 +8680,7 @@ class TMasterDataLink extends TDetailDataLink {
 
 // ---- TMasterParamsDataLink (db.pas L1882-1894, implementation datasource.inc
 //      L441-525）--------------------------------------------------------------
+/// A [TMasterDataLink] that fills the detail query's parameters from the master.
 class TMasterParamsDataLink extends TMasterDataLink {
   TParams? _params;
 
@@ -8607,6 +8757,7 @@ class TMasterParamsDataLink extends TMasterDataLink {
 // TDataChangeEvent（db.pas L1898）
 typedef TDataChangeEvent = void Function(Object sender, TField? field);
 
+/// Connects data-aware controls to a [TDataSet] (WML `<datasource>`).
 class TDataSource extends TComponent {
   TDataSet? _dataSet;
   final List<TDataLink> _dataLinks = [];
@@ -8701,6 +8852,7 @@ class TDataSource extends TComponent {
   }
 
   // SetEnabled（L638-642）
+  // ignore: unnecessary_getters_setters
   bool get enabled => _enabled;
   set enabled(bool value) {
     _enabled = value;
@@ -8797,6 +8949,7 @@ TLoginDialogExProc? loginDialogExProc;
 
 // ---- TCustomConnection (db.pas L2001-2044, implementation database.inc
 //      L615-776）--------------------------------------------------------------
+/// Base of database connections.
 class TCustomConnection extends TComponent {
   TNotifyEvent? afterConnect;
   TNotifyEvent? afterDisconnect;
@@ -8949,6 +9102,7 @@ class TCustomConnection extends TComponent {
 }
 
 // ---- TDatabase (db.pas L2051-2098, implementation database.inc L21-316) ---------------
+/// A database connection that owns datasets and transactions.
 class TDatabase extends TCustomConnection {
   bool _connected = false;
   String databaseName = '';
@@ -8959,7 +9113,6 @@ class TDatabase extends TCustomConnection {
   bool keepConnection = false;
   late TStrings _params;
   final bool _sqlBased = false;
-  bool _openAfterRead = false;
 
   // constructor Create（database.inc L56-64）
   TDatabase([super.aOwner]) {
@@ -8998,9 +9151,6 @@ class TDatabase extends TCustomConnection {
     closeDataSets();
     closeTransactions();
     doInternalDisConnect();
-    if (componentState.contains(TComponentStateItem.csLoading)) {
-      _openAfterRead = false;
-    }
     _connected = false;
   }
 
@@ -9118,6 +9268,7 @@ class TDatabase extends TCustomConnection {
 }
 
 // ---- TDBTransaction (db.pas L1960-1995, implementation database.inc L369-609) ---------
+/// Base of database transactions.
 class TDBTransaction extends TComponent {
   bool _transActive = false;
   TDatabase? _database;
@@ -9285,6 +9436,7 @@ class TDBTransaction extends TComponent {
 // TDBDatasetClass = Class of TDBDataset → a factory typedef (convention 2)
 typedef TDBDatasetClass = TDBDataset Function(TComponent? aOwner);
 
+/// A dataset bound to a [TDatabase] and a [TDBTransaction].
 class TDBDataset extends TDataSet {
   TDatabase? _database;
   TDBTransaction? _transaction;

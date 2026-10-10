@@ -104,10 +104,10 @@ class WapApp extends StatelessWidget {
   const WapApp({super.key});
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
+  Widget build(BuildContext context) => const MaterialApp(
         title: 'WapForm',
         debugShowCheckedModeBanner: false,
-        home: const _AppRoot(),
+        home: _AppRoot(),
       );
 }
 

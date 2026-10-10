@@ -95,37 +95,37 @@ void main() {
       ev.clearVars();
       expect(ev.eval('x'), isNull);
       // A built-in function must still work after clearVars.
-      expect(ev.eval("tt_PADL('7',3)"), '  7');
+      expect(ev.eval("PADL('7',3)"), '  7');
     });
   });
 
-  group('tt_* built-in function library', () {
+  group('extended built-in function library', () {
     late WapEvaluator ev;
     setUp(() => ev = WapEvaluator());
 
-    test('tt_PADL / tt_PADR pad to width', () {
-      expect(ev.eval("tt_PADL('7',3)"), '  7');
-      expect(ev.eval("tt_PADR('7',3)"), '7  ');
+    test('PADL / PADR pad to width', () {
+      expect(ev.eval("PADL('7',3)"), '  7');
+      expect(ev.eval("PADR('7',3)"), '7  ');
     });
 
-    test('tt_NUMFMT formats with thousands separators', () {
-      expect(ev.eval('tt_NUMFMT(1234567,0)'), '1,234,567');
+    test('NUMFMT formats with thousands separators', () {
+      expect(ev.eval('NUMFMT(1234567,0)'), '1,234,567');
     });
 
-    test('tt_CLAMP restricts a value to a range', () {
-      expect(ev.eval('tt_CLAMP(15,0,10)'), 10);
-      expect(ev.eval('tt_CLAMP(-5,0,10)'), 0);
-      expect(ev.eval('tt_CLAMP(5,0,10)'), 5);
+    test('CLAMP restricts a value to a range', () {
+      expect(ev.eval('CLAMP(15,0,10)'), 10);
+      expect(ev.eval('CLAMP(-5,0,10)'), 0);
+      expect(ev.eval('CLAMP(5,0,10)'), 5);
     });
 
-    test('tt_NVL returns the default only when the value is Null', () {
-      expect(ev.eval("tt_NVL(UNSET_VAR,'fallback')"), 'fallback');
-      expect(ev.eval("tt_NVL('real value','fallback')"), 'real value');
+    test('NVL returns the default only when the value is Null', () {
+      expect(ev.eval("NVL(UNSET_VAR,'fallback')"), 'fallback');
+      expect(ev.eval("NVL('real value','fallback')"), 'real value');
     });
 
-    test('tt_SPLIT / tt_SPLITCOUNT tokenize by delimiter', () {
-      expect(ev.eval("tt_SPLITCOUNT('a,b,c',',')"), 3);
-      expect(ev.eval("tt_SPLIT('a,b,c',',',2)"), 'b');
+    test('SPLIT / SPLITCOUNT tokenize by delimiter', () {
+      expect(ev.eval("SPLITCOUNT('a,b,c',',')"), 3);
+      expect(ev.eval("SPLIT('a,b,c',',',2)"), 'b');
     });
   });
 

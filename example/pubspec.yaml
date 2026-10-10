@@ -17,13 +17,13 @@ dependencies:
     sdk: flutter
   wapform_flutter:
     path: ../
-  # Used directly by a few of the 12 example pages (not by the package
-  # itself) — app006/app007/app012/app023 render report/help snippets
-  # via flutter_html, app006 opens an external link via url_launcher.
-  # Run `flutter pub add` to resolve the actual latest compatible
-  # versions rather than trusting a hand-typed number here.
-  flutter_html: any
+  # Used directly by app006 (not by the package itself): opens an
+  # external link via url_launcher.
   url_launcher: any
+
+  # <platform name="flutter">: file_picker + http.
+  file_picker: ^13.1.0
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

@@ -58,6 +58,9 @@
 //   2026-08-22  rev2  Don't cache the lookup map while the dataset isn't
 //                     open yet -- see the note above _cols below
 
+/// The lookup drop-down ([WapLookupBox]) behind WML `<input lookup>`.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 // @@@ Lazarus version: uses lazarus_sqldb's TSQLQuery (lookupMap is added on top of it)
@@ -67,6 +70,11 @@ const _kBlue = Color(0xFF1A6FB5);
 const _kBorder = Color(0xFFD3D1C7);
 const _kReadOnly = Color(0xFFF0EFE9);
 
+/// A lookup drop-down (WML `<input lookup>` / `<item lookup>`).
+///
+/// The list comes from [dataSet] + [keyField] + [displayFields], or from
+/// fixed `lookupItems` / `lookupColumns`. Typing filters the list; picking an
+/// item calls `onPicked` (WML `oncloseup`).
 class WapLookupBox extends StatefulWidget {
   /// Current value (key)
   final String value;
@@ -91,7 +99,11 @@ class WapLookupBox extends StatefulWidget {
   ///  dataSet.lookupMap(keyField, displayFields) itself to compute the list.
   ///  Corresponds to Delphi's TDBLookupComboBox.ListSource/KeyField/ListField.
   final TSQLQuery? dataSet;
+
+  /// Field of [dataSet] that holds the code written back to [value].
   final String? keyField;
+
+  /// Fields of [dataSet] shown as the list's columns.
   final List<String>? displayFields;
 
   /// Per-column width (px) for the multi-column case
@@ -123,6 +135,7 @@ class WapLookupBox extends StatefulWidget {
   /// onChanged = typing, onPicked = picking from the list)
   final ValueChanged<String>? onPicked;
 
+  /// Creates a lookup box showing [value].
   const WapLookupBox({
     super.key,
     required this.value,

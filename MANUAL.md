@@ -53,7 +53,6 @@
 - [C.12 Dynamic variables and arrays](#c12-dynamic-variables-and-arrays-6)
 - [Summary: 150 functions, 100% coverage](#summary-150-functions-100-coverage)
 - [Standard library in practice](#standard-library-in-practice)
-- [The `tt_*` extended library](#the-tt_-extended-library)
 
 ---
 

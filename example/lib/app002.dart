@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+// ignore_for_file: unused_element, unused_field
+import 'package:flutter/material.dart';
 
 import 'package:wapform_flutter/lazarus_db.dart';
 import 'package:wapform_flutter/lazarus_sqldb.dart';
@@ -10,6 +11,8 @@ import 'package:wapform_flutter/wapform_lookup_box.dart';
 import 'package:wapform_flutter/wapform_expression.dart';
 import 'package:wapform_flutter/wapform_lazarus.dart';
 import 'package:wapform_flutter/wapform_filter.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
 
 const String _kDb = 'WapProductionDB';
 
@@ -39,7 +42,8 @@ TField _fieldOf(String type) {
     case 'boolean':
       return TBooleanField();
     default:
-      return TStringField();
+      // size 0 = no length limit (the default 20 cut longer values such as file names)
+      return TStringField()..size = 0;
   }
 }
 
@@ -190,6 +194,7 @@ class _App002CardPState
   late final WapEvaluator _ev = widget.ev ?? WapEvaluator();
   late final DataSetRegistry _reg = widget.reg ?? DataSetRegistry();
   bool get _ownsReg => widget.reg == null;
+  final List<String> _ownedDs = []; // datasets this card created
 
   TSQLQuery dbquery(String id, String sqlText,
       {void Function(TSQLQuery ds)? define}) {
@@ -204,6 +209,7 @@ class _App002CardPState
       q.name = id;
       _reg.put(id, q);
       isNew = true;
+      _ownedDs.add(id);
     }
     if (sqlText.isNotEmpty) {
       final sql = expandSql(sqlText);
@@ -238,7 +244,7 @@ class _App002CardPState
     _fld(ds, "price1", "Price 1");
     _fld(ds, "price2", "Price 2");
     _fld(ds, "price3", "Price 3");
-    _fld(ds, "activate", "Listed");
+    _fld(ds, "active", "Listed");
     _fld(ds, "UDate", "Updated Date");
     _fld(ds, "newa", "Price 4");
     _fld(ds, "new1", "Price 5");
@@ -250,7 +256,11 @@ class _App002CardPState
     _fld(ds, "icon", "Icon");
 
     ds.onNewRecord = (d) {
-      setvar("pa.activate", "1");
+      setvar("pa.active", "1");
+    };
+
+    ds.afterScroll = (d) {
+      Future.microtask(() { if (mounted) _paAfterScroll(); });
     };
   });
 
@@ -290,6 +300,12 @@ class _App002CardPState
     _ve.free();
     _vv.free();
       _reg.releaseAll();
+    } else {
+      // shared registry: drop the datasets this card created, so a
+      // reopened card re-creates them with events bound to its new State
+      for (final id in _ownedDs) {
+        _reg.release(id);
+      }
     }
     super.dispose();
   }
@@ -314,6 +330,8 @@ class _App002CardPState
       }
 
       await dbquery("pa", r"select * from pa order by pno").openAsync();
+      // Detail is opened with a filter carried by pa's afterscroll
+      await _paAfterScroll();
       if (!_ve.active) await _ve.openAsync();
       if (!_vv.active) await _vv.openAsync();
     } catch (e, st) {
@@ -333,7 +351,7 @@ class _App002CardPState
     _column(c, "UDate", "Updated Date", 16);
     _column(c, "Des", "Item Name / Spec", 40);
     _column(c, "Unit", "Unit", 6);
-    _column(c, "activate", "Listed", 10);
+    _column(c, "active", "Listed", 10);
     _column(c, "pricea", "Price A", 10, align: TAlignment.taRightJustify);
     _column(c, "priceb", "Price B", 10);
     _column(c, "pricec", "Price C", 10);
@@ -351,25 +369,47 @@ class _App002CardPState
     return c;
   }
 
-  void _a0() {
-    setvar("I", "0");
-    setvar("S", "''");
-    // TODO <open> not yet supported
-    if (condition("I=1")) {
-      _log("\$s");
-      // TODO <webcopy> not yet supported
-      _log("\$s");
-      if (condition("Pos('failed', S)=0")) {
-        setvar("ddzlTPMC", "ExtractFileName(S)");
-        _log("\$ddzlTPMC");
-        // TODO <setprop name="g0" prop="img" value="'http://localhost:90/xyz/uploads/a02.jpg'"/>
+  Future<void> _a0() async {
+    final f = await FilePicker.pickFile(type: FileType.image);
+    if (f == null) return;
+    final bytes = await f.readAsBytes();
+    // timestamp name, like <webcopy unique>: ASCII only, never overwrites another image
+    final name = '${DateTime.now().millisecondsSinceEpoch}.${(f.extension ?? 'jpg').toLowerCase()}';
+    // Same page as the Windows <webcopy>: shop/upload.wml on WapServer
+    // (http://localhost:8080/shop/; under IIS use http://localhost/shop/).
+    // <upload> takes the file name from Content-Disposition and the type from
+    // Content-Type, so both must be sent.
+    const types = {'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png',
+        'gif': 'image/gif', 'bmp': 'image/bmp'};
+    final ext = (f.extension ?? 'jpg').toLowerCase();
+    try {
+      final res = await http.put(
+          Uri.parse('http://localhost:8080/shop/upload.wml'),
+          headers: {
+            'Content-Type': types[ext] ?? 'application/octet-stream',
+            'Content-Disposition': 'attachment; filename="$name"',
+          },
+          body: bytes);
+      // upload.wml answers with its page; the saved name is in "Saved <b>...</b>"
+      final saved = RegExp(r'Saved <b>([^<]+)</b>').firstMatch(res.body)?.group(1);
+      if (res.statusCode == 200 && saved != null) {
+        // write the new image name and save it right away
+        setvar("pa.icon", "'$saved'");
+        await _saveAsync(_pa);
+      } else {
+        await _alert("Upload failed: HTTP ${res.statusCode}");
       }
+    } catch (e) {
+      await _alert("Upload failed: $e");
     }
   }
 
-  void _b0() {
-    setvar("ddzlTPMC", "''");
-    // TODO <setprop name="g0" prop="img" value="$('http://127.0.0.1:8080/wap/'+'nopic.jpg')"/>
+  Future<void> _b0() async {
+    setvar("pa.icon", "''");
+    await _saveAsync(_pa);
+  }
+
+  void _sHOWIMG() {
   }
 
   Future<void> _paInsert({bool atEnd = false}) async {
@@ -379,6 +419,7 @@ class _App002CardPState
       } else {
         _pa.insert();
       }
+      await _paAfterScroll();
       if (mounted) setState(() {});
     } catch (e) {
       _snack("Add failed: $e");
@@ -398,11 +439,21 @@ class _App002CardPState
   Future<void> _paDelete() async {
     try {
       await _delAsync(_pa);
+      await _paAfterScroll();
       _snack("Deleted", ok: true);
       if (mounted) setState(() {});
     } catch (e) {
       _snack("Delete failed: $e");
     }
+  }
+
+  String _paLastKey = '\u0000';
+  Future<void> _paAfterScroll() async {
+    final k = _str(_pa, "Pno");
+    if (k == _paLastKey) return;
+    _paLastKey = k;
+
+    if (mounted) setState(() {});
   }
 
   Future<void> _paQnoChange() async {
@@ -851,7 +902,7 @@ class _App002CardPState
                                   controller: _tab,
                                   isScrollable: true,
                                   labelColor: _kBlue,
-                                  tabs: [
+                                  tabs: const [
                                     Tab(text: "Product Search"),
                                     Tab(text: "Product Details"),
                                   ],
@@ -878,7 +929,7 @@ class _App002CardPState
                                       _nav(_paSrc, post: _paPost, insert: _paInsert, del: _paDelete),
                                       Center(child: // <dbgrid width="1180" height="350">
                                       FocusTraversalOrder(
-                                        order: NumericFocusOrder(1),
+                                        order: const NumericFocusOrder(1),
                                         child: FocusTraversalGroup(
                                           child: TDBGrid(
                                             dataSource: _paSrc,
@@ -889,7 +940,7 @@ class _App002CardPState
                                             onRowInsert: () => _paInsert(atEnd: true),
                                             onExitLastRow: () => FocusScope.of(context).nextFocus(),
                                             onRowActivate: (_) {
-                                              // TODO <setprop name="pagecontrol" prop="activatePageIndex" value="1"/>
+                                              _tab.animateTo(1);
                                               if (mounted) setState(() {});
                                             },
                                             // <item field="vno" lookup="ve;vno;vname"/>
@@ -917,6 +968,7 @@ class _App002CardPState
                                       const SizedBox(height: 8),
                                       // <table columns="5" align="LLLLC">
                                       _tbl([
+                                        Column(crossAxisAlignment: _xa(""), mainAxisSize: MainAxisSize.min, children: [
                                           // [diag] fieldset children=38 dsId=pa foreign=False
                                             _line([
                                               _lblR("Item No:", 131.0),
@@ -948,7 +1000,7 @@ class _App002CardPState
                                             ]),
                                             _line([
                                               _lblR("Listed:", 131.0),
-                                              _edit(_paSrc, "activate", 2, order: 9),
+                                              _edit(_paSrc, "active", 2, order: 9),
                                             ]),
                                             _line([
                                               _lblR("Menu:", 131.0),
@@ -968,9 +1020,11 @@ class _App002CardPState
                                               _lblR("Minimum:", 131.0),
                                               _edit(_paSrc, "qty", 6, order: 13),
                                             ]),
+                                        ]),
                                         _tdf(15.0, [
 
                                         ]),
+                                        Column(crossAxisAlignment: _xa(""), mainAxisSize: MainAxisSize.min, children: [
                                           // [diag] fieldset children=30 dsId=pa foreign=False
                                             _line([
                                               _lblR("Brand Code:", 152.0),
@@ -1013,13 +1067,30 @@ class _App002CardPState
                                               _lblR("Price 5", 152.0),
                                               _edit(_paSrc, "new1", 10, order: 22),
                                             ]),
+                                        ]),
                                         _tdf(15.0, [
 
                                         ]),
+                                        Column(crossAxisAlignment: _xa("C"), mainAxisSize: MainAxisSize.min, children: [
                                           _line([
-                                            _lbl("圖形|"),
-                                            _lbl("|"),
+                                            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                              Row(mainAxisSize: MainAxisSize.min, children: [
+                                                const Text("Image  "),
+                                                TButton(caption: "Open", onClick: () async { await _a0(); if (mounted) setState(() {}); }),
+                                                const SizedBox(width: 6),
+                                                TButton(caption: "Clear", onClick: () async { await _b0(); if (mounted) setState(() {}); }),
+                                              ]),
+                                              const SizedBox(height: 6),
+                                              Image.network(
+                                                _str(_pa, "icon").isEmpty
+                                                    ? "http://localhost:8080/shop/300x300.jpg"
+                                                    : "http://localhost:8080/shop/upload/${_str(_pa, "icon")}",
+                                                width: 300, height: 300, fit: BoxFit.contain,
+                                                errorBuilder: (_, __, ___) => const SizedBox(width: 300, height: 300,
+                                                    child: Center(child: Text("No image")))),
+                                            ]),
                                           ]),
+                                        ]),
                                       ]),
                                       // </datasource pa>
                                     ]),

@@ -45,6 +45,10 @@
 //  pointer→object, class of→factory, Variant→dynamic, method names lowerCamelCase……), not repeated here.
 // ═════════════════════════════════════════════════════════════════════════════
 
+/// SQL datasets and connections: a Dart port of the Free Pascal `sqldb`
+/// unit ([TSQLQuery], [TSQLConnection]) plus the HTTP database gateway.
+library;
+
 import 'dart:convert'; // @@@ used by WapDb's HTTP driver (JSON)
 import 'package:http/http.dart' as http; // @@@ used by WapDb's HTTP driver
 import 'package:flutter/foundation.dart'; // @@@ debugPrint (SQL diagnostic output)
@@ -79,6 +83,7 @@ import 'lazarus_db.dart';
 // ═════════════════════════════════════════════════════════════════════════════
 
 // TSchemaType（sqltypes）
+/// Kind of schema information requested from a connection.
 enum TSchemaType {
   stNoSchema,
   stTables,
@@ -93,6 +98,7 @@ enum TSchemaType {
 }
 
 // TStatementType（sqltypes）
+/// Kind of SQL statement: select, insert, update, delete….
 enum TStatementType {
   stUnknown,
   stSelect,
@@ -110,6 +116,7 @@ enum TStatementType {
 }
 
 // TDBEventType / TDBEventTypes（sqltypes）
+/// Kind of event written to a connection's log.
 enum TDBEventType {
   detCustom,
   detPrepare,
@@ -128,6 +135,7 @@ typedef TQuoteChars = List<String>;
 
 // TSqlObjectIdentifier / TSqlObjectIdentifierList（sqltypes）：
 // The return container for GetObjectNames
+/// A schema-qualified SQL object name.
 class TSqlObjectIdentifier extends TCollectionItem {
   String schemaName = '';
   String objectName = '';
@@ -138,6 +146,7 @@ class TSqlObjectIdentifier extends TCollectionItem {
       schemaName.isEmpty ? objectName : "$schemaName.$objectName";
 }
 
+/// A list of [TSqlObjectIdentifier]s.
 class TSqlObjectIdentifierList extends TCollection {
   TSqlObjectIdentifierList() : super((c) => TSqlObjectIdentifier(c));
 
@@ -169,6 +178,7 @@ typedef TSQLScriptDirectiveEvent = void Function(
 typedef TSQLScriptExceptionEvent = void Function(Object sender,
     TStrings theStatement, Object theException, TBoolRef continueExecution);
 
+/// Base of SQL scripts made of several statements.
 class TCustomSQLScript extends TComponent {
   bool autoCommit = false;
   bool useDollarString = false;
@@ -262,12 +272,14 @@ class TCustomSQLScript extends TComponent {
 
 // TBlobBuffer / TBufBlobField / PBufBlobField（bufdataset）：
 // The attached structure for a blob field inside the buffer
+/// Cached contents of a blob field.
 class TBlobBuffer {
   Uint8List? buffer;
   int size = 0;
   int fieldNo = 0;
 }
 
+/// Reference to a cached blob in a record buffer.
 class TBufBlobField {
   TBlobBuffer? blobBuffer;
   dynamic connBlobBuffer; // freely attached by the driver side
@@ -285,6 +297,7 @@ class _PendingUpdate {
   _PendingUpdate(this.kind, this.oldValues, this.newValues);
 }
 
+/// A dataset that keeps its records in memory (FPC `TBufDataset`).
 class TCustomBufDataset extends TDBDataset {
   final List<TRecordBuffer> _records = [];
   int _cursorIndex = -1; // the underlying cursor position (getRecord's current)
@@ -951,6 +964,7 @@ const String defaultMacroChar = '%'; // DefaultMacroChar（L81）
 typedef TRowsCount = int;
 
 // TSQLStatementInfo（L85-91）
+/// Information about a parsed SQL statement.
 class TSQLStatementInfo {
   TStatementType statementType = TStatementType.stUnknown;
   String tableName = '';
@@ -961,6 +975,7 @@ class TSQLStatementInfo {
 
 // A subset of TFormatSettings (DefaultSQLFormatSettings, L832-853):
 // only keeps the fields sqldb.pp actually uses
+/// Number and date formats used when converting values to text.
 class TFormatSettings {
   String decimalSeparator = '.';
   String dateSeparator = '-';
@@ -1029,9 +1044,11 @@ String timeIntervalToString(DateTime time) {
 //               implementation L877-914)
 // ═════════════════════════════════════════════════════════════════════════════
 
+/// Base of connection-specific statement handles.
 class TSQLHandle {}
 
 // TSQLCursor (L105-113): the fields are public (as in the original source)
+/// A prepared statement and its result rows.
 class TSQLCursor extends TSQLHandle {
   bool fDirect = false;
   bool fPrepared = false;
@@ -1042,6 +1059,7 @@ class TSQLCursor extends TSQLHandle {
 }
 
 // ESQLDatabaseError (L117-123, implementation L895-914)
+/// An [EDatabaseError] reported by the database server.
 class ESQLDatabaseError extends EDatabaseError {
   final int errorCode;
   final String sqlState;
@@ -1067,6 +1085,7 @@ class ESQLDatabaseError extends EDatabaseError {
 }
 
 // TSQLDBFieldDef (L127-132): SQLDBData is a pointer freely attached by the driver side → dynamic
+/// A [TFieldDef] for a SQL result column.
 class TSQLDBFieldDef extends TFieldDef {
   dynamic sqldbData;
   TSQLDBFieldDef(super.aCollection);
@@ -1078,6 +1097,7 @@ class TSQLDBFieldDef extends TFieldDef {
 
 // TSQLDBFieldDefs (L136-139, implementation L879-882):
 // class function FieldDefClass → overriding the virtual factory method (convention 2)
+/// The [TSQLDBFieldDef]s of a SQL result.
 class TSQLDBFieldDefs extends TFieldDefs {
   TSQLDBFieldDefs(super.aDataSet);
 
@@ -1091,6 +1111,7 @@ class TSQLDBFieldDefs extends TFieldDefs {
 }
 
 // TSQLDBParam（L143-150）
+/// A [TParam] of a SQL statement.
 class TSQLDBParam extends TParam {
   TFieldDef? fieldDef;
   dynamic sqldbData;
@@ -1098,6 +1119,7 @@ class TSQLDBParam extends TParam {
 }
 
 // TSQLDBParams (L154-157, implementation L887-890)
+/// The [TSQLDBParam]s of a SQL statement.
 class TSQLDBParams extends TParams {
   TSQLDBParams([TPersistent? aOwner])
       : super.withItemClass(aOwner, (c) => TSQLDBParam(c));
@@ -1108,6 +1130,7 @@ class TSQLDBParams extends TParams {
 //  Declaration: L360-442; implementation: L919-1359
 // ═════════════════════════════════════════════════════════════════════════════
 
+/// Base of statements that return no rows.
 class TCustomSQLStatement extends TComponent {
   TSQLCursor? _cursor;
   TSQLConnection? _database;
@@ -1548,6 +1571,7 @@ class TCustomSQLStatement extends TComponent {
 
 // TSQLStatement (L431-442): just re-exposes published properties; Dart has no
 // published concept, so it inherits directly
+/// A SQL statement that returns no rows (INSERT / UPDATE / DELETE).
 class TSQLStatement extends TCustomSQLStatement {
   TSQLStatement([super.aOwner]);
 }
@@ -1561,6 +1585,7 @@ class TSQLStatement extends TCustomSQLStatement {
 typedef TDBLogNotifyEvent = void Function(
     TSQLConnection sender, TDBEventType eventType, String msg);
 
+/// Capabilities of a connection type.
 enum TConnOption {
   sqSupportParams,
   sqSupportEmptyDatabaseName,
@@ -1574,6 +1599,7 @@ enum TConnOption {
 
 typedef TConnOptions = Set<TConnOption>;
 
+/// Options of a [TSQLConnection].
 enum TSQLConnectionOption {
   scoExplicitConnect,
   scoApplyUpdatesChecksRowsAffected
@@ -1583,6 +1609,7 @@ typedef TSQLConnectionOptions = Set<TSQLConnectionOption>;
 
 // TConnInfoType (starting from citAll=-1 —— Dart enums have no custom ordinals,
 // citAll is placed first, indices are understood with a -1 offset; only used for == comparisons and range traversal)
+/// Kind of information requested about a connection.
 enum TConnInfoType {
   citAll,
   citServerType,
@@ -1595,6 +1622,7 @@ enum TConnInfoType {
 // The GlobalDBLogHook global variable (L824)
 TDBLogNotifyEvent? globalDBLogHook;
 
+/// A connection to a SQL database (FPC `TSQLConnection`).
 class TSQLConnection extends TDatabase {
   TQuoteChars fieldNameQuoteChars = doubleQuotes;
   TSQLConnectionOptions _options = <TSQLConnectionOption>{};
@@ -2821,6 +2849,7 @@ class TSQLConnection extends TDatabase {
 }
 
 // A reference wrapper for the qry parameter (InitialiseUpdateStatement's var TCustomSQLQuery)
+/// A mutable [TSQLQuery] reference.
 class TQueryRef {
   TCustomSQLQuery? value;
   TQueryRef([this.value]);
@@ -2832,6 +2861,7 @@ class TQueryRef {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // TCommitRollbackAction / TSQLTransactionOption(s)（L315-319）
+/// What happens to open datasets on commit or rollback.
 enum TCommitRollbackAction {
   caNone,
   caCommit,
@@ -2840,10 +2870,12 @@ enum TCommitRollbackAction {
   caRollbackRetaining,
 }
 
+/// Options of a [TSQLTransaction].
 enum TSQLTransactionOption { stoUseImplicit, stoExplicitStart }
 
 typedef TSQLTransactionOptions = Set<TSQLTransactionOption>;
 
+/// A transaction of a [TSQLConnection].
 class TSQLTransaction extends TDBTransaction {
   TSQLTransactionOptions _options = <TSQLTransactionOption>{};
   TSQLHandle? _trans;
@@ -3078,8 +3110,10 @@ class TSQLTransaction extends TDBTransaction {
 }
 
 // ---- TSQLSequence (declaration L447-466, implementation L2542-2581) --------------------------
+/// When a [TSQLSequence] assigns its next value.
 enum TSQLSequenceApplyEvent { saeOnNewRecord, saeOnPost }
 
+/// Fills a field from a database sequence when records are inserted.
 class TSQLSequence extends TPersistent {
   final TCustomSQLQuery? _query;
   String fieldName = '';
@@ -3128,6 +3162,7 @@ class TSQLSequence extends TPersistent {
 // ---- TQuerySQLStatement (declaration L2588-2600, implementation L2604-2675) ------------------
 // A Statement subclass used internally by TCustomSQLQuery, feeding the Schema/table-name parsing result
 // back into the Query
+/// The statement used internally by a [TCustomSQLQuery].
 class TQuerySQLStatement extends TCustomSQLStatement {
   final TCustomSQLQuery _query;
 
@@ -3196,6 +3231,7 @@ class TQuerySQLStatement extends TCustomSQLStatement {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // TSQLQueryOption(s)（L471-472）
+/// Options of a [TSQLQuery].
 enum TSQLQueryOption {
   sqoKeepOpenOnCommit,
   sqoAutoApplyUpdates,
@@ -3207,6 +3243,7 @@ enum TSQLQueryOption {
 typedef TSQLQueryOptions = Set<TSQLQueryOption>;
 
 // ---- TServerIndexDefs (declaration L164-169, implementation L4003-4017) ----------------------
+/// Index definitions read from the server.
 class TServerIndexDefs extends TIndexDefs {
   // constructor Create(ADataset)（L4003-4008）
   TServerIndexDefs(TDataSet? aDataSet) : super(aDataSet) {
@@ -3227,6 +3264,7 @@ class TServerIndexDefs extends TIndexDefs {
   }
 }
 
+/// Base of [TSQLQuery].
 class TCustomSQLQuery extends TCustomBufDataset {
   TSQLQueryOptions _options = <TSQLQueryOption>{};
   TSchemaType _schemaType = TSchemaType.stNoSchema;
@@ -3241,6 +3279,7 @@ class TCustomSQLQuery extends TCustomBufDataset {
   // _updateable, and setting it earlier gets overwritten). This flag can be set "before" opening, and internalOpen
   // automatically applies it at the end —— so the caller only needs openAsync() to open, without wrapping an extra step to set it afterward.
   bool _alwaysUpdateable = false;
+  // ignore: unnecessary_getters_setters
   bool get alwaysUpdateable => _alwaysUpdateable;
   set alwaysUpdateable(bool v) => _alwaysUpdateable = v;
 // zz ### flutter extension
@@ -3951,6 +3990,7 @@ class TCustomSQLQuery extends TCustomBufDataset {
   }
 
   // SetUpdateMode（L3357-3361）
+  // ignore: unnecessary_getters_setters
   TUpdateMode get updateMode => _updateMode;
   set updateMode(TUpdateMode aValue) {
     _updateMode = aValue;
@@ -4118,6 +4158,7 @@ class TCustomSQLQuery extends TCustomBufDataset {
 //  MaxIndexesCount/IndexDefs come from TCustomBufDataset (already provided by the shim)
 // ═════════════════════════════════════════════════════════════════════════════
 
+/// A dataset filled by a SQL query (FPC `TSQLQuery`); what WML `<dbquery>` creates.
 class TSQLQuery extends TCustomSQLQuery {
   TSQLQuery([super.aOwner]);
 
@@ -4157,6 +4198,7 @@ class TSQLQuery extends TCustomSQLQuery {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // ---- TSQLScript (declaration L721-758, implementation L3552-3627) ----------------------------
+/// Runs a script of several SQL statements.
 class TSQLScript extends TCustomSQLScript {
   TSQLScriptDirectiveEvent? onDirective;
   late TCustomSQLQuery _query;
@@ -4209,12 +4251,14 @@ class TSQLScript extends TCustomSQLScript {
   }
 
   // SetDatabase（L3583-3586）
+  // ignore: unnecessary_getters_setters
   TDatabase? get database => _database;
   set database(TDatabase? value) {
     _database = value;
   }
 
   // SetTransaction（L3588-3591）
+  // ignore: unnecessary_getters_setters
   TDBTransaction? get transaction => _transaction;
   set transaction(TDBTransaction? value) {
     _transaction = value;
@@ -4257,6 +4301,7 @@ typedef TLibraryUnLoadFunction = void Function();
 // TSQLConnectionClass = Class of TSQLConnection → a factory typedef (convention 2)
 typedef TSQLConnectionClass = TSQLConnection Function(TComponent? aOwner);
 
+/// Describes a connection type that [TSQLConnector] can create.
 class TConnectionDef extends TPersistent {
   // The class function group (L3960-3993) → instance methods (convention 2: a metaclass's
   // class function is carried by an instance method in Dart; the registry builds an instance first, then queries it)
@@ -4330,6 +4375,7 @@ void getConnectionList(TStrings list) {
 }
 
 // ---- TSQLConnector (declaration L762-804, implementation L3726-3955) -------------------------
+/// A [TSQLConnection] that picks its connection type by name.
 class TSQLConnector extends TSQLConnection {
   TSQLConnection? _proxy;
   String _connectorType = '';
@@ -4620,6 +4666,7 @@ class TSQLConnector extends TSQLConnection {
 //  @@@ prepareStatement already uses the faithfully-translated TParams.parseSQL to convert :name into
 //  @@@ psInterbase's ?, so the bridge side doesn't need to parse it again.
 // ---------------------------------------------------------------------
+/// Rows and affected-row count returned by the database gateway.
 class LazarusDbResult {
   final bool success;
   final List<Map<String, dynamic>> data;
@@ -4643,6 +4690,7 @@ class LazarusDbResult {
       LazarusDbResult(success: false, data: const [], errorMessage: message);
 }
 
+/// Interface of the database gateway used by [TWapSQLConnection].
 abstract class LazarusDbDriver {
   /// A SELECT-type query, returns rows
   Future<LazarusDbResult> rawQuery(String sql, [List<Object?> args]);
@@ -4656,6 +4704,7 @@ abstract class LazarusDbDriver {
 //  @@@ subclass carries whatever state its backend needs (sqlite3's stmt pointer, mysql's
 //  @@@ result handle…); here it holds "preloaded rows + traversal index + parameter mapping".
 // ---------------------------------------------------------------------
+/// A [TSQLCursor] for the HTTP database gateway.
 class TWapCursor extends TSQLCursor {
   String preparedSQL = '';
   TParamBinding paramBinding = <int>[];
@@ -4673,6 +4722,7 @@ class _PendingDML {
 }
 
 // @@@ Transaction handle: the backend has no transaction API, so the handle is just a marker for queue ownership
+/// Transaction handle for the HTTP database gateway.
 class TWapTransactionHandle extends TSQLHandle {
   bool active = false;
 }
@@ -4680,6 +4730,7 @@ class TWapTransactionHandle extends TSQLHandle {
 // ---------------------------------------------------------------------
 //  TWapSQLConnection
 // ---------------------------------------------------------------------
+/// A [TSQLConnection] that sends SQL to the WapForm HTTP database gateway.
 class TWapSQLConnection extends TSQLConnection {
   // @@@ The backend driver (the HTTP bridge is provided by lazarus_wapdb_bridge.dart)
   LazarusDbDriver? driver;
@@ -5088,6 +5139,7 @@ extension TWapSQLQueryAsync on TCustomSQLQuery {
 const bool kWapSqlLog = true;
 // zz ### flutter extension
 
+/// HTTP client of the WapForm database gateway (`/query`, `/exec`).
 class WapDb {
   static const _base = 'http://localhost:3000';
 

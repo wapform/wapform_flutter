@@ -58,6 +58,9 @@
 //  Depends on: lazarus_db.dart (TPersistent/TCollection/TCollectionItem/TStrings)
 // ═════════════════════════════════════════════════════════════════════════════
 
+/// Grid base classes and column definitions used by the data-aware grid.
+library;
+
 import 'lazarus_db.dart';
 
 // aa !!! not fully translated
@@ -540,6 +543,7 @@ class TGridColumns extends TCollection {
   // A grid-less convenience constructor for dbgrids' TDBGridColumns
   TGridColumns.plain(super.itemClass) : _grid = null;
 
+  // ignore: unnecessary_getters_setters
   dynamic get grid => _grid;
   set grid(dynamic value) => _grid = value;
 

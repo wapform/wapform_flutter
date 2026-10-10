@@ -75,6 +75,9 @@
 //        lazarus_db.dart (TAlignment shim)
 // ═════════════════════════════════════════════════════════════════════════════
 
+/// Extra controls (panels, tab sheets, images, shapes).
+library;
+
 import 'dart:async';
 import 'dart:math' as math;
 

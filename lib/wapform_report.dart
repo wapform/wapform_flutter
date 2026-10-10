@@ -49,11 +49,16 @@
 //                     preview (reportCssScreen), instead of a separate
 //                     reportCssPrint-based layout that was wrapping fields.
 
+/// Grouped, paginated reports ([WapReport]) and the report page ([WapPage])
+/// that previews and prints them (WML `<report>`, `<group>`, `<page>`).
+library;
+
 import 'dart:convert'; // base64Encode (used by wapFontFaceCss)
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+// aa ### flutter extension
 import 'package:flutter_html/flutter_html.dart';
 // aa ### flutter extension
 // flutter_html 3.x's <table> needs this extension to render as a real
@@ -84,36 +89,72 @@ import 'src/report_web.dart';
 // ════════════════════════════════════════════════════════════
 //  Constants
 // ════════════════════════════════════════════════════════════
+/// Maximum number of group levels in a [WapReport].
 const int kMaxGroups = 9;
 
 // ════════════════════════════════════════════════════════════
 //  WapGroupRow
 // ════════════════════════════════════════════════════════════
+/// State of one group level of a [WapReport].
 class WapGroupRow {
+  /// Whether the level's prefix block is pending.
   bool prefixChk = false;
+
+  /// Whether the level's suffix block is pending.
   bool suffixChk = false;
+
+  /// The level's current group value.
   String str = '';
+
+  /// Text of the prefix block.
   String prefixTxt = '';
+
+  /// Text of the suffix block.
   String suffixTxt = '';
+
+  /// Block id passed to [WapReport.parseBlock] when the group starts (e.g. `G1_PREFIX`).
   String tagPrefix = '';
+
+  /// Block id passed to [WapReport.parseBlock] when the group ends (e.g. `G1_SUFFIX`).
   String tagSuffix = '';
 }
 
 // ════════════════════════════════════════════════════════════
 //  WapStorage
 // ════════════════════════════════════════════════════════════
+/// Run-time settings and counters of a [WapReport].
 class WapStorage {
+  /// Index of the group level being processed.
   int wapIdx = 0;
+
+  /// Number of group levels (up to [kMaxGroups]).
   int wapGroups = 0;
+
+  /// Whether a group value changed on the current record.
   bool wapChgFound = false;
+
+  /// Last evaluated group value.
   String wapExpVal = '';
+
+  /// Lines per page; [WapReport.emitRow] breaks the page after this many.
   int wapLpp = 60;
+
+  /// Current line number on the page.
   int wapLineNo = 0;
+
+  /// Current page number.
   int wapPageNo = 0;
+
+  /// Whether more records remain.
   bool wapHasMore = false;
+
+  /// Whether output is enabled.
   bool wapEnable = true;
+
+  /// Id of the block currently being output.
   String wapBlockId = '';
 
+  /// Per-level group state, `wapRow[0]` being level 1.
   final List<WapGroupRow> wapRow =
       List.generate(kMaxGroups, (_) => WapGroupRow());
 }
@@ -121,15 +162,29 @@ class WapStorage {
 // ════════════════════════════════════════════════════════════
 //  WapLine — the original interface fully preserved
 // ════════════════════════════════════════════════════════════
+/// One output line of a [WapReport].
 class WapLine {
+  /// Block that produced the line.
   final String blockId;
+
+  /// HTML of the line (or tab-separated columns).
   final String text; // an HTML string, or tab-separated columns
+  /// Page the line belongs to.
   final int pageNo;
+
+  /// Line number on its page.
   final int lineNo;
+
+  /// Whether the line is a header line.
   final bool isHeader;
+
+  /// Whether the line is a footer line.
   final bool isFooter;
+
+  /// CSS class of the line (e.g. `row1` / `row2`).
   final String tag; // CSS class (e.g. 'row1'/'row2')
 
+  /// Creates an output line.
   const WapLine({
     required this.blockId,
     required this.text,
@@ -144,24 +199,46 @@ class WapLine {
 // ════════════════════════════════════════════════════════════
 //  WapReport — abstract base class
 // ════════════════════════════════════════════════════════════
+/// A grouped, paginated report (WML `<report>` with `<group>` and `<page>`).
+///
+/// Subclasses say how records are read ([fetchFirst], [fetchNext],
+/// [fetchPrior]), what the group values are ([expression]) and what each
+/// block outputs ([parseBlock]); [run] drives the groups and page breaks,
+/// and [WapPage] shows and prints the result.
 abstract class WapReport {
+  /// Settings and counters; set [WapStorage.wapLpp] and [WapStorage.wapGroups] in [initParams].
   final WapStorage wap = WapStorage();
+
+  /// The output lines produced by [run].
   final List<WapLine> lines = [];
 
+  /// Sets lines per page, the number of group levels and their block ids.
   void initParams();
+
+  /// Value of group level [idx]; a new group starts when it changes (WML `<group change>`).
   String expression(int idx);
+
+  /// Moves to the first record; returns false when there is none.
   Future<bool> fetchFirst();
+
+  /// Moves to the next record; returns false at the end.
   Future<bool> fetchNext();
+
+  /// Moves back one record (used before a group's suffix is output).
   Future<void> fetchPrior();
+
+  /// Outputs block [blockId]: `PREFIX`, `PAGEPREFIX`, `G1_PREFIX`…, `RECORD`, `G1_SUFFIX`…, `PAGESUFFIX`, `PAGEBREAK` or `SUFFIX`.
   void parseBlock(String blockId);
   // @@@ Async preparation for a group break (opens the <dbquery> used for
   //     group aggregation). parseBlock is synchronous and can't await, so
   //     anything that needs an async <dbquery>.openAsync() is opened here
   //     ahead of time instead. No-op by default; report generators with
   //     group queries override this.
+  /// Asynchronous preparation before a group starts, e.g. querying the group's totals.
   Future<void> onGroupPrepare() async {}
 
   // ── emit() — original interface fully preserved ──────────────────────
+  /// Outputs [text] without counting it as a line (table openings and closings).
   void emit(
     String text, {
     bool isHeader = false,
@@ -181,11 +258,16 @@ abstract class WapReport {
 
   // ── columns / linesPerRecord / lineToColumns — original interface preserved ─
   List<(double?, String)> get columns => [];
+
+  /// Number of output lines one record takes.
   int get linesPerRecord => 1;
+
+  /// Splits a tab-separated [line] into columns.
   List<String> lineToColumns(WapLine line) =>
       line.text.split('\t').map((s) => s.trim()).toList();
 
   // ── run() — unchanged from the original ─────────────────────────────────
+  /// Runs the report: reads every record and fills [lines].
   Future<void> run() async {
     lines.clear();
     initParams();
@@ -252,6 +334,7 @@ abstract class WapReport {
   // isFooter → gray text
   // tag      → CSS class ('row1'/'row2', etc.)
   // columns  → if defined, tab-separated text is converted to <td>; otherwise the whole line is output as-is
+  /// The whole report as HTML.
   String buildHtml() {
     final useTable = columns.isNotEmpty;
     final buf = StringBuffer();
@@ -538,6 +621,7 @@ ${includePrintScript ? '<script>window.onload=function(){window.print();}</scrip
   //     e.g. "one page per customer"). Doesn't break if already at the
   //     top of a page (wapLineNo==0), to avoid producing a blank page.
   //     Closes out the current page → breaks → reprints the page header.
+  /// Ends the current page and starts a new one (WML `<newpage/>`); no blank page is produced.
   void forcePageBreak() {
     if (_hadRecordThisPage) {
       _newPageEnd();
@@ -584,37 +668,6 @@ ${includePrintScript ? '<script>window.onload=function(){window.print();}</scrip
     emit(html, isHeader: isHeader, isFooter: isFooter);
   }
 // zz ### flutter extension
-}
-
-// ════════════════════════════════════════════════════════════
-//  _SrcReport — a minimal shell for the demo card's PDF
-// ════════════════════════════════════════════════════════════
-class _SrcReport extends WapReport {
-  final String _src;
-  _SrcReport(this._src);
-
-  @override
-  void initParams() {
-    wap.wapLpp = 9999;
-    wap.wapGroups = 1;
-    wap.wapRow[0].tagPrefix = 'G1_PREFIX';
-    wap.wapRow[0].tagSuffix = 'G1_SUFFIX';
-  }
-
-  @override
-  String expression(int i) => '';
-  @override
-  Future<bool> fetchFirst() async => true;
-  @override
-  Future<bool> fetchNext() async => false;
-  @override
-  Future<void> fetchPrior() async {}
-  @override
-  void parseBlock(String id) {
-    if (id != 'PREFIX') return;
-    wap.wapLineNo++;
-    emit(expandText(_src));
-  }
 }
 
 // ════════════════════════════════════════════════════════════
@@ -732,6 +785,7 @@ String pageSizeOf(String paper, String orient) {
 ///     per fontAsset, then reused after that.
 final Map<String, String> _fontFaceCssCache = {};
 
+/// CSS `@font-face` rule embedding [fontAsset], cached per asset.
 Future<String> wapFontFaceCss(String fontAsset) async {
   final cached = _fontFaceCssCache[fontAsset];
   if (cached != null) return cached;
@@ -903,6 +957,7 @@ double paperMm(String paper, String orient) {
   return isLandscape(orient) ? wh[1] : wh[0];
 }
 
+/// Printable width in pixels of [paper] in orientation [orient].
 double paperWidthPx(String paper, String orient) {
   const mmPerPx = 96.0 / 25.4;
   const margin = 44.0; // left + right margins combined
@@ -998,17 +1053,19 @@ class _WapPageState extends State<WapPage> {
         await widget.report!.run();
         html = widget.report!.buildHtml();
       }
-      if (mounted)
+      if (mounted) {
         setState(() {
           _html = html;
           _loading = false;
         });
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.toString();
           _loading = false;
         });
+      }
     }
   }
 
